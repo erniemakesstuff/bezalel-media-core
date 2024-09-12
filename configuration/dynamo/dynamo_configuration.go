@@ -11,8 +11,11 @@ import (
 
 const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
-const TABLE_PUBLISHER_PROFILE = "PublisherProfile"
-const PUBLISHER_PROFILE_GSI_NAME = "ChannelPlatform" // For querying by YouTube, Instagram, ...
+
+// Although status is derivable from ledger data, needed for index-lookup replayability.
+const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex" // {Status, StartedAtEpochMilli}
+const TABLE_PUBLISHER_PROFILE = "PublisherProfiles"
+const PUBLISHER_PROFILE_GSI_NAME = "ChannelPlatformIndex" // For querying by YouTube, Instagram, ...
 const MAX_QPS_ON_DEMAND_GSI = 50
 
 func Init() {
@@ -23,7 +26,6 @@ func Init() {
 	createTableAccounts(svc)
 	createPublisherProfileTables(svc)
 	createEventLedgerTables(svc)
-	//reaperOldLedgers(svc)
 }
 
 // Creates Accounts Table.
@@ -53,10 +55,9 @@ func createTableAccounts(svc *dynamodb.DynamoDB) {
 	createTable(svc, input, tableName)
 }
 
-// PK: <AccountID>.<SaltGuid>
-// Range: LastPublishAtEpochMilli - time.Now().UnixMilli()
-//   - used to sort and select next profile
-//
+// PK: <OwnerAccountID> Owner ID from Account table
+// SK: <PublisherProfileID> - GUID
+// LastPublishAtEpochMilli - time.Now().UnixMilli()
 // Proviisions GSI for querying by PlatformChannel and LastPublishAtEpochMilli
 // Filter by ChannelTheme, and ChannelLanguage.
 func createPublisherProfileTables(svc *dynamodb.DynamoDB) {
@@ -64,6 +65,10 @@ func createPublisherProfileTables(svc *dynamodb.DynamoDB) {
 	tableName := TABLE_PUBLISHER_PROFILE
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("OwnerAccountID"),
+				AttributeType: aws.String("S"),
+			},
 			{
 				AttributeName: aws.String("PublisherProfileID"),
 				AttributeType: aws.String("S"),
@@ -79,11 +84,11 @@ func createPublisherProfileTables(svc *dynamodb.DynamoDB) {
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("PublisherProfileID"),
+				AttributeName: aws.String("OwnerAccountID"),
 				KeyType:       aws.String("HASH"),
 			},
 			{
-				AttributeName: aws.String("LastPublishAtEpochMilli"),
+				AttributeName: aws.String("PublisherProfileID"),
 				KeyType:       aws.String("RANGE"),
 			},
 		},
@@ -123,11 +128,41 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 				AttributeName: aws.String("LedgerID"),
 				AttributeType: aws.String("S"),
 			},
+			{
+				AttributeName: aws.String("LedgerStatus"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("LedgerPublishedAtEpochMilli"),
+				AttributeType: aws.String("N"),
+			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
 				AttributeName: aws.String("LedgerID"),
 				KeyType:       aws.String("HASH"),
+			},
+		},
+		GlobalSecondaryIndexes: []*dynamodb.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String(EVENT_LEDGER_STATE_GSI_NAME),
+				KeySchema: []*dynamodb.KeySchemaElement{
+					{
+						AttributeName: aws.String("LedgerStatus"),
+						KeyType:       aws.String("HASH"),
+					},
+					{
+						AttributeName: aws.String("LedgerPublishedAtEpochMilli"),
+						KeyType:       aws.String("RANGE"),
+					},
+				},
+				Projection: &dynamodb.Projection{
+					ProjectionType: aws.String(dynamodb.ProjectionTypeAll),
+				},
+				OnDemandThroughput: &dynamodb.OnDemandThroughput{
+					MaxReadRequestUnits:  aws.Int64(MAX_QPS_ON_DEMAND_GSI),
+					MaxWriteRequestUnits: aws.Int64(MAX_QPS_ON_DEMAND_GSI),
+				},
 			},
 		},
 		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
@@ -152,11 +187,4 @@ func tableAlreadyExists(err error) bool {
 		return true
 	}
 	return false
-}
-
-func reaperOldLedgers(svc *dynamodb.DynamoDB) {
-	svc.DeleteTable(&dynamodb.DeleteTableInput{
-		TableName: aws.String("Accounts"),
-	})
-	log.Println("Deleted the table", "Accounts")
 }
