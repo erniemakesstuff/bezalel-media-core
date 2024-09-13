@@ -167,6 +167,10 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 		},
 		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
 		TableName:   aws.String(tableName),
+		StreamSpecification: &dynamodb.StreamSpecification{
+			StreamEnabled:  aws.Bool(true),
+			StreamViewType: aws.String(dynamodb.StreamViewTypeNewImage),
+		},
 	}
 	createTable(svc, input, tableName)
 }
