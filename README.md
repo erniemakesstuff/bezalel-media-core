@@ -13,3 +13,11 @@ Environment variables to set:
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_REGION
+
+Running in docker
+`docker build -t core --build-arg AwsSecretId=$AWS_ACCESS_KEY_ID --build-arg AwsSecretKey=$AWS_SECRET_ACCESS_KEY --build-arg AwsRegion=$AWS_REGION .`
+`docker run core -ti`
+
+
+Stopping running containers; prunning images.
+`docker stop $(docker ps -a -q)`
