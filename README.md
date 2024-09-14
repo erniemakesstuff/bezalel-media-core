@@ -16,8 +16,11 @@ AWS_REGION
 
 Running in docker
 `docker build -t core --build-arg AwsSecretId=$AWS_ACCESS_KEY_ID --build-arg AwsSecretKey=$AWS_SECRET_ACCESS_KEY --build-arg AwsRegion=$AWS_REGION .`
-`docker run core -ti`
+`docker run core`
 
 
 Stopping running containers; prunning images.
 `docker stop $(docker ps -a -q)`
+
+Ensure to prune old images to save space!
+https://docs.docker.com/engine/manage-resources/pruning/
