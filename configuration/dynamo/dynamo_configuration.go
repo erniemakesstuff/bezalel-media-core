@@ -2,11 +2,11 @@ package dynamo
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	aws_configuration "github.com/bezalel-media-core/v2/configuration"
 
 	"log"
-	"strings"
 )
 
 const TABLE_ACCOUNTS = "Accounts"
@@ -133,7 +133,7 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 				AttributeType: aws.String("S"),
 			},
 			{
-				AttributeName: aws.String("LedgerPublishedAtEpochMilli"),
+				AttributeName: aws.String("LedgerCreatedAtEpochMilli"),
 				AttributeType: aws.String("N"),
 			},
 		},
@@ -152,7 +152,7 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 						KeyType:       aws.String("HASH"),
 					},
 					{
-						AttributeName: aws.String("LedgerPublishedAtEpochMilli"),
+						AttributeName: aws.String("LedgerCreatedAtEpochMilli"),
 						KeyType:       aws.String("RANGE"),
 					},
 				},
@@ -187,8 +187,11 @@ func createTable(svc *dynamodb.DynamoDB, input *dynamodb.CreateTableInput, table
 }
 
 func tableAlreadyExists(err error) bool {
-	if err != nil && strings.Contains(err.Error(), "ResourceInUseException") {
-		return true
+	if err == nil {
+		return false
+	}
+	if aerr, ok := err.(awserr.Error); ok {
+		return aerr.Code() == dynamodb.ErrCodeResourceInUseException
 	}
 	return false
 }

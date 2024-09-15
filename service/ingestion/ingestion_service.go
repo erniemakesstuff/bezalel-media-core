@@ -17,5 +17,5 @@ func HandleSourceEvent(source string, r *http.Request) error {
 	}
 	payload.Source = source
 	log.Println(payload)
-	return nil
+	return err
 }
