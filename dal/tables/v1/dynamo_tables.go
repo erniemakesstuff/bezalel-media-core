@@ -29,5 +29,7 @@ type Ledger struct {
 }
 
 type ScriptEvent struct {
-	Foo string
+	Foo              string
+	ScriptEventID    string // <language>.<content-type>.<niche>; e.g. EN.longFormVideo.NewsReport
+	ContentLookupKey string // some guid to fetch into s3. Namespace by event: e.g. script.1029-102S-1290AKXL
 }

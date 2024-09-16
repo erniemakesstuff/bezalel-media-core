@@ -49,26 +49,27 @@ func CreateLedger(item dynamo_tables.Ledger) error {
 }
 
 func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.ScriptEvent) error {
-	oldItem, err := GetLedger(ledgerId)
+	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
 		return err
 	}
 
-	anyExistingScriptEvents, err := getExistingScriptEvents(oldItem)
+	anyExistingScriptEvents, err := getExistingScriptEvents(ledgerItem)
 	if err != nil {
 		log.Printf("error fetching existing script events: %s", err)
 		return err
 	}
-
-	joinedEvents := append(anyExistingScriptEvents, scriptEvents...)
-	joinedEventsJson, err := json.Marshal(joinedEvents)
+	// TODO: Create set of events to avoid duplicate ledger entries.
+	setEvents := append(anyExistingScriptEvents, scriptEvents...)
+	joinedEventsJson, err := json.Marshal(setEvents)
 	if err != nil {
 		log.Printf("error marshalling joined scriptEvents: %s", err)
 		return err
 	}
-	oldItem.ScriptEvents = string(joinedEventsJson)
-	err = updateLedgerEvents(oldItem, "ScriptEvents", "ScriptEventsVersion")
+	// TODO: Backoff retry conditional check expression
+	ledgerItem.ScriptEvents = string(joinedEventsJson)
+	err = updateLedgerEvents(ledgerItem, "ScriptEvents", "ScriptEventsVersion")
 	return err
 }
 
@@ -102,7 +103,6 @@ func updateLedgerEvents(ledgerEntry dynamo_tables.Ledger, fieldKey string, versi
 	// Check to see that no one updated before us.
 	oldVersionNumber := getField(&ledgerEntry, versionKey).Int()
 	newVersionNumber := oldVersionNumber + 1
-	log.Printf(fmt.Sprintf("%s = %d", versionKey, oldVersionNumber))
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"LedgerID": {
