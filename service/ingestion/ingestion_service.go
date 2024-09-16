@@ -5,6 +5,10 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
+
+	dal "github.com/bezalel-media-core/v2/dal"
+	dynamo_tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	source_events "github.com/bezalel-media-core/v2/service/ingestion/models/v1"
 )
 
@@ -17,5 +21,30 @@ func HandleSourceEvent(source string, r *http.Request) error {
 	}
 	payload.Source = source
 	log.Println(payload)
+	test()
 	return err
+}
+
+func test() {
+	ledgerId := uuid.New().String()
+	entry := dynamo_tables.Ledger{
+		LedgerID: ledgerId,
+	}
+	err := dal.CreateLedger(entry)
+	if err != nil {
+		log.Fatalf("failed to create ledger")
+	}
+	_, err = dal.GetLedger(ledgerId)
+	if err != nil {
+		log.Fatalf("failed to get ledger")
+	}
+	scriptEvent := dynamo_tables.ScriptEvent{
+		Foo: "Hello world",
+	}
+	scriptEvents := []dynamo_tables.ScriptEvent{scriptEvent}
+
+	err = dal.AppendLedgerScriptEvents(ledgerId, scriptEvents)
+	if err != nil {
+		log.Fatalf("failed to append script event to ledger")
+	}
 }

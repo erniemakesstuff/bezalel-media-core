@@ -27,3 +27,7 @@ type Ledger struct {
 	ScriptEventsVersion  int64
 	PublishEventsVersion int64
 }
+
+type ScriptEvent struct {
+	Foo string
+}
