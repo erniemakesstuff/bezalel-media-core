@@ -24,49 +24,27 @@ func Init() {
 	// Create DynamoDB client
 	svc := dynamodb.New(aws_configuration.GetAwsSession())
 	createTableAccounts(svc)
-	createPublisherProfileTables(svc)
 	createEventLedgerTables(svc)
 }
 
-// Creates Accounts Table.
+// Creates Accounts Table + PublisherProfile details.
 // PK: AccountID (email, phone, etc.)
 // PartitionSalt: GUID, ensure partition distribution within a shard.
 // SubscriptionStatus: Expired, Free, Premium, PowerUser,... (Expired == Free)
 // Downstream reads to collect PublisherProfiles per-account will need to
 // be a quorum read across all N-publisherProfile shards.
+// SK: <PublisherProfileID> - GUID
+// LastPublishAtEpochMilli - time.Now().UnixMilli()
+// Proviisions GSI for querying by PlatformChannel and LastPublishAtEpochMilli
+// Filter by ChannelTheme, and ChannelLanguage.
+// Contains Custom profile avatar prompts, and descriptions.
+// RANGE: DEFAULT - contains prompting templates to assign to other publisher-profiles in-range.
 func createTableAccounts(svc *dynamodb.DynamoDB) {
 	tableName := TABLE_ACCOUNTS
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String("AccountID"),
-				AttributeType: aws.String("S"),
-			},
-		},
-		KeySchema: []*dynamodb.KeySchemaElement{
-			{
-				AttributeName: aws.String("AccountID"),
-				KeyType:       aws.String("HASH"),
-			},
-		},
-		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
-		TableName:   aws.String(tableName),
-	}
-	createTable(svc, input, tableName)
-}
-
-// PK: <OwnerAccountID> Owner ID from Account table
-// SK: <PublisherProfileID> - GUID
-// LastPublishAtEpochMilli - time.Now().UnixMilli()
-// Proviisions GSI for querying by PlatformChannel and LastPublishAtEpochMilli
-// Filter by ChannelTheme, and ChannelLanguage.
-func createPublisherProfileTables(svc *dynamodb.DynamoDB) {
-	// Account.AccountID + saltGuid_n...
-	tableName := TABLE_PUBLISHER_PROFILE
-	input := &dynamodb.CreateTableInput{
-		AttributeDefinitions: []*dynamodb.AttributeDefinition{
-			{
-				AttributeName: aws.String("OwnerAccountID"),
 				AttributeType: aws.String("S"),
 			},
 			{
@@ -84,7 +62,7 @@ func createPublisherProfileTables(svc *dynamodb.DynamoDB) {
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("OwnerAccountID"),
+				AttributeName: aws.String("AccountID"),
 				KeyType:       aws.String("HASH"),
 			},
 			{
