@@ -39,7 +39,7 @@ func test() {
 		log.Fatalf("failed to get ledger")
 	}
 	scriptEvent := dynamo_tables.ScriptEvent{
-		ScriptEventID: "Hello world",
+		ContentLookupKey: "Hello world",
 	}
 	scriptEvents := []dynamo_tables.ScriptEvent{scriptEvent}
 

@@ -28,7 +28,7 @@ func Init() {
 }
 
 // Creates Accounts Table + PublisherProfile details.
-// PK: AccountID (email, phone, etc.)
+// PK: AccountID (should ideally be some sub-identity guid to avoid hot-partitions; otherwise email, phone, etc.)
 // PartitionSalt: GUID, ensure partition distribution within a shard.
 // SubscriptionStatus: Expired, Free, Premium, PowerUser,... (Expired == Free)
 // Downstream reads to collect PublisherProfiles per-account will need to

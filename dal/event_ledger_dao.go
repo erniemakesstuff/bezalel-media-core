@@ -47,7 +47,12 @@ func CreateLedger(item dynamo_tables.Ledger) error {
 
 	return err
 }
-
+func joinSet(s1 []dynamo_tables.Event, s2 []dynamo_tables.Event) []dynamo_tables.Event {
+	result := []dynamo_tables.Event{}
+	// TODO create union-set.
+	// map s1, exclusion
+	return result
+}
 func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.ScriptEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
@@ -69,7 +74,9 @@ func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 	}
 	// TODO: Backoff retry conditional check expression
 	ledgerItem.ScriptEvents = string(joinedEventsJson)
-	err = updateLedgerEvents(ledgerItem, "ScriptEvents", "ScriptEventsVersion")
+	const fieldKeyScript = "ScriptEvents"
+	const versionKeyScript = "ScriptEventsVersion"
+	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
 	return err
 }
 
