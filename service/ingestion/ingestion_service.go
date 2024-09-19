@@ -38,10 +38,19 @@ func test() {
 	if err != nil {
 		log.Fatalf("failed to get ledger")
 	}
-	scriptEvent := dynamo_tables.ScriptEvent{
+	scriptEvent1 := dynamo_tables.ScriptEvent{
 		ContentLookupKey: "Hello world",
+		Language:         "EN",
+		ContentType:      "Video",
+		Niche:            "NewsBroadcast",
 	}
-	scriptEvents := []dynamo_tables.ScriptEvent{scriptEvent}
+	scriptEvent2 := dynamo_tables.ScriptEvent{
+		ContentLookupKey: "Hello world",
+		Language:         "EN",
+		ContentType:      "Image",
+		Niche:            "Reaction",
+	}
+	scriptEvents := []dynamo_tables.ScriptEvent{scriptEvent1, scriptEvent2}
 
 	err = dal.AppendLedgerScriptEvents(ledgerId, scriptEvents)
 	if err != nil {

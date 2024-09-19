@@ -3,9 +3,12 @@ package dal
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 
+	"bitbucket.org/creachadair/stringset"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	aws_configuration "github.com/bezalel-media-core/v2/configuration"
@@ -47,13 +50,56 @@ func CreateLedger(item dynamo_tables.Ledger) error {
 
 	return err
 }
-func joinSet(s1 []dynamo_tables.Event, s2 []dynamo_tables.Event) []dynamo_tables.Event {
-	result := []dynamo_tables.Event{}
-	// TODO create union-set.
-	// map s1, exclusion
-	return result
+
+func GetLedger(ledgerId string) (dynamo_tables.Ledger, error) {
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
+		Key: map[string]*dynamodb.AttributeValue{
+			"LedgerID": {
+				S: aws.String(ledgerId),
+			},
+		},
+	})
+
+	resultItem := dynamo_tables.Ledger{}
+	if err != nil {
+		log.Printf("got error calling GetItem ledger item: %s", err)
+		return resultItem, err
+	}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, &resultItem)
+	if err != nil {
+		log.Printf("error unmarshalling ledger item: %s", err)
+		return resultItem, err
+	}
+
+	return resultItem, err
 }
+
 func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.ScriptEvent) error {
+	var err error
+	retryCount := 0
+	const maxRetries = 5
+	const minSeconds = 2
+	success := false
+	canRetry := true
+	for retryCount < maxRetries && !success && canRetry {
+		err = appendLedgerScriptEvents(ledgerId, scriptEvents)
+		retryCount++
+		if err != nil && hasVersionConflict(err) {
+			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
+		} else if err != nil {
+			log.Printf("error appending event to ledger: %s", err)
+			canRetry = false
+		} else {
+			success = true
+		}
+	}
+
+	return err
+}
+
+func appendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.ScriptEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
@@ -65,14 +111,13 @@ func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 		log.Printf("error fetching existing script events: %s", err)
 		return err
 	}
-	// TODO: Create set of events to avoid duplicate ledger entries.
-	setEvents := append(anyExistingScriptEvents, scriptEvents...)
+
+	setEvents := joinScriptEventSet(anyExistingScriptEvents, scriptEvents)
 	joinedEventsJson, err := json.Marshal(setEvents)
 	if err != nil {
 		log.Printf("error marshalling joined scriptEvents: %s", err)
 		return err
 	}
-	// TODO: Backoff retry conditional check expression
 	ledgerItem.ScriptEvents = string(joinedEventsJson)
 	const fieldKeyScript = "ScriptEvents"
 	const versionKeyScript = "ScriptEventsVersion"
@@ -80,28 +125,28 @@ func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 	return err
 }
 
-func getExistingScriptEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.ScriptEvent, error) {
-	var existingScriptEvents []dynamo_tables.ScriptEvent
-	if ledgerItem.ScriptEvents == "" {
-		return existingScriptEvents, nil
-	}
-
-	err := json.Unmarshal([]byte(ledgerItem.ScriptEvents), &existingScriptEvents)
-	if err != nil {
-		log.Printf("error unmarshalling scriptEvents: %s", err)
-		return existingScriptEvents, err
-	}
-	return existingScriptEvents, err
-}
-
-func AppendLedgerMediaEvents() error {
+func appendLedgerMediaEvents() error {
 	// TODO: Conditional updates
 	return nil
 }
 
-func AppendLedgerPublishEvents() error {
+func appendLedgerPublishEvents() error {
 	// TODO: Conditional updates
 	return nil
+}
+
+func hasVersionConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+	if aerr, ok := err.(awserr.Error); ok {
+		return aerr.Code() == dynamodb.ErrCodeConditionalCheckFailedException
+	}
+	return false
+}
+
+func powInt(x, y int) int {
+	return int(math.Pow(float64(x), float64(y)))
 }
 
 func updateLedgerEvents(ledgerEntry dynamo_tables.Ledger, fieldKey string, versionKey string) error {
@@ -146,27 +191,64 @@ func getField(v *dynamo_tables.Ledger, field string) reflect.Value {
 	return f
 }
 
-func GetLedger(ledgerId string) (dynamo_tables.Ledger, error) {
-	result, err := svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
-		Key: map[string]*dynamodb.AttributeValue{
-			"LedgerID": {
-				S: aws.String(ledgerId),
-			},
-		},
-	})
-
-	resultItem := dynamo_tables.Ledger{}
-	if err != nil {
-		log.Printf("got error calling GetItem ledger item: %s", err)
-		return resultItem, err
+func joinScriptEventSet(s1 []dynamo_tables.ScriptEvent, s2 []dynamo_tables.ScriptEvent) []dynamo_tables.ScriptEvent {
+	result := []dynamo_tables.ScriptEvent{}
+	existing := stringset.New()
+	for _, e := range s1 {
+		existing.Add(e.GetEventID())
+		result = append(result, e)
 	}
 
-	err = dynamodbattribute.UnmarshalMap(result.Item, &resultItem)
-	if err != nil {
-		log.Printf("error unmarshalling ledger item: %s", err)
-		return resultItem, err
+	for _, e := range s2 {
+		if !existing.Contains(e.GetEventID()) {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
+func joinMediaEventSet(s1 []dynamo_tables.MediaEvent, s2 []dynamo_tables.MediaEvent) []dynamo_tables.MediaEvent {
+	result := []dynamo_tables.MediaEvent{}
+	existing := stringset.New()
+	for _, e := range s1 {
+		existing.Add(e.GetEventID())
+		result = append(result, e)
 	}
 
-	return resultItem, err
+	for _, e := range s2 {
+		if !existing.Contains(e.GetEventID()) {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
+func joinPublishEventSet(s1 []dynamo_tables.PublishEvent, s2 []dynamo_tables.PublishEvent) []dynamo_tables.PublishEvent {
+	result := []dynamo_tables.PublishEvent{}
+	existing := stringset.New()
+	for _, e := range s1 {
+		existing.Add(e.GetEventID())
+		result = append(result, e)
+	}
+
+	for _, e := range s2 {
+		if !existing.Contains(e.GetEventID()) {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
+func getExistingScriptEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.ScriptEvent, error) {
+	var existingScriptEvents []dynamo_tables.ScriptEvent
+	if ledgerItem.ScriptEvents == "" {
+		return existingScriptEvents, nil
+	}
+
+	err := json.Unmarshal([]byte(ledgerItem.ScriptEvents), &existingScriptEvents)
+	if err != nil {
+		log.Printf("error unmarshalling scriptEvents: %s", err)
+		return existingScriptEvents, err
+	}
+	return existingScriptEvents, err
 }
