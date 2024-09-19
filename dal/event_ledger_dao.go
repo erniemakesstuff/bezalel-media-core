@@ -11,24 +11,19 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	aws_configuration "github.com/bezalel-media-core/v2/configuration"
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
-	dynamo_tables "github.com/bezalel-media-core/v2/dal/tables/v1"
+	ledger_table "github.com/bezalel-media-core/v2/dal/tables/v1"
 
 	"log"
 	"reflect"
 	"time"
 )
 
-var svc = dynamodb.New(aws_configuration.GetAwsSession())
-
-const start_version = 0
-
-func CreateLedger(item dynamo_tables.Ledger) error {
+func CreateLedger(item ledger_table.Ledger) error {
 	item.MediaEventsVersion = start_version
 	item.ScriptEventsVersion = start_version
 	item.PublishEventsVersion = start_version
-	item.LedgerStatus = dynamo_tables.NEW_LEDGER
+	item.LedgerStatus = ledger_table.NEW_LEDGER
 	item.LedgerCreatedAtEpochMilli = time.Now().UnixMilli()
 
 	av, err := dynamodbattribute.MarshalMap(item)
@@ -51,7 +46,7 @@ func CreateLedger(item dynamo_tables.Ledger) error {
 	return err
 }
 
-func GetLedger(ledgerId string) (dynamo_tables.Ledger, error) {
+func GetLedger(ledgerId string) (ledger_table.Ledger, error) {
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -61,7 +56,7 @@ func GetLedger(ledgerId string) (dynamo_tables.Ledger, error) {
 		},
 	})
 
-	resultItem := dynamo_tables.Ledger{}
+	resultItem := ledger_table.Ledger{}
 	if err != nil {
 		log.Printf("got error calling GetItem ledger item: %s", err)
 		return resultItem, err
@@ -76,7 +71,7 @@ func GetLedger(ledgerId string) (dynamo_tables.Ledger, error) {
 	return resultItem, err
 }
 
-func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.ScriptEvent) error {
+func AppendLedgerScriptEvents(ledgerId string, scriptEvents []ledger_table.ScriptEvent) error {
 	var err error
 	retryCount := 0
 	const maxRetries = 5
@@ -99,7 +94,7 @@ func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 	return err
 }
 
-func AppendLedgerMediaEvents(ledgerId string, mediaEvents []dynamo_tables.MediaEvent) error {
+func AppendLedgerMediaEvents(ledgerId string, mediaEvents []ledger_table.MediaEvent) error {
 	var err error
 	retryCount := 0
 	const maxRetries = 5
@@ -122,7 +117,7 @@ func AppendLedgerMediaEvents(ledgerId string, mediaEvents []dynamo_tables.MediaE
 	return err
 }
 
-func AppendLedgerPublishEvents(ledgerId string, publishEvents []dynamo_tables.PublishEvent) error {
+func AppendLedgerPublishEvents(ledgerId string, publishEvents []ledger_table.PublishEvent) error {
 	var err error
 	retryCount := 0
 	const maxRetries = 5
@@ -145,7 +140,7 @@ func AppendLedgerPublishEvents(ledgerId string, publishEvents []dynamo_tables.Pu
 	return err
 }
 
-func appendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.ScriptEvent) error {
+func appendLedgerScriptEvents(ledgerId string, scriptEvents []ledger_table.ScriptEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
@@ -171,7 +166,7 @@ func appendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 	return err
 }
 
-func appendLedgerMediaEvents(ledgerId string, mediaEvents []dynamo_tables.MediaEvent) error {
+func appendLedgerMediaEvents(ledgerId string, mediaEvents []ledger_table.MediaEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
@@ -197,7 +192,7 @@ func appendLedgerMediaEvents(ledgerId string, mediaEvents []dynamo_tables.MediaE
 	return err
 }
 
-func appendLedgerPublishEvents(ledgerId string, publishEvents []dynamo_tables.PublishEvent) error {
+func appendLedgerPublishEvents(ledgerId string, publishEvents []ledger_table.PublishEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
@@ -237,7 +232,7 @@ func powInt(x, y int) int {
 	return int(math.Pow(float64(x), float64(y)))
 }
 
-func updateLedgerEvents(ledgerEntry dynamo_tables.Ledger, fieldKey string, versionKey string) error {
+func updateLedgerEvents(ledgerEntry ledger_table.Ledger, fieldKey string, versionKey string) error {
 
 	updatedValue := getField(&ledgerEntry, fieldKey)
 	// Check to see that no one updated before us.
@@ -273,14 +268,14 @@ func updateLedgerEvents(ledgerEntry dynamo_tables.Ledger, fieldKey string, versi
 	return err
 }
 
-func getField(v *dynamo_tables.Ledger, field string) reflect.Value {
+func getField(v *ledger_table.Ledger, field string) reflect.Value {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f
 }
 
-func joinScriptEventSet(s1 []dynamo_tables.ScriptEvent, s2 []dynamo_tables.ScriptEvent) []dynamo_tables.ScriptEvent {
-	result := []dynamo_tables.ScriptEvent{}
+func joinScriptEventSet(s1 []ledger_table.ScriptEvent, s2 []ledger_table.ScriptEvent) []ledger_table.ScriptEvent {
+	result := []ledger_table.ScriptEvent{}
 	existing := stringset.New()
 	for _, e := range s1 {
 		existing.Add(e.GetEventID())
@@ -295,8 +290,8 @@ func joinScriptEventSet(s1 []dynamo_tables.ScriptEvent, s2 []dynamo_tables.Scrip
 	return result
 }
 
-func joinMediaEventSet(s1 []dynamo_tables.MediaEvent, s2 []dynamo_tables.MediaEvent) []dynamo_tables.MediaEvent {
-	result := []dynamo_tables.MediaEvent{}
+func joinMediaEventSet(s1 []ledger_table.MediaEvent, s2 []ledger_table.MediaEvent) []ledger_table.MediaEvent {
+	result := []ledger_table.MediaEvent{}
 	existing := stringset.New()
 	for _, e := range s1 {
 		existing.Add(e.GetEventID())
@@ -311,8 +306,8 @@ func joinMediaEventSet(s1 []dynamo_tables.MediaEvent, s2 []dynamo_tables.MediaEv
 	return result
 }
 
-func joinPublishEventSet(s1 []dynamo_tables.PublishEvent, s2 []dynamo_tables.PublishEvent) []dynamo_tables.PublishEvent {
-	result := []dynamo_tables.PublishEvent{}
+func joinPublishEventSet(s1 []ledger_table.PublishEvent, s2 []ledger_table.PublishEvent) []ledger_table.PublishEvent {
+	result := []ledger_table.PublishEvent{}
 	existing := stringset.New()
 	for _, e := range s1 {
 		existing.Add(e.GetEventID())
@@ -327,8 +322,8 @@ func joinPublishEventSet(s1 []dynamo_tables.PublishEvent, s2 []dynamo_tables.Pub
 	return result
 }
 
-func getExistingScriptEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.ScriptEvent, error) {
-	var existingScriptEvents []dynamo_tables.ScriptEvent
+func getExistingScriptEvents(ledgerItem ledger_table.Ledger) ([]ledger_table.ScriptEvent, error) {
+	var existingScriptEvents []ledger_table.ScriptEvent
 	if ledgerItem.ScriptEvents == "" {
 		return existingScriptEvents, nil
 	}
@@ -340,8 +335,8 @@ func getExistingScriptEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.S
 	}
 	return existingScriptEvents, err
 }
-func getExistingMediaEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.MediaEvent, error) {
-	var existingMediaEvents []dynamo_tables.MediaEvent
+func getExistingMediaEvents(ledgerItem ledger_table.Ledger) ([]ledger_table.MediaEvent, error) {
+	var existingMediaEvents []ledger_table.MediaEvent
 	if ledgerItem.ScriptEvents == "" {
 		return existingMediaEvents, nil
 	}
@@ -354,8 +349,8 @@ func getExistingMediaEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.Me
 	return existingMediaEvents, err
 }
 
-func getExistingPublishEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.PublishEvent, error) {
-	var existingPublishEvents []dynamo_tables.PublishEvent
+func getExistingPublishEvents(ledgerItem ledger_table.Ledger) ([]ledger_table.PublishEvent, error) {
+	var existingPublishEvents []ledger_table.PublishEvent
 	if ledgerItem.ScriptEvents == "" {
 		return existingPublishEvents, nil
 	}

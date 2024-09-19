@@ -9,6 +9,7 @@ import (
 	"log"
 )
 
+const TABLE_PROMPT = "Prompts"
 const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
 
@@ -25,6 +26,7 @@ func Init() {
 	svc := dynamodb.New(aws_configuration.GetAwsSession())
 	createTableAccounts(svc)
 	createEventLedgerTables(svc)
+	createPromptTable(svc)
 }
 
 // Creates Accounts Table + PublisherProfile details.
@@ -149,6 +151,27 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 			StreamEnabled:  aws.Bool(true),
 			StreamViewType: aws.String(dynamodb.StreamViewTypeNewImage),
 		},
+	}
+	createTable(svc, input, tableName)
+}
+
+func createPromptTable(svc *dynamodb.DynamoDB) {
+	tableName := TABLE_PROMPT
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("PromptID"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("PromptID"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		TableName:   aws.String(tableName),
 	}
 	createTable(svc, input, tableName)
 }
