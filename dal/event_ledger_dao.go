@@ -89,7 +89,53 @@ func AppendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 		if err != nil && hasVersionConflict(err) {
 			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
 		} else if err != nil {
-			log.Printf("error appending event to ledger: %s", err)
+			log.Printf("error appending script event to ledger: %s", err)
+			canRetry = false
+		} else {
+			success = true
+		}
+	}
+
+	return err
+}
+
+func AppendLedgerMediaEvents(ledgerId string, mediaEvents []dynamo_tables.MediaEvent) error {
+	var err error
+	retryCount := 0
+	const maxRetries = 5
+	const minSeconds = 2
+	success := false
+	canRetry := true
+	for retryCount < maxRetries && !success && canRetry {
+		err = appendLedgerMediaEvents(ledgerId, mediaEvents)
+		retryCount++
+		if err != nil && hasVersionConflict(err) {
+			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
+		} else if err != nil {
+			log.Printf("error appending media event to ledger: %s", err)
+			canRetry = false
+		} else {
+			success = true
+		}
+	}
+
+	return err
+}
+
+func AppendLedgerPublishEvents(ledgerId string, publishEvents []dynamo_tables.PublishEvent) error {
+	var err error
+	retryCount := 0
+	const maxRetries = 5
+	const minSeconds = 2
+	success := false
+	canRetry := true
+	for retryCount < maxRetries && !success && canRetry {
+		err = appendLedgerPublishEvents(ledgerId, publishEvents)
+		retryCount++
+		if err != nil && hasVersionConflict(err) {
+			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
+		} else if err != nil {
+			log.Printf("error appending publish event to ledger: %s", err)
 			canRetry = false
 		} else {
 			success = true
@@ -125,14 +171,56 @@ func appendLedgerScriptEvents(ledgerId string, scriptEvents []dynamo_tables.Scri
 	return err
 }
 
-func appendLedgerMediaEvents() error {
-	// TODO: Conditional updates
-	return nil
+func appendLedgerMediaEvents(ledgerId string, mediaEvents []dynamo_tables.MediaEvent) error {
+	ledgerItem, err := GetLedger(ledgerId)
+	if err != nil {
+		log.Printf("error fetching ledger: %s", err)
+		return err
+	}
+
+	anyExistingMediaEvents, err := getExistingMediaEvents(ledgerItem)
+	if err != nil {
+		log.Printf("error fetching existing media events: %s", err)
+		return err
+	}
+
+	setEvents := joinMediaEventSet(anyExistingMediaEvents, mediaEvents)
+	joinedEventsJson, err := json.Marshal(setEvents)
+	if err != nil {
+		log.Printf("error marshalling joined mediaEvents: %s", err)
+		return err
+	}
+	ledgerItem.ScriptEvents = string(joinedEventsJson)
+	const fieldKeyScript = "MediaEvents"
+	const versionKeyScript = "MediaEventsVersion"
+	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
+	return err
 }
 
-func appendLedgerPublishEvents() error {
-	// TODO: Conditional updates
-	return nil
+func appendLedgerPublishEvents(ledgerId string, publishEvents []dynamo_tables.PublishEvent) error {
+	ledgerItem, err := GetLedger(ledgerId)
+	if err != nil {
+		log.Printf("error fetching ledger: %s", err)
+		return err
+	}
+
+	anyExistingPublishEvents, err := getExistingPublishEvents(ledgerItem)
+	if err != nil {
+		log.Printf("error fetching existing media events: %s", err)
+		return err
+	}
+
+	setEvents := joinPublishEventSet(anyExistingPublishEvents, publishEvents)
+	joinedEventsJson, err := json.Marshal(setEvents)
+	if err != nil {
+		log.Printf("error marshalling joined publishEvents: %s", err)
+		return err
+	}
+	ledgerItem.ScriptEvents = string(joinedEventsJson)
+	const fieldKeyScript = "PublishEvents"
+	const versionKeyScript = "PublishEventsVersion"
+	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
+	return err
 }
 
 func hasVersionConflict(err error) bool {
@@ -251,4 +339,31 @@ func getExistingScriptEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.S
 		return existingScriptEvents, err
 	}
 	return existingScriptEvents, err
+}
+func getExistingMediaEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.MediaEvent, error) {
+	var existingMediaEvents []dynamo_tables.MediaEvent
+	if ledgerItem.ScriptEvents == "" {
+		return existingMediaEvents, nil
+	}
+
+	err := json.Unmarshal([]byte(ledgerItem.PublishEvents), &existingMediaEvents)
+	if err != nil {
+		log.Printf("error unmarshalling mediaEvents: %s", err)
+		return existingMediaEvents, err
+	}
+	return existingMediaEvents, err
+}
+
+func getExistingPublishEvents(ledgerItem dynamo_tables.Ledger) ([]dynamo_tables.PublishEvent, error) {
+	var existingPublishEvents []dynamo_tables.PublishEvent
+	if ledgerItem.ScriptEvents == "" {
+		return existingPublishEvents, nil
+	}
+
+	err := json.Unmarshal([]byte(ledgerItem.PublishEvents), &existingPublishEvents)
+	if err != nil {
+		log.Printf("error unmarshalling publishEvents: %s", err)
+		return existingPublishEvents, err
+	}
+	return existingPublishEvents, err
 }

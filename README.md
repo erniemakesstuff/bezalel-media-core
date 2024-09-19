@@ -1,6 +1,6 @@
 Bezalel Media Core
 Monolith application to handle ingestion of events, orchestrate media processing, syndication workflows, and publishing of media.
-
+Employs saga-ledger design architecture.
 Build and run
 `go build main.go`
 `./main`
