@@ -41,7 +41,7 @@ func handlerCustomPrompt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	source := r.URL.Path[1:]
-	err := ingestion_service.HandleSourceEvent(source, r)
+	err := ingestion_service.SaveSourceEventToLedger(source, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, err.Error())

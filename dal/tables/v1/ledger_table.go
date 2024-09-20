@@ -57,7 +57,7 @@ func hash(s string) string {
 
 type MediaEvent struct {
 	PromptInstruction string // Instructions for the diffusion models. Will be used to vectorize & re-use media. IDEMPOTENT
-	MediaType         string // Avatar, Avatar.Custom, BRoll, Text, Video, Music, Voice, ...
+	MediaType         string // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
 	ScriptEventID     string // Media associated to script. Many-One.
 	ContentLookupKey  string // GUID into s3: e.g. media.XXXX-XXXX...
 }

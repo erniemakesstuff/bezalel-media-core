@@ -1,7 +1,6 @@
 package ingestion
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -9,19 +8,20 @@ import (
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	dynamo_tables "github.com/bezalel-media-core/v2/dal/tables/v1"
-	source_events "github.com/bezalel-media-core/v2/service/ingestion/models/v1"
 )
 
-func HandleSourceEvent(source string, r *http.Request) error {
-	decoder := json.NewDecoder(r.Body)
-	var payload source_events.Raw_Event
-	err := decoder.Decode(&payload)
+func SaveSourceEventToLedger(source string, r *http.Request) error {
+	driver, err := GetDriver(source, r.Body)
+	ledgerItem, err := driver.GetRawEventPayload()
 	if err != nil {
+		log.Printf("driver failed to get raw event payload: %s", err)
 		return err
 	}
-	payload.Source = source
-	log.Println(payload)
-	test()
+
+	err = dal.CreateLedger(ledgerItem)
+	if err != nil {
+		log.Printf("failed to create a new ledger item: %s", err)
+	}
 	return err
 }
 
