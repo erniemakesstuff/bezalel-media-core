@@ -54,7 +54,6 @@ func consumeMessages(queueURL *string) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("POLLED %d", len(msgResult.Messages))
 	if len(msgResult.Messages) > 0 {
 		processMessages(msgResult.Messages, queueURL)
 	}

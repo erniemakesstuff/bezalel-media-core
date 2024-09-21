@@ -7,10 +7,6 @@ import (
 )
 
 func ProcessScripts(ledgerItem tables.Ledger) error {
-	if ledgerItem.LedgerStatus == tables.FINISHED_LEDGER {
-		log.Printf("correlationID: %s ledger finished, cannot process scripts.", ledgerItem.LedgerID)
-		return nil
-	}
 	if alreadyScripted(ledgerItem) {
 		log.Printf("correlationID: %s ledger already has scripts.", ledgerItem.LedgerID)
 		return nil

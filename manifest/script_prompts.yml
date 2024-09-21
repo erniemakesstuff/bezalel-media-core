@@ -1,0 +1,9 @@
+scriptPrompts:
+- promptKey: "en.blog.news_default"
+  promptText: |
+    Loren ipsum multi line text
+    Here today, gone tomorrow
+- promptKey: "en.blog.news_us"
+  promptText: |
+    Loren ipsum multi line text
+    Here today, gone tomorrow
