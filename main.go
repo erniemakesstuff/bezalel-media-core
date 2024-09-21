@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
+	orchestrator "github.com/bezalel-media-core/v2/service"
 	ingestion_service "github.com/bezalel-media-core/v2/service/ingestion"
 )
 
@@ -16,6 +17,7 @@ func main() {
 	http.HandleFunc(route_health, handlerHealthCheck)
 	http.HandleFunc(route_source_prompt, handlerCustomPrompt)
 	dynamo_configuration.Init()
+	go orchestrator.PollForLedgerUpdates()
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 

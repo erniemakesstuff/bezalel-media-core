@@ -1,15 +1,15 @@
 package drivers
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
-	"hash/fnv"
 	"io"
 	"log"
-	"strconv"
 	"time"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
-	models_v1 "github.com/bezalel-media-core/v2/service/ingestion/models"
+	models_v1 "github.com/bezalel-media-core/v2/service/ingestion/models/v1"
 	"github.com/google/uuid"
 )
 
@@ -28,8 +28,9 @@ func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 		LedgerID:                  uuid.New().String(),
 		LedgerStatus:              tables.NEW_LEDGER,
 		LedgerCreatedAtEpochMilli: time.Now().UnixMilli(),
-		RawEventPayload:           rawEvent.Prompt,
+		RawEventPayload:           rawEvent.PromptText,
 		RawEventSource:            d.Source,
+		RawContentHash:            getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
 	}
 	return ledger, err
 }
@@ -44,8 +45,7 @@ func decode(payloadIO io.ReadCloser) (models_v1.Raw_Event, error) {
 	return payload, err
 }
 
-func hash(s string) string {
-	h := fnv.New32a()
-	h.Write([]byte(s))
-	return strconv.FormatUint(uint64(h.Sum32()), 10)
+func getMD5Hash(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
 }

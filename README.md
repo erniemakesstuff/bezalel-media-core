@@ -24,3 +24,9 @@ Stopping running containers; prunning images.
 
 Ensure to prune old images to save space!
 https://docs.docker.com/engine/manage-resources/pruning/
+
+## Data Triggers
+### Scheduled Crons
+- Custom Prompt that requests the LLM to create an article; no prompt-branching from manifest.
+## General Notes
+If you delete the eventLedgerTable, ensure you re-create the pipe in AWS EventBridge.
