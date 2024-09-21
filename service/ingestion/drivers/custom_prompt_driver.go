@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"time"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	models_v1 "github.com/bezalel-media-core/v2/service/ingestion/models/v1"
@@ -25,12 +24,12 @@ func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	}
 
 	ledger := tables.Ledger{
-		LedgerID:                  uuid.New().String(),
-		LedgerStatus:              tables.NEW_LEDGER,
-		LedgerCreatedAtEpochMilli: time.Now().UnixMilli(),
-		RawEventPayload:           rawEvent.PromptText,
-		RawEventSource:            d.Source,
-		RawContentHash:            getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
+		LedgerID:         uuid.New().String(),
+		LedgerStatus:     tables.NEW_LEDGER,
+		RawEventPayload:  rawEvent.PromptText,
+		RawEventSource:   d.Source,
+		RawContentHash:   getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
+		RawEventLanguage: "EN",
 	}
 	return ledger, err
 }

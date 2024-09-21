@@ -1,12 +1,16 @@
 package service
 
 import (
+	"encoding/json"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	aws_configuration "github.com/bezalel-media-core/v2/configuration"
+	ledger "github.com/bezalel-media-core/v2/dal/tables/v1"
+	sqs_model "github.com/bezalel-media-core/v2/service/models"
 )
 
 var sqs_svc = sqs.New(aws_configuration.GetAwsSession())
@@ -61,7 +65,7 @@ func processMessages(messages []*sqs.Message, queueUrl *string) {
 	for _, m := range messages {
 		err := executeRelevantWorkflow(m)
 		if err != nil {
-			log.Printf("unalbe to execute workflow for event: %s", m.GoString())
+			log.Printf("unable to execute workflow for event: %s %s", *m.MessageId, err)
 			continue
 		}
 		err = ackMessage(m, queueUrl)
@@ -80,6 +84,69 @@ func ackMessage(message *sqs.Message, queueUrl *string) error {
 }
 
 func executeRelevantWorkflow(message *sqs.Message) error {
-	// TODO
+	ledgerItem, err := decode(message)
+	if err != nil {
+		return err
+	}
+	log.Printf("PAYLOAD: %s", ledgerItem.LedgerID)
 	return nil
+}
+
+func decode(message *sqs.Message) (ledger.Ledger, error) {
+	var sqsMessage sqs_model.SQSMessage
+	err := json.Unmarshal([]byte(*message.Body), &sqsMessage)
+	if err != nil {
+		log.Printf("failed to unmarshall sqs body: %s", err)
+		return ledger.Ledger{}, err
+	}
+	var streamMessage sqs_model.DynamoCDC
+	err = json.Unmarshal([]byte(sqsMessage.Message), &streamMessage)
+	if err != nil {
+		log.Printf("failed to unmarshall sqs message: %s", err)
+		return ledger.Ledger{}, err
+	}
+	ledgerItem, err := transformToLedger(streamMessage)
+	return ledgerItem, err
+}
+
+func transformToLedger(cdc sqs_model.DynamoCDC) (ledger.Ledger, error) {
+	createdAtTime, err := strconv.ParseInt(cdc.Dynamodb.NewImage.LedgerCreatedAtEpochMilli.N, 10, 64)
+	if err != nil {
+		log.Printf("failed to parse ledger numerics: %s", err)
+		return ledger.Ledger{}, err
+	}
+	mediaVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.MediaEventsVersion.N)
+	if err != nil {
+		log.Printf("failed to parse ledger numerics: %s", err)
+		return ledger.Ledger{}, err
+	}
+	scriptVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.ScriptEventsVersion.N)
+	if err != nil {
+		log.Printf("failed to parse ledger numerics: %s", err)
+		return ledger.Ledger{}, err
+	}
+	publishVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.PublishEventsVersion.N)
+	if err != nil {
+		log.Printf("failed to parse ledger numerics: %s", err)
+		return ledger.Ledger{}, err
+	}
+
+	resultItem := ledger.Ledger{
+		LedgerID:                  cdc.Dynamodb.Keys.LedgerID.S,
+		LedgerStatus:              ledger.LedgerStatus(cdc.Dynamodb.NewImage.LedgerStatus.S),
+		LedgerCreatedAtEpochMilli: createdAtTime,
+		RawEventPayload:           cdc.Dynamodb.NewImage.RawEventPayload.S,
+		RawEventSource:            cdc.Dynamodb.NewImage.RawEventSource.S,
+		RawEventMediaUrls:         cdc.Dynamodb.NewImage.RawEventMediaUrls.S,
+		RawEventWebsiteUrls:       cdc.Dynamodb.NewImage.RawEventWebsiteUrls.S,
+		RawEventLanguage:          cdc.Dynamodb.NewImage.RawEventLanguage.S,
+		RawContentHash:            cdc.Dynamodb.NewImage.RawContentHash.S,
+		MediaEvents:               cdc.Dynamodb.NewImage.MediaEvents.S,
+		ScriptEvents:              cdc.Dynamodb.NewImage.ScriptEvents.S,
+		PublishEvents:             cdc.Dynamodb.NewImage.PublishEvents.S,
+		MediaEventsVersion:        int64(mediaVersion),
+		ScriptEventsVersion:       int64(scriptVersion),
+		PublishEventsVersion:      int64(publishVersion),
+	}
+	return resultItem, err
 }
