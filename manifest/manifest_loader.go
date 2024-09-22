@@ -18,8 +18,8 @@ var once sync.Once
 
 type ScriptPromptCollection struct {
 	ScriptPrompts []struct {
-		PromptKey  string `yaml:"promptKey"`
-		PromptText string `yaml:"promptText"`
+		PromptCategoryKey string `yaml:"promptCategoryKey"`
+		PromptText        string `yaml:"promptText"`
 	} `yaml:"scriptPrompts"`
 }
 
@@ -42,6 +42,25 @@ func GetManifestLoader() *ManifestLoader {
 	return manifestInstance
 }
 
+func (m *ManifestLoader) GetScriptPromptsFromSource(sourceName string) []string {
+	categoryKeysFromSource := map[string]bool{}
+	for _, source := range m.SourceToScriptCategoryCollection.Sources {
+		if source.SourceName == sourceName {
+			for _, category := range source.ScriptCategories {
+				categoryKeysFromSource[category.CategoryKey] = true
+			}
+		}
+	}
+
+	resultPrompts := []string{}
+	for _, p := range m.ScriptPrompts.ScriptPrompts {
+		if categoryKeysFromSource[p.PromptCategoryKey] {
+			resultPrompts = append(resultPrompts, p.PromptText)
+		}
+	}
+	return resultPrompts
+}
+
 func initManifest() {
 
 	manifest := ManifestLoader{
@@ -62,9 +81,6 @@ func getScriptPromptCollection() ScriptPromptCollection {
 	if err != nil {
 		log.Fatalf("failed to unmarshall manifest prompts: %s", err)
 	}
-	for _, p := range prompts.ScriptPrompts {
-		log.Printf("PROMPTKEY: %s", p.PromptText)
-	}
 	return prompts
 }
 
@@ -78,9 +94,6 @@ func getSourceToScriptCategoryCollection() SourceCollection {
 	err = yaml.Unmarshal(promptFile, &sources)
 	if err != nil {
 		log.Fatalf("failed to unmarshall manifest sources: %s", err)
-	}
-	for _, p := range sources.Sources {
-		log.Printf("SOURCE NAME: %s", p.SourceName)
 	}
 	return sources
 }

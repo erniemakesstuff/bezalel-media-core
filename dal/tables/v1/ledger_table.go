@@ -39,17 +39,18 @@ type Event interface {
 
 type ScriptEvent struct {
 	ContentLookupKey string // some guid to fetch into s3. Namespace by event: e.g. script.1029-102S-1290AKXL
+	PromptHash       string // Hash of the prompt instruction
 	Language         string
 	ContentType      string
 	Niche            string
 }
 
 func (m *ScriptEvent) GetEventID() string {
-	// derivable concatenation <Language>.<ContentType>.<Niche>: E.g. EN.LongFormVideo.NewsReport IDEMPOTENT
-	return fmt.Sprintf("%s.%s.%s", m.Language, m.ContentType, m.Niche)
+	// derivable concatenation <Language>.<ContentType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport IDEMPOTENT
+	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.ContentType, m.Niche, m.PromptHash)
 }
 
-func hash(s string) string {
+func GetStringContentHash(s string) string {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return strconv.FormatUint(uint64(h.Sum32()), 10)
@@ -64,7 +65,7 @@ type MediaEvent struct {
 
 func (m *MediaEvent) GetEventID() string {
 	// <hashPromptInstruction>.<script_event_id>
-	return fmt.Sprintf("%s.%s", hash(m.PromptInstruction), m.ScriptEventID)
+	return fmt.Sprintf("%s.%s", GetStringContentHash(m.PromptInstruction), m.ScriptEventID)
 }
 
 type PublishStatus string
