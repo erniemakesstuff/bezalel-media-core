@@ -1,0 +1,9 @@
+sources:
+  - sourceName: "source1"
+    scriptCategories:
+      - categoryKey: "loren.ipsum"
+      - categoryKey: "david blane"
+  - sourceName: "source2"
+    scriptCategories:
+      - categoryKey: "loren.ipsum"
+      - categoryKey: "david blane"
