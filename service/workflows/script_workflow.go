@@ -4,13 +4,21 @@ import (
 	"log"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
+	manifest "github.com/bezalel-media-core/v2/manifest"
 )
 
-func ProcessScripts(ledgerItem tables.Ledger) error {
+type ScriptWorkflow struct{}
+
+func (s *ScriptWorkflow) GetWorkflowName() string {
+	return "ScriptWorkflow"
+}
+
+func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
 	if alreadyScripted(ledgerItem) {
 		log.Printf("correlationID: %s ledger already has scripts.", ledgerItem.LedgerID)
 		return nil
 	}
+	manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
 	return nil
 }
 

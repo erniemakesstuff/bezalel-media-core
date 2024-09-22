@@ -79,7 +79,7 @@ func executeRelevantWorkflow(message *sqs.Message) error {
 	if err != nil {
 		return err
 	}
-	return ProcessWorkflow(ledgerItem)
+	return RunWorkflows(ledgerItem)
 }
 
 func ackMessage(message *sqs.Message, queueUrl *string) error {

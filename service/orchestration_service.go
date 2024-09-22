@@ -4,11 +4,29 @@ import (
 	"log"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
+	workflows "github.com/bezalel-media-core/v2/service/workflows"
 )
 
-func ProcessWorkflow(ledgerItem tables.Ledger) error {
+type Workflow interface {
+	GetWorkflowName() string
+	Run(tables.Ledger) error
+}
+
+// TODO: Add workflows in-order here.
+// Workflows run in order.
+var workflowsToRun = []Workflow{
+	&workflows.ScriptWorkflow{},
+}
+
+func RunWorkflows(ledgerItem tables.Ledger) error {
 	if isCompleteWorkflow(ledgerItem) {
 		return nil
+	}
+	for _, w := range workflowsToRun {
+		err := w.Run(ledgerItem)
+		if err != nil {
+			log.Printf("correlationID: %s workflow %s failed: %s", ledgerItem.LedgerID, w.GetWorkflowName(), err)
+		}
 	}
 	return nil
 }
