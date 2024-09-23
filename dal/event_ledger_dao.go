@@ -71,29 +71,6 @@ func GetLedger(ledgerId string) (tables.Ledger, error) {
 	return resultItem, err
 }
 
-func AppendLedgerScriptEvents(ledgerId string, scriptEvents []tables.ScriptEvent) error {
-	var err error
-	retryCount := 0
-	const maxRetries = 5
-	const minSeconds = 2
-	success := false
-	canRetry := true
-	for retryCount < maxRetries && !success && canRetry {
-		err = appendLedgerScriptEvents(ledgerId, scriptEvents)
-		retryCount++
-		if err != nil && hasVersionConflict(err) {
-			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
-		} else if err != nil {
-			log.Printf("error appending script event to ledger: %s", err)
-			canRetry = false
-		} else {
-			success = true
-		}
-	}
-
-	return err
-}
-
 func AppendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) error {
 	var err error
 	retryCount := 0
@@ -137,32 +114,6 @@ func AppendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEv
 		}
 	}
 
-	return err
-}
-
-func appendLedgerScriptEvents(ledgerId string, scriptEvents []tables.ScriptEvent) error {
-	ledgerItem, err := GetLedger(ledgerId)
-	if err != nil {
-		log.Printf("error fetching ledger: %s", err)
-		return err
-	}
-
-	anyExistingScriptEvents, err := getExistingScriptEvents(ledgerItem)
-	if err != nil {
-		log.Printf("error fetching existing script events: %s", err)
-		return err
-	}
-
-	setEvents := joinScriptEventSet(anyExistingScriptEvents, scriptEvents)
-	joinedEventsJson, err := json.Marshal(setEvents)
-	if err != nil {
-		log.Printf("error marshalling joined scriptEvents: %s", err)
-		return err
-	}
-	ledgerItem.ScriptEvents = string(joinedEventsJson)
-	const fieldKeyScript = "ScriptEvents"
-	const versionKeyScript = "ScriptEventsVersion"
-	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
 	return err
 }
 
@@ -274,22 +225,6 @@ func getField(v *tables.Ledger, field string) reflect.Value {
 	return f
 }
 
-func joinScriptEventSet(s1 []tables.ScriptEvent, s2 []tables.ScriptEvent) []tables.ScriptEvent {
-	result := []tables.ScriptEvent{}
-	existing := stringset.New()
-	for _, e := range s1 {
-		existing.Add(e.GetEventID())
-		result = append(result, e)
-	}
-
-	for _, e := range s2 {
-		if !existing.Contains(e.GetEventID()) {
-			result = append(result, e)
-		}
-	}
-	return result
-}
-
 func joinMediaEventSet(s1 []tables.MediaEvent, s2 []tables.MediaEvent) []tables.MediaEvent {
 	result := []tables.MediaEvent{}
 	existing := stringset.New()
@@ -322,19 +257,6 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 	return result
 }
 
-func getExistingScriptEvents(ledgerItem tables.Ledger) ([]tables.ScriptEvent, error) {
-	var existingScriptEvents []tables.ScriptEvent
-	if ledgerItem.ScriptEvents == "" {
-		return existingScriptEvents, nil
-	}
-
-	err := json.Unmarshal([]byte(ledgerItem.ScriptEvents), &existingScriptEvents)
-	if err != nil {
-		log.Printf("error unmarshalling scriptEvents: %s", err)
-		return existingScriptEvents, err
-	}
-	return existingScriptEvents, err
-}
 func getExistingMediaEvents(ledgerItem tables.Ledger) ([]tables.MediaEvent, error) {
 	var existingMediaEvents []tables.MediaEvent
 	if ledgerItem.ScriptEvents == "" {

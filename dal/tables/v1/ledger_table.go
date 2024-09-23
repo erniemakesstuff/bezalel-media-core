@@ -2,8 +2,6 @@ package v1
 
 import (
 	"fmt"
-	"hash/fnv"
-	"strconv"
 )
 
 type LedgerStatus string
@@ -37,35 +35,19 @@ type Event interface {
 	GetEventID() string
 }
 
-type ScriptEvent struct {
-	ContentLookupKey string // some guid to fetch into s3. Namespace by event: e.g. script.1029-102S-1290AKXL
-	PromptHash       string // Hash of the prompt instruction
-	Language         string
-	ContentType      string
-	Niche            string
-}
-
-func (m *ScriptEvent) GetEventID() string {
-	// derivable concatenation <Language>.<ContentType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport IDEMPOTENT
-	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.ContentType, m.Niche, m.PromptHash)
-}
-
-func GetStringContentHash(s string) string {
-	h := fnv.New32a()
-	h.Write([]byte(s))
-	return strconv.FormatUint(uint64(h.Sum32()), 10)
-}
-
 type MediaEvent struct {
 	PromptInstruction string // Instructions for the diffusion models. Will be used to vectorize & re-use media. IDEMPOTENT
 	MediaType         string // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
-	ScriptEventID     string // Media associated to script. Many-One.
-	ContentLookupKey  string // GUID into s3: e.g. media.XXXX-XXXX...
+	ContentLookupKey  string // GUID into s3: e.g. <MediaType>.<SomeGuid>... Use guid because promptHash for scripts will collide.
+	Niche             string
+	Language          string
+	PromptHash        string // Hash of the prompt instruction
+	ParentEventID     string // null for root. Will be set if part of a script ID.
 }
 
 func (m *MediaEvent) GetEventID() string {
-	// <hashPromptInstruction>.<script_event_id>
-	return fmt.Sprintf("%s.%s", GetStringContentHash(m.PromptInstruction), m.ScriptEventID)
+	// derivable concatenation <Language>.<MediaType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport IDEMPOTENT
+	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.MediaType, m.Niche, m.PromptHash)
 }
 
 type PublishStatus string

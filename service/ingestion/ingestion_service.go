@@ -8,6 +8,7 @@ import (
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	dynamo_tables "github.com/bezalel-media-core/v2/dal/tables/v1"
+	service "github.com/bezalel-media-core/v2/service"
 )
 
 func SaveSourceEventToLedger(source string, r *http.Request) error {
@@ -21,6 +22,7 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 	if err != nil {
 		log.Printf("failed to create a new ledger item: %s", err)
 	}
+	//test()
 	return err
 }
 
@@ -37,22 +39,31 @@ func test() {
 	if err != nil {
 		log.Fatalf("failed to get ledger")
 	}
-	scriptEvent1 := dynamo_tables.ScriptEvent{
+	scriptEvent1 := dynamo_tables.MediaEvent{
 		ContentLookupKey: "Hello world",
 		Language:         "EN",
-		ContentType:      "Video",
+		MediaType:        "Video",
 		Niche:            "NewsBroadcast",
 	}
-	scriptEvent2 := dynamo_tables.ScriptEvent{
+	scriptEvent2 := dynamo_tables.MediaEvent{
 		ContentLookupKey: "Hello world",
 		Language:         "EN",
-		ContentType:      "Image",
+		MediaType:        "Image",
 		Niche:            "Reaction",
 	}
-	scriptEvents := []dynamo_tables.ScriptEvent{scriptEvent1, scriptEvent2}
+	scriptEvents := []dynamo_tables.MediaEvent{scriptEvent1, scriptEvent2}
 
-	err = dal.AppendLedgerScriptEvents(ledgerId, scriptEvents)
+	err = dal.AppendLedgerMediaEvents(ledgerId, scriptEvents)
 	if err != nil {
 		log.Fatalf("failed to append script event to ledger")
+	}
+	msg := dynamo_tables.MediaEvent{
+		ContentLookupKey: "FooBar",
+		Niche:            "Hello world",
+		MediaType:        "Text",
+	}
+	err = service.PublishMediaTopicSns(msg)
+	if err != nil {
+		log.Fatalf("failed to publish to media event sns: %s", err)
 	}
 }

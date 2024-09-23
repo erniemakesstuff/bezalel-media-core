@@ -18,6 +18,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
 		log.Printf("correlationID: %s ledger already has scripts.", ledgerItem.LedgerID)
 		return nil
 	}
+	// TODO
 	manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
 	return nil
 }
