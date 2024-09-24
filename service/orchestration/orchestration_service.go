@@ -1,10 +1,9 @@
-package service
+package orchestration
 
 import (
 	"log"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
-	workflows "github.com/bezalel-media-core/v2/service/workflows"
 )
 
 type Workflow interface {
@@ -15,7 +14,7 @@ type Workflow interface {
 // TODO: Add workflows in-order here.
 // Workflows run in order.
 var workflowsToRun = []Workflow{
-	&workflows.ScriptWorkflow{},
+	&ScriptWorkflow{},
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {

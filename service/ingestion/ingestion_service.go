@@ -8,7 +8,7 @@ import (
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	dynamo_tables "github.com/bezalel-media-core/v2/dal/tables/v1"
-	service "github.com/bezalel-media-core/v2/service"
+	service "github.com/bezalel-media-core/v2/service/orchestration"
 )
 
 func SaveSourceEventToLedger(source string, r *http.Request) error {

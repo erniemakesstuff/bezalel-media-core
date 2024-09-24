@@ -1,4 +1,4 @@
-package service
+package orchestration
 
 import (
 	"encoding/json"

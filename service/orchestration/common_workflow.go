@@ -1,4 +1,4 @@
-package workflows
+package orchestration
 
 import (
 	"log"
@@ -30,7 +30,8 @@ func appendMediaEventToLedgerItem(ledgerItem tables.Ledger, mediaEvent tables.Me
 }
 
 func publishToSNSToGenerateMedia(mediaEvent tables.MediaEvent) error {
-	return nil
+
+	return PublishMediaTopicSns(mediaEvent)
 }
 
 func appendMediaEvents(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) ([]tables.MediaEvent, error) {

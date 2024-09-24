@@ -7,8 +7,8 @@ import (
 
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
 	manifest "github.com/bezalel-media-core/v2/manifest"
-	orchestrator "github.com/bezalel-media-core/v2/service"
 	ingestion_service "github.com/bezalel-media-core/v2/service/ingestion"
+	pubsub "github.com/bezalel-media-core/v2/service/orchestration"
 )
 
 const route_health = "/health"
@@ -19,7 +19,7 @@ func main() {
 	http.HandleFunc(route_source_prompt, handlerCustomPrompt)
 	dynamo_configuration.Init()
 	manifest.GetManifestLoader()
-	go orchestrator.PollForLedgerUpdates()
+	go pubsub.PollForLedgerUpdates()
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
