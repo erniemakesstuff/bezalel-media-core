@@ -16,11 +16,13 @@ type ManifestLoader struct {
 var manifestInstance *ManifestLoader
 var once sync.Once
 
+type Prompt struct {
+	PromptCategoryKey string `yaml:"promptCategoryKey"`
+	SystemPromptText  string `yaml:"systemPromptText"`
+	PromptText        string `yaml:"promptText"`
+}
 type ScriptPromptCollection struct {
-	ScriptPrompts []struct {
-		PromptCategoryKey string `yaml:"promptCategoryKey"`
-		PromptText        string `yaml:"promptText"`
-	} `yaml:"scriptPrompts"`
+	ScriptPrompts []Prompt `yaml:"scriptPrompts"`
 }
 
 type SourceCollection struct {
@@ -42,7 +44,7 @@ func GetManifestLoader() *ManifestLoader {
 	return manifestInstance
 }
 
-func (m *ManifestLoader) GetScriptPromptsFromSource(sourceName string) []string {
+func (m *ManifestLoader) GetScriptPromptsFromSource(sourceName string) []Prompt {
 	categoryKeysFromSource := map[string]bool{}
 	for _, source := range m.SourceToScriptCategoryCollection.Sources {
 		if source.SourceName == sourceName {
@@ -52,10 +54,10 @@ func (m *ManifestLoader) GetScriptPromptsFromSource(sourceName string) []string 
 		}
 	}
 
-	resultPrompts := []string{}
+	resultPrompts := []Prompt{}
 	for _, p := range m.ScriptPrompts.ScriptPrompts {
 		if categoryKeysFromSource[p.PromptCategoryKey] {
-			resultPrompts = append(resultPrompts, p.PromptText)
+			resultPrompts = append(resultPrompts, p)
 		}
 	}
 	return resultPrompts

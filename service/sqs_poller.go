@@ -118,11 +118,6 @@ func transformToLedger(cdc sqs_model.DynamoCDC) (tables.Ledger, error) {
 		log.Printf("failed to parse ledger numerics: %s", err)
 		return tables.Ledger{}, err
 	}
-	scriptVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.ScriptEventsVersion.N)
-	if err != nil {
-		log.Printf("failed to parse ledger numerics: %s", err)
-		return tables.Ledger{}, err
-	}
 	publishVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.PublishEventsVersion.N)
 	if err != nil {
 		log.Printf("failed to parse ledger numerics: %s", err)
@@ -140,10 +135,8 @@ func transformToLedger(cdc sqs_model.DynamoCDC) (tables.Ledger, error) {
 		RawEventLanguage:          cdc.Dynamodb.NewImage.RawEventLanguage.S,
 		RawContentHash:            cdc.Dynamodb.NewImage.RawContentHash.S,
 		MediaEvents:               cdc.Dynamodb.NewImage.MediaEvents.S,
-		ScriptEvents:              cdc.Dynamodb.NewImage.ScriptEvents.S,
 		PublishEvents:             cdc.Dynamodb.NewImage.PublishEvents.S,
 		MediaEventsVersion:        int64(mediaVersion),
-		ScriptEventsVersion:       int64(scriptVersion),
 		PublishEventsVersion:      int64(publishVersion),
 	}
 	return resultItem, err

@@ -1,6 +1,8 @@
 package v1
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 )
 
@@ -25,10 +27,8 @@ type Ledger struct {
 	RawEventLanguage     string // EN, CN, ...
 	RawContentHash       string // for deduping raw events.
 	MediaEvents          string // Media generation: audio, video, ...
-	ScriptEvents         string // Text generation.
 	PublishEvents        string // Publish to distribution channel: YouTube, Instagram, ...
 	MediaEventsVersion   int64
-	ScriptEventsVersion  int64
 	PublishEventsVersion int64
 }
 type Event interface {
@@ -36,20 +36,26 @@ type Event interface {
 }
 
 type MediaEvent struct {
-	PromptInstruction string // Instructions for the diffusion models. Will be used to vectorize & re-use media. IDEMPOTENT
-	MediaType         string // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
-	ContentLookupKey  string // GUID into s3: e.g. <MediaType>.<SomeGuid>... Use guid because promptHash for scripts will collide.
-	Niche             string
-	Language          string
-	PromptHash        string // Hash of the prompt instruction
-	EventID           string // Although derivable, set for convenience on downstream calls.
-	ParentEventID     string // null for root. Will be set if part of a script ID.
+	PromptInstruction       string // Instructions for the diffusion models. Will be used to vectorize & re-use media.
+	SystemPromptInstruction string // Roles, personalities, or response guidelines for the LLM.
+	MediaType               string // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
+	ContentLookupKey        string // GUID into s3: e.g. <MediaType>.<SomeGuid>... Use guid because promptHash for scripts will collide.
+	Niche                   string
+	Language                string
+	PromptHash              string // Hash of the prompt instruction
+	EventID                 string // Although derivable GetEventID, set for convenience on downstream calls.
+	ParentEventID           string // null for root. Will be set if part of a script ID.
 }
 
 func (m *MediaEvent) GetEventID() string {
 	// derivable concatenation <Language>.<MediaType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport....
 	// Enforce idempotency within the context of a ledger entry; no datastore collision.
 	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.MediaType, m.Niche, m.PromptHash)
+}
+
+func HashString(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
 }
 
 type PublishStatus string
@@ -61,7 +67,7 @@ const (
 	EXPIRED    PublishStatus = "EXPIRED"  // Terminal, failure, timeout.
 )
 
-// Associating Script to a PublisherProfile.
+// Associating Script to a PublisherProfile. Used for softlocking.
 type PublishEvent struct {
 	ScriptEventID      string        // ContentType --> distribution channel selection.
 	PublishStatus      PublishStatus // Soft lock: ASSIGNED, PUBLISHING, COMPLETE, EXPIRED.

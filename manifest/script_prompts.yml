@@ -1,9 +1,13 @@
 scriptPrompts:
 - promptCategoryKey: "en.blog.news_default"
+  systempPromptText: |
+    "You are a helpful chatbot."
   promptText: |
     Loren ipsum multi line text
     Here today, gone tomorrow
 - promptCategoryKey: "en.blog.news_us"
+  systempPromptText: |
+    "You are a helpful chatbot."
   promptText: |
     Loren ipsum multi line text
     Here today, gone tomorrow

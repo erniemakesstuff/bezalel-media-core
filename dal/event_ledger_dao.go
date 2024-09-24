@@ -21,7 +21,6 @@ import (
 
 func CreateLedger(item tables.Ledger) error {
 	item.MediaEventsVersion = start_version
-	item.ScriptEventsVersion = start_version
 	item.PublishEventsVersion = start_version
 	item.LedgerStatus = tables.NEW_LEDGER
 	item.LedgerCreatedAtEpochMilli = time.Now().UnixMilli()
@@ -136,7 +135,7 @@ func appendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) e
 		log.Printf("error marshalling joined mediaEvents: %s", err)
 		return err
 	}
-	ledgerItem.ScriptEvents = string(joinedEventsJson)
+	ledgerItem.MediaEvents = string(joinedEventsJson)
 	const fieldKeyScript = "MediaEvents"
 	const versionKeyScript = "MediaEventsVersion"
 	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
@@ -162,7 +161,7 @@ func appendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEv
 		log.Printf("error marshalling joined publishEvents: %s", err)
 		return err
 	}
-	ledgerItem.ScriptEvents = string(joinedEventsJson)
+	ledgerItem.PublishEvents = string(joinedEventsJson)
 	const fieldKeyScript = "PublishEvents"
 	const versionKeyScript = "PublishEventsVersion"
 	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
@@ -259,7 +258,7 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 
 func getExistingMediaEvents(ledgerItem tables.Ledger) ([]tables.MediaEvent, error) {
 	var existingMediaEvents []tables.MediaEvent
-	if ledgerItem.ScriptEvents == "" {
+	if ledgerItem.MediaEvents == "" {
 		return existingMediaEvents, nil
 	}
 
@@ -273,7 +272,7 @@ func getExistingMediaEvents(ledgerItem tables.Ledger) ([]tables.MediaEvent, erro
 
 func getExistingPublishEvents(ledgerItem tables.Ledger) ([]tables.PublishEvent, error) {
 	var existingPublishEvents []tables.PublishEvent
-	if ledgerItem.ScriptEvents == "" {
+	if ledgerItem.PublishEvents == "" {
 		return existingPublishEvents, nil
 	}
 
