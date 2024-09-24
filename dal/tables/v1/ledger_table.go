@@ -42,11 +42,13 @@ type MediaEvent struct {
 	Niche             string
 	Language          string
 	PromptHash        string // Hash of the prompt instruction
+	EventID           string // Although derivable, set for convenience on downstream calls.
 	ParentEventID     string // null for root. Will be set if part of a script ID.
 }
 
 func (m *MediaEvent) GetEventID() string {
-	// derivable concatenation <Language>.<MediaType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport IDEMPOTENT
+	// derivable concatenation <Language>.<MediaType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport....
+	// Enforce idempotency within the context of a ledger entry; no datastore collision.
 	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.MediaType, m.Niche, m.PromptHash)
 }
 
