@@ -4,7 +4,6 @@ import (
 	"log"
 	"strings"
 
-	dao "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	manifest "github.com/bezalel-media-core/v2/manifest"
 )
@@ -19,20 +18,19 @@ func (s *ScriptWorkflow) GetWorkflowName() string {
 
 func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
 	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
-	existingMediaEvents, err := dao.GetExistingMediaEvents(ledgerItem)
-	if err != nil {
-		log.Printf("correlationID: %s error deserializing existing media events from ledger: %s", ledgerItem.LedgerID, err)
-		return err
-	}
 	for _, p := range prompts {
 		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
-		if isAlreadyScripted(existingMediaEvents, mediaEvent) {
-			continue
-		}
-
 		if err != nil {
 			log.Printf("correlationID: %s failed to get media event from prompt: %s", ledgerItem.LedgerID, err)
 			return err
+		}
+		alreadyExists, err := ExistsInLedger(ledgerItem, mediaEvent)
+		if err != nil {
+			log.Printf("correlationID: %s failed to determine ledger existence: %s", ledgerItem.LedgerID, err)
+			return err
+		}
+		if alreadyExists {
+			continue
 		}
 		err = HandleMediaGeneration(ledgerItem, mediaEvent)
 		if err != nil {
@@ -41,15 +39,6 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
 		}
 	}
 	return nil
-}
-
-func isAlreadyScripted(existingMediaEvents []tables.MediaEvent, mediaEvent tables.MediaEvent) bool {
-	for _, m := range existingMediaEvents {
-		if m.EventID == mediaEvent.GetEventID() {
-			return true
-		}
-	}
-	return false
 }
 
 func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (tables.MediaEvent, error) {

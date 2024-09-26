@@ -12,12 +12,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type CustomPromptDriver struct {
+type BlogPromptDriver struct {
 	PayloadIO io.ReadCloser
 	Source    string
 }
 
-func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
+func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {
 		log.Printf("error decoding raw event payload: %s", err)
@@ -26,17 +26,17 @@ func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	ledger := tables.Ledger{
 		LedgerID:         uuid.New().String(),
 		LedgerStatus:     tables.NEW_LEDGER,
-		RawEventPayload:  rawEvent.PromptText,
+		RawEventPayload:  rawEvent.Text,
 		RawEventSource:   d.Source,
-		RawContentHash:   d.getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
+		RawContentHash:   d.getMD5Hash(rawEvent.Text), // Set, but prompts aren't deduped.
 		RawEventLanguage: "EN",
 	}
 	return ledger, err
 }
 
-func (d CustomPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Custom_Prompt_Request, error) {
+func (d BlogPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Blog_Request, error) {
 	decoder := json.NewDecoder(payloadIO)
-	var payload models_v1.Custom_Prompt_Request
+	var payload models_v1.Blog_Request
 	err := decoder.Decode(&payload)
 	if err != nil {
 		return payload, err
@@ -44,7 +44,7 @@ func (d CustomPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Custom_Pr
 	return payload, err
 }
 
-func (d CustomPromptDriver) getMD5Hash(text string) string {
+func (d BlogPromptDriver) getMD5Hash(text string) string {
 	hash := md5.Sum([]byte(text))
 	return hex.EncodeToString(hash[:])
 }

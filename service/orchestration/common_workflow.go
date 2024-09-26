@@ -3,11 +3,12 @@ package orchestration
 import (
 	"log"
 
+	dao "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 )
 
 func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) error {
-	existsInLedger, err := existsInLedger(ledgerItem, mediaEvent)
+	existsInLedger, err := ExistsInLedger(ledgerItem, mediaEvent)
 	if err != nil {
 		log.Printf("correlationID: %s unable to determine idempotency: %s", ledgerItem.LedgerID, err)
 		return err
@@ -25,20 +26,24 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvent tables.MediaEven
 }
 
 func appendMediaEventToLedgerItem(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) error {
-	// TODO: appendMediaEvents
-	return nil
+	mediaEvents := []tables.MediaEvent{mediaEvent}
+	return dao.AppendLedgerMediaEvents(ledgerItem.LedgerID, mediaEvents)
 }
 
 func publishToSNSToGenerateMedia(mediaEvent tables.MediaEvent) error {
-
 	return PublishMediaTopicSns(mediaEvent)
 }
 
-func appendMediaEvents(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) ([]tables.MediaEvent, error) {
-	return []tables.MediaEvent{}, nil
-}
-
-func existsInLedger(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) (bool, error) {
-	// TODO:
+func ExistsInLedger(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) (bool, error) {
+	existingMediaEvents, err := dao.GetExistingMediaEvents(ledgerItem)
+	if err != nil {
+		log.Printf("correlationID: %s error deserializing existing media events from ledger: %s", ledgerItem.LedgerID, err)
+		return false, err
+	}
+	for _, m := range existingMediaEvents {
+		if m.EventID == mediaEvent.GetEventID() {
+			return true, nil
+		}
+	}
 	return false, nil
 }
