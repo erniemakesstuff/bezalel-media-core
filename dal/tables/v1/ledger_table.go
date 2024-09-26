@@ -3,7 +3,11 @@ package v1
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
 )
 
 type LedgerStatus string
@@ -35,11 +39,29 @@ type Event interface {
 	GetEventID() string
 }
 
+// MediaType determine what downstream media-generator will be used for this MediaEvent.
+type MediaType string
+
+const (
+	MEDIA_TEXT MediaType = "Text"
+)
+
+// DistributionFormat are only set for the Parent/Root MediaEvent.
+// Used to select the applicable downstream PublisherProfile that supports the format.
+// E.g. You cannot publish a Blog to Snapchat, but you can publish a Blog to Medium or Reddit.
+type DistributionFormat string
+
+const (
+	DIST_FORMAT_BLOG   DistributionFormat = "Blog"
+	DIST_FORMAT_LVIDEO DistributionFormat = "LongformVideo"
+)
+
 type MediaEvent struct {
-	PromptInstruction       string // Instructions for the diffusion models. Will be used to vectorize & re-use media.
-	SystemPromptInstruction string // Roles, personalities, or response guidelines for the LLM.
-	MediaType               string // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
-	ContentLookupKey        string // GUID into s3: e.g. <MediaType>.<SomeGuid>... Use guid because promptHash for scripts will collide.
+	PromptInstruction       string             // Instructions for the diffusion models. Will be used to vectorize & re-use media.
+	SystemPromptInstruction string             // Roles, personalities, or response guidelines for the LLM.
+	MediaType               MediaType          // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
+	DistributionFormat      DistributionFormat // LongFormVideo, ShortFormVideo, Image, Blog, ...
+	ContentLookupKey        string             // GUID into s3: e.g. <MediaType>.<SomeGuid>...
 	Niche                   string
 	Language                string
 	PromptHash              string // Hash of the prompt instruction
@@ -47,10 +69,25 @@ type MediaEvent struct {
 	ParentEventID           string // null for root. Will be set if part of a script ID.
 }
 
+func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
+	switch {
+	case strings.EqualFold(format, string(DIST_FORMAT_BLOG)):
+		return DIST_FORMAT_BLOG, nil
+	case strings.EqualFold(format, string(DIST_FORMAT_LVIDEO)):
+		return DIST_FORMAT_LVIDEO, nil
+	}
+	return DIST_FORMAT_BLOG, errors.New("unable to find matching distribution format from string")
+}
+
 func (m *MediaEvent) GetEventID() string {
 	// derivable concatenation <Language>.<MediaType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport....
 	// Enforce idempotency within the context of a ledger entry; no datastore collision.
 	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.MediaType, m.Niche, m.PromptHash)
+}
+
+func (m *MediaEvent) GetContentLookupKey() string {
+	// Use guid because promptHash for static-scripts will collide.
+	return fmt.Sprintf("%s.%s", m.MediaType, uuid.New().String())
 }
 
 func HashString(text string) string {

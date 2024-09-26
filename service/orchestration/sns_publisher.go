@@ -43,7 +43,7 @@ func PublishMediaTopicSns(mediaEvent tables.MediaEvent) error {
 		MessageAttributes: map[string]*sns.MessageAttributeValue{
 			"filterKey": {
 				DataType:    aws.String("String"),
-				StringValue: aws.String(mediaEvent.MediaType),
+				StringValue: aws.String(string(mediaEvent.MediaType)),
 			},
 		},
 	})

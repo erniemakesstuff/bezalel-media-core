@@ -63,7 +63,8 @@ func test() {
 	msg := dynamo_tables.MediaEvent{
 		ContentLookupKey:        "FooBar",
 		Niche:                   "Hello world",
-		MediaType:               "Text",
+		MediaType:               dynamo_tables.MEDIA_TEXT,
+		DistributionFormat:      dynamo_tables.DIST_FORMAT_BLOG,
 		SystemPromptInstruction: "You are a fun bubbly woman.",
 		PromptInstruction:       "How do you like to spend sunny days?",
 	}

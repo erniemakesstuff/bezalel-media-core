@@ -3,6 +3,7 @@ package manifest
 import (
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v2"
@@ -16,11 +17,26 @@ type ManifestLoader struct {
 var manifestInstance *ManifestLoader
 var once sync.Once
 
+const PROMPT_SCRIPT_VAR_RAW_TEXT = "$RAW_TEXT"
+
 type Prompt struct {
-	PromptCategoryKey string `yaml:"promptCategoryKey"`
+	PromptCategoryKey string `yaml:"promptCategoryKey"` // Language.MediaType.Niche
 	SystemPromptText  string `yaml:"systemPromptText"`
 	PromptText        string `yaml:"promptText"`
 }
+
+func (p *Prompt) GetLanguage() string {
+	return strings.Split(p.PromptCategoryKey, ".")[0]
+}
+
+func (p *Prompt) GetDistributionFormat() string {
+	return strings.Split(p.PromptCategoryKey, ".")[1]
+}
+
+func (p *Prompt) GetNiche() string {
+	return strings.Split(p.PromptCategoryKey, ".")[2]
+}
+
 type ScriptPromptCollection struct {
 	ScriptPrompts []Prompt `yaml:"scriptPrompts"`
 }

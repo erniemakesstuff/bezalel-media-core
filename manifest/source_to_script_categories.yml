@@ -1,9 +1,9 @@
 sources:
-  - sourceName: "source1"
+  - sourceName: "/v1/source/prompt"
     scriptCategories:
-      - categoryKey: "loren.ipsum"
+      - categoryKey: "en.blog.news_default"
       - categoryKey: "david blane"
-  - sourceName: "source2"
+  - sourceName: "/v1/source/blog"
     scriptCategories:
-      - categoryKey: "loren.ipsum"
-      - categoryKey: "david blane"
+      - categoryKey: "en.blog.news_default"
+      - categoryKey: "en.blog.news_us"
