@@ -76,6 +76,7 @@ func processMessages(messages []*sqs.Message, queueUrl *string) {
 
 func executeRelevantWorkflow(message *sqs.Message) error {
 	ledgerItem, err := decode(message)
+	log.Printf("correlationID: %s, executing workflow", ledgerItem.LedgerID)
 	if err != nil {
 		return err
 	}

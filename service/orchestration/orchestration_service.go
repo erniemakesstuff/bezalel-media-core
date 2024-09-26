@@ -22,6 +22,7 @@ func RunWorkflows(ledgerItem tables.Ledger) error {
 		return nil
 	}
 	for _, w := range workflowsToRun {
+		log.Printf("correlationID: %s running %s", ledgerItem.LedgerID, w.GetWorkflowName())
 		err := w.Run(ledgerItem)
 		if err != nil {
 			log.Printf("correlationID: %s workflow %s failed: %s", ledgerItem.LedgerID, w.GetWorkflowName(), err)

@@ -262,7 +262,7 @@ func GetExistingMediaEvents(ledgerItem tables.Ledger) ([]tables.MediaEvent, erro
 		return existingMediaEvents, nil
 	}
 
-	err := json.Unmarshal([]byte(ledgerItem.PublishEvents), &existingMediaEvents)
+	err := json.Unmarshal([]byte(ledgerItem.MediaEvents), &existingMediaEvents)
 	if err != nil {
 		log.Printf("error unmarshalling mediaEvents: %s", err)
 		return existingMediaEvents, err

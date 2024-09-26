@@ -13,10 +13,12 @@ import (
 
 const route_health = "/health"
 const route_source_prompt = "/v1/source/prompt"
+const route_source_blog = "/v1/source/blog"
 
 func main() {
 	http.HandleFunc(route_health, handlerHealthCheck)
 	http.HandleFunc(route_source_prompt, handlerCustomPrompt)
+	http.HandleFunc(route_source_blog, handlerCustomPrompt)
 	dynamo_configuration.Init()
 	manifest.GetManifestLoader()
 	go pubsub.PollForLedgerUpdates()

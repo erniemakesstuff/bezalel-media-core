@@ -17,7 +17,9 @@ func (s *ScriptWorkflow) GetWorkflowName() string {
 }
 
 func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
+	log.Printf("correlationID: %s getting manifest loader", ledgerItem.LedgerID)
 	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
+	log.Printf("correlationID: %s received prompts %s from source %s", ledgerItem.LedgerID, prompts, ledgerItem.RawEventSource)
 	for _, p := range prompts {
 		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
 		if err != nil {
@@ -30,6 +32,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
 			return err
 		}
 		if alreadyExists {
+			log.Printf("correlationID: %s mediaEvent already exists, mediaEventID: %s", ledgerItem.LedgerID, mediaEvent.EventID)
 			continue
 		}
 		err = HandleMediaGeneration(ledgerItem, mediaEvent)

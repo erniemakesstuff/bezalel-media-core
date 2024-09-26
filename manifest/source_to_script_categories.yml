@@ -1,9 +1,8 @@
 sources:
-  - sourceName: "/v1/source/prompt"
+  - sourceName: "v1/source/prompt"
     scriptCategories:
       - categoryKey: "en.blog.news_default"
-      - categoryKey: "david blane"
-  - sourceName: "/v1/source/blog"
+  - sourceName: "v1/source/blog"
     scriptCategories:
       - categoryKey: "en.blog.news_default"
       - categoryKey: "en.blog.news_us"
