@@ -20,7 +20,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
 	}
 	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
 	for _, p := range prompts {
-		mediaEvent, err := getMediaEventFromPrompt(p)
+		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
 		if err != nil {
 			log.Printf("correlationID: %s failed to get media event from prompt: %s", ledgerItem.LedgerID, err)
 			return err
@@ -39,6 +39,7 @@ func alreadyScripted(ledgerItem tables.Ledger) bool {
 	return false
 }
 
-func getMediaEventFromPrompt(prompt manifest.Prompt) (tables.MediaEvent, error) {
+func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (tables.MediaEvent, error) {
+	// TODO: Set the prompt variables with the Raws from the ledgerItem into the IntructionPrompt.
 	return tables.MediaEvent{}, nil
 }

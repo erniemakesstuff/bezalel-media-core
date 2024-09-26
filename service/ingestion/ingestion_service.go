@@ -61,9 +61,11 @@ func test() {
 		log.Fatalf("failed to append script event to ledger")
 	}
 	msg := dynamo_tables.MediaEvent{
-		ContentLookupKey: "FooBar",
-		Niche:            "Hello world",
-		MediaType:        "Text",
+		ContentLookupKey:        "FooBar",
+		Niche:                   "Hello world",
+		MediaType:               "Text",
+		SystemPromptInstruction: "You are a fun bubbly woman.",
+		PromptInstruction:       "How do you like to spend sunny days?",
 	}
 	err = service.PublishMediaTopicSns(msg)
 	if err != nil {
