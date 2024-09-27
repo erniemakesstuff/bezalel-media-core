@@ -15,6 +15,7 @@ type Workflow interface {
 // Workflows run in order.
 var workflowsToRun = []Workflow{
 	&ScriptWorkflow{},
+	&EnrichmentWorkflow{},
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {
