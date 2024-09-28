@@ -12,6 +12,7 @@ import (
 type ManifestLoader struct {
 	ScriptPrompts                    ScriptPromptCollection
 	SourceToScriptCategoryCollection SourceCollection
+	DistributionFormatToChannel      DistributionFormatCollection
 }
 
 var manifestInstance *ManifestLoader
@@ -50,6 +51,15 @@ type SourceCollection struct {
 	} `yaml:"sources"`
 }
 
+type DistributionFormatCollection struct {
+	DistributionFormats []struct {
+		Format   string `yaml:"format"`
+		Channels []struct {
+			ChannelName string `yaml:"channelName"`
+		} `yaml:"channels"`
+	} `yaml:"distributionFormats"`
+}
+
 func GetManifestLoader() *ManifestLoader {
 	if manifestInstance != nil {
 		return manifestInstance
@@ -80,10 +90,10 @@ func (m *ManifestLoader) GetScriptPromptsFromSource(sourceName string) []Prompt 
 }
 
 func initManifest() {
-
 	manifest := ManifestLoader{
 		ScriptPrompts:                    getScriptPromptCollection(),
 		SourceToScriptCategoryCollection: getSourceToScriptCategoryCollection(),
+		DistributionFormatToChannel:      getDistributionFormatToChannelCollection(),
 	}
 	manifestInstance = &manifest
 }
@@ -114,4 +124,18 @@ func getSourceToScriptCategoryCollection() SourceCollection {
 		log.Fatalf("failed to unmarshall manifest sources: %s", err)
 	}
 	return sources
+}
+
+func getDistributionFormatToChannelCollection() DistributionFormatCollection {
+	distFile, err := os.ReadFile("./manifest/distribution_format_to_channel.yml")
+	if err != nil {
+		log.Fatalf("failed to load file manifest distribution format: %s", err)
+	}
+
+	var distFormats DistributionFormatCollection
+	err = yaml.Unmarshal(distFile, &distFormats)
+	if err != nil {
+		log.Fatalf("failed to unmarshall manifest distribution format: %s", err)
+	}
+	return distFormats
 }

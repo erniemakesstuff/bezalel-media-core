@@ -1,0 +1,5 @@
+distributionFormats:
+  - format: "Text"
+    channels:
+      - channelName: "Medium"
+      - channelName: "Reddit"
