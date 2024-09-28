@@ -123,7 +123,7 @@ func appendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) e
 		return err
 	}
 
-	anyExistingMediaEvents, err := GetExistingMediaEvents(ledgerItem)
+	anyExistingMediaEvents, err := ledgerItem.GetExistingMediaEvents()
 	if err != nil {
 		log.Printf("error fetching existing media events: %s", err)
 		return err
@@ -149,7 +149,7 @@ func appendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEv
 		return err
 	}
 
-	anyExistingPublishEvents, err := GetExistingPublishEvents(ledgerItem)
+	anyExistingPublishEvents, err := ledgerItem.GetExistingPublishEvents()
 	if err != nil {
 		log.Printf("error fetching existing media events: %s", err)
 		return err
@@ -254,32 +254,4 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 		}
 	}
 	return result
-}
-
-func GetExistingMediaEvents(ledgerItem tables.Ledger) ([]tables.MediaEvent, error) {
-	var existingMediaEvents []tables.MediaEvent
-	if ledgerItem.MediaEvents == "" {
-		return existingMediaEvents, nil
-	}
-
-	err := json.Unmarshal([]byte(ledgerItem.MediaEvents), &existingMediaEvents)
-	if err != nil {
-		log.Printf("error unmarshalling mediaEvents: %s", err)
-		return existingMediaEvents, err
-	}
-	return existingMediaEvents, err
-}
-
-func GetExistingPublishEvents(ledgerItem tables.Ledger) ([]tables.PublishEvent, error) {
-	var existingPublishEvents []tables.PublishEvent
-	if ledgerItem.PublishEvents == "" {
-		return existingPublishEvents, nil
-	}
-
-	err := json.Unmarshal([]byte(ledgerItem.PublishEvents), &existingPublishEvents)
-	if err != nil {
-		log.Printf("error unmarshalling publishEvents: %s", err)
-		return existingPublishEvents, err
-	}
-	return existingPublishEvents, err
 }

@@ -3,7 +3,6 @@ package orchestration
 import (
 	"log"
 
-	dao "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 )
 
@@ -18,7 +17,7 @@ const mediatTypeImage = "Image"
 
 func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger) error {
 	// TODO: Support images for parent event.
-	mediaEvents, err := dao.GetExistingMediaEvents(ledgerItem)
+	mediaEvents, err := ledgerItem.GetExistingMediaEvents()
 	if err != nil {
 		log.Printf("correlationID: %s error extracting media events from ledger item: %s", ledgerItem.LedgerID, err)
 		return err

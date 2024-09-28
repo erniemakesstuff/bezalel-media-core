@@ -1,0 +1,141 @@
+package dal
+
+import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
+	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
+
+	"log"
+)
+
+func CreatePublisherAccount(item tables.AccountPublisher) error {
+	av, err := dynamodbattribute.MarshalMap(item)
+	if err != nil {
+		log.Printf("got error marshalling ledger item: %s", err)
+		return err
+	}
+	tableName := dynamo_configuration.TABLE_ACCOUNTS
+
+	input := &dynamodb.PutItemInput{
+		Item:      av,
+		TableName: aws.String(tableName),
+	}
+	_, err = svc.PutItem(input)
+	if err != nil {
+		log.Printf("got error calling PutItem item: %s", err)
+		return err
+	}
+
+	return err
+}
+
+func GetPublisherAccount(accountId string, publisherProfileId string) (tables.AccountPublisher, error) {
+	result, err := svc.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+	})
+
+	resultItem := tables.AccountPublisher{}
+	if err != nil {
+		log.Printf("got error calling GetItem accountPublisher item: %s", err)
+		return resultItem, err
+	}
+
+	err = dynamodbattribute.UnmarshalMap(result.Item, &resultItem)
+	if err != nil {
+		log.Printf("error unmarshalling accountPublisher item: %s", err)
+		return resultItem, err
+	}
+
+	return resultItem, err
+}
+
+func AssignPublisher(accountId string, publisherProfileId string, processId string) error {
+	err := takePublisherProfileLock(accountId, publisherProfileId, processId)
+	if err != nil {
+		log.Printf("failed to take account publisher lock: %s", err)
+		return err
+	}
+	return err
+}
+
+func takePublisherProfileLock(accountId string, publisherProfileId string, processId string) error {
+	account, err := GetPublisherAccount(accountId, publisherProfileId)
+	if err != nil {
+		log.Printf("error getting publisher account: %s", err)
+		return err
+	}
+
+	if !canTakeLock(processId, account) {
+		return fmt.Errorf("unable to take lock. accountId: %s publisherProfileId: %s processId: %s",
+			accountId, publisherProfileId, processId)
+	}
+	err = takeLock(processId, account)
+	return err
+}
+
+func canTakeLock(processId string, account tables.AccountPublisher) bool {
+	if account.AssignmentLockID == processId {
+		return true
+	}
+	if account.AssignmentLockID == "" {
+		return true
+	}
+
+	lockExpiry := account.AssignmentLockEpochMilliTTL
+	epochNow := time.Now().UnixMilli()
+	if epochNow > lockExpiry {
+		return true
+	}
+	return false
+}
+
+func takeLock(processId string, account tables.AccountPublisher) error {
+	const ninetyMinutes = 5400000
+	expiryTime := time.Now().UnixMilli() + ninetyMinutes
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(account.AccountID),
+			},
+			"PublisherProfileID": {
+				S: aws.String(account.PublisherProfileID),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":r": {
+				S: aws.String(processId),
+			},
+			":v": {
+				N: aws.String(strconv.FormatInt(expiryTime, 10)),
+			},
+			":ov": {
+				N: aws.String(account.AssignmentLockID), // old assignment lock
+			},
+		},
+		TableName:           aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		ReturnValues:        aws.String("NONE"),
+		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", "AssignmentLockID", "AssignmentLockEpochMilliTTL")),
+		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "AssignmentLockID")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling UpdateItem: %s", err)
+		return err
+	}
+	return err
+}

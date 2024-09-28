@@ -3,8 +3,10 @@ package v1
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/google/uuid"
@@ -37,6 +39,34 @@ type Ledger struct {
 }
 type Event interface {
 	GetEventID() string
+}
+
+func (ledgerItem *Ledger) GetExistingMediaEvents() ([]MediaEvent, error) {
+	var existingMediaEvents []MediaEvent
+	if ledgerItem.MediaEvents == "" {
+		return existingMediaEvents, nil
+	}
+
+	err := json.Unmarshal([]byte(ledgerItem.MediaEvents), &existingMediaEvents)
+	if err != nil {
+		log.Printf("error unmarshalling mediaEvents: %s", err)
+		return existingMediaEvents, err
+	}
+	return existingMediaEvents, err
+}
+
+func (ledgerItem *Ledger) GetExistingPublishEvents() ([]PublishEvent, error) {
+	var existingPublishEvents []PublishEvent
+	if ledgerItem.PublishEvents == "" {
+		return existingPublishEvents, nil
+	}
+
+	err := json.Unmarshal([]byte(ledgerItem.PublishEvents), &existingPublishEvents)
+	if err != nil {
+		log.Printf("error unmarshalling publishEvents: %s", err)
+		return existingPublishEvents, err
+	}
+	return existingPublishEvents, err
 }
 
 // MediaType determine what downstream media-generator will be used for this MediaEvent.

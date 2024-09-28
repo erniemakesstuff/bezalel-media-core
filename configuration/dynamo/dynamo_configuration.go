@@ -13,8 +13,7 @@ const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
 
 // Although status is derivable from ledger data, needed for index-lookup replayability.
-const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex" // {Status, StartedAtEpochMilli}
-const TABLE_PUBLISHER_PROFILE = "PublisherProfiles"
+const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex"   // {Status, StartedAtEpochMilli}
 const PUBLISHER_PROFILE_GSI_NAME = "ChannelPlatformIndex" // For querying by YouTube, Instagram, ...
 const MAX_QPS_ON_DEMAND_GSI = 50
 

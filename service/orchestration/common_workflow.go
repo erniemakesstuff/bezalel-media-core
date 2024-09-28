@@ -17,7 +17,7 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvent tables.MediaEven
 		log.Printf("correlationID: %s media event already in ledger eventID: %s", ledgerItem.LedgerID, mediaEvent.EventID)
 		return nil
 	}
-	err = publishToSNSToGenerateMedia(mediaEvent)
+	err = publishMediaGenerationSNS(mediaEvent)
 	if err != nil {
 		return err
 	}
@@ -30,12 +30,12 @@ func appendMediaEventToLedgerItem(ledgerItem tables.Ledger, mediaEvent tables.Me
 	return dao.AppendLedgerMediaEvents(ledgerItem.LedgerID, mediaEvents)
 }
 
-func publishToSNSToGenerateMedia(mediaEvent tables.MediaEvent) error {
+func publishMediaGenerationSNS(mediaEvent tables.MediaEvent) error {
 	return PublishMediaTopicSns(mediaEvent)
 }
 
 func ExistsInLedger(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) (bool, error) {
-	existingMediaEvents, err := dao.GetExistingMediaEvents(ledgerItem)
+	existingMediaEvents, err := ledgerItem.GetExistingMediaEvents()
 	if err != nil {
 		log.Printf("correlationID: %s error deserializing existing media events from ledger: %s", ledgerItem.LedgerID, err)
 		return false, err
