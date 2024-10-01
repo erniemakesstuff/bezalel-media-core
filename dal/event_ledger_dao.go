@@ -151,7 +151,7 @@ func appendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEv
 
 	anyExistingPublishEvents, err := ledgerItem.GetExistingPublishEvents()
 	if err != nil {
-		log.Printf("error fetching existing media events: %s", err)
+		log.Printf("error fetching existing publish events: %s", err)
 		return err
 	}
 

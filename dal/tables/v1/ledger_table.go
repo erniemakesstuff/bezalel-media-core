@@ -16,7 +16,7 @@ type LedgerStatus string
 
 const (
 	NEW_LEDGER      LedgerStatus = "NEW"
-	FINISHED_LEDGER LedgerStatus = "FINISHED" // Terminal
+	FINISHED_LEDGER LedgerStatus = "FINISHED" // Terminal for all cases.
 )
 
 type Ledger struct {
@@ -92,11 +92,11 @@ type MediaEvent struct {
 	MediaType               MediaType          // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
 	DistributionFormat      DistributionFormat // LongFormVideo, ShortFormVideo, Image, Blog, ...
 	ContentLookupKey        string             // GUID into s3: e.g. <MediaType>.<SomeGuid>...
-	Niche                   string
-	Language                string
-	PromptHash              string // Hash of the prompt instruction
-	EventID                 string // Although derivable GetEventID, set for convenience on downstream calls.
-	ParentEventID           string // null for root. Will be set if part of a script ID.
+	Niche                   string             // Secondary filter on publish-profile results.
+	Language                string             // Secondary filter on publish-profile results.
+	PromptHash              string             // Hash of the prompt instruction
+	EventID                 string             // Although derivable GetEventID, set for convenience on downstream calls.
+	ParentEventID           string             // null for root. Will be set if part of a script ID.
 }
 
 func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
@@ -128,22 +128,31 @@ func HashString(text string) string {
 type PublishStatus string
 
 const (
-	ASSIGNED   PublishStatus = "ASSIGNED"
-	PUBLISHING PublishStatus = "PUBLISHING"
-	COMPLETE   PublishStatus = "COMPLETE" // Terminal, success.
-	EXPIRED    PublishStatus = "EXPIRED"  // Terminal, failure, timeout.
+	ASSIGNED       PublishStatus = "ASSIGNED"       // Lock taken. Assumes base child-events are ready.
+	OVERLAY_ENRICH PublishStatus = "OVERLAY_ENRICH" // Create media events for custom overlay
+	RENDERING      PublishStatus = "RENDERING"      // Once all child-elements are ready, combine to final edit.
+	PUBLISHING     PublishStatus = "PUBLISHING"     // Once final edit is ready, publish.
+	COMPLETE       PublishStatus = "COMPLETE"       // Terminal, success.
+	EXPIRED        PublishStatus = "EXPIRED"        // Terminal, failure, timeout.
 )
 
-// Associating Script to a PublisherProfile. Used for softlocking.
+// Associating PublishEvent to a PublisherProfile. Used for softlocking.
 type PublishEvent struct {
-	ScriptEventID      string        // ContentType --> distribution channel selection.
-	PublishStatus      PublishStatus // Soft lock: ASSIGNED, PUBLISHING, COMPLETE, EXPIRED.
-	MinutesTTL         int           // Lifetime of assignment lock prior to entering EXPIRED state if no associated COMPLETE.
-	PublisherProfileID string
-	OwnerAccountID     string
+	DistributionChannel string        // YouTube, Medium, Twitter, ...
+	PublishStatus       PublishStatus // Soft lock: ASSIGNED, PUBLISHING, COMPLETE, EXPIRED.
+	ExpiresAtTTL        int64         // Lifetime of assignment lock prior to entering EXPIRED state if no associated COMPLETE.
+	PublisherProfileID  string
+	OwnerAccountID      string // PublisherProfile owner.
+	RootMediaEvent      string
+	ProcessOwner        string // Agent guid performing the publish.
 }
 
 func (m *PublishEvent) GetEventID() string {
 	// concat <script_Id>.<publisher_profile_id>.<publish_status>
-	return fmt.Sprintf("%s.%s.%s", m.ScriptEventID, m.PublisherProfileID, m.PublishStatus)
+	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.PublisherProfileID, m.PublishStatus)
+}
+
+func (m *PublishEvent) GetRootMediaAssignmentKey() string {
+	// concat <script_Id>.<publisher_profile_id>.<publish_status>
+	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.RootMediaEvent, m.PublishStatus)
 }

@@ -15,7 +15,7 @@ func (s *EnrichmentWorkflow) GetWorkflowName() string {
 
 const mediatTypeImage = "Image"
 
-func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger) error {
+func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 	// TODO: Support images for parent event.
 	mediaEvents, err := ledgerItem.GetExistingMediaEvents()
 	if err != nil {
@@ -24,7 +24,7 @@ func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger) error {
 	}
 
 	for _, parentMedia := range mediaEvents {
-		if isParentMediaEvent(parentMedia) {
+		if IsParentMediaEvent(parentMedia) {
 			err = spawnChildMediaEvents(ledgerItem, parentMedia, mediaEvents)
 			if err != nil {
 				log.Printf("correlationID: %s failed to spawn child media events: %s", ledgerItem.LedgerID, err)
@@ -34,10 +34,6 @@ func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger) error {
 	}
 
 	return err
-}
-
-func isParentMediaEvent(mediaEvent tables.MediaEvent) bool {
-	return mediaEvent.ParentEventID == ""
 }
 
 func spawnChildMediaEvents(ledgerItem tables.Ledger, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) error {

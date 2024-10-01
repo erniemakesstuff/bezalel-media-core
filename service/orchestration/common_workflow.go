@@ -47,3 +47,11 @@ func ExistsInLedger(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) (boo
 	}
 	return false, nil
 }
+
+func IsParentMediaEvent(mediaEvent tables.MediaEvent) bool {
+	return mediaEvent.ParentEventID == ""
+}
+
+func AllChildrenRendered(mediaEventRoot tables.MediaEvent, mediaEvents []tables.MediaEvent) bool {
+	return false
+}

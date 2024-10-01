@@ -1,6 +1,7 @@
 package dal
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -63,7 +64,119 @@ func GetPublisherAccount(accountId string, publisherProfileId string) (tables.Ac
 	return resultItem, err
 }
 
-func AssignPublisher(accountId string, publisherProfileId string, processId string) error {
+func ReleaseAssignment(accountId string, publisherProfileId string, processId string) error {
+	const releaseLockId = ""
+	const releaseTime = 0
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":r": {
+				S: aws.String(releaseLockId),
+			},
+			":v": {
+				N: aws.String(strconv.FormatInt(releaseTime, 10)),
+			},
+			":ov": {
+				N: aws.String(processId), // old assignment lock
+			},
+		},
+		TableName:           aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		ReturnValues:        aws.String("NONE"),
+		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", "AssignmentLockID", "AssignmentLockEpochMilliTTL")),
+		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "AssignmentLockID")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling UpdateItem to release lock: %s", err)
+		return err
+	}
+	return nil
+}
+
+func AssignOldestActivePublisherProfile(processId string, distributionChannelName string) (tables.AccountPublisher, error) {
+	lpk := ""
+	lsk := ""
+	var resultItem tables.AccountPublisher
+	for {
+		resultItem, lpk, lsk, err := queryForOldestActivePublisherProfile(distributionChannelName, lpk, lsk)
+		if err != nil {
+			log.Printf("failed to query account publisher profile table: %s", err)
+			return tables.AccountPublisher{}, err
+		} else if lpk == "" && lsk == "" {
+			break
+		}
+
+		if resultItem.AccountID == "" {
+			return resultItem, errors.New("no active account publisher profiles found")
+		}
+	}
+
+	err := assignPublisher(resultItem.AccountID, resultItem.PublisherProfileID, processId)
+	if err != nil {
+		log.Printf("error assigning publisher profile: %s", err)
+		return resultItem, err
+	}
+	return resultItem, nil
+}
+
+func queryForOldestActivePublisherProfile(distributionChannelName string, lastPagekeyPK string, lastPageKeySK string) (tables.AccountPublisher, string, string, error) {
+	const maxRecordsPerQuery = 200
+	queryInput := &dynamodb.QueryInput{
+		TableName:              aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		IndexName:              aws.String(dynamo_configuration.PUBLISHER_PROFILE_GSI_NAME),
+		KeyConditionExpression: aws.String("ChannelName = :c"),
+		ScanIndexForward:       aws.Bool(true), // ASCending last-publish time.
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":c": {
+				S: aws.String(distributionChannelName),
+			},
+			":e": {
+				S: aws.String("Expired"),
+			},
+		},
+
+		FilterExpression: aws.String("NOT BEGINS_WITH(AccountSubscriptionStatus, :e)"),
+		Limit:            aws.Int64(maxRecordsPerQuery),
+	}
+	if lastPagekeyPK != "" {
+		queryInput.SetExclusiveStartKey(map[string]*dynamodb.AttributeValue{
+			"ChannelName": {
+				S: aws.String(lastPagekeyPK),
+			},
+			"LastPublishAtEpochMilli": {
+				N: aws.String(lastPageKeySK),
+			},
+		})
+	}
+	queryOutput, err := svc.Query(queryInput)
+	if err != nil {
+		log.Printf("unalbe to query account publisher GSI: %s", err)
+		return tables.AccountPublisher{}, "", "", err
+	}
+	const pk = "ChannelName"
+	const sk = "LastPublishAtEpochMilli"
+	if queryOutput.Count == aws.Int64(0) {
+		log.Printf("no records found in page for account publisher GSI, returning w/ pagination if set")
+		return tables.AccountPublisher{}, *queryOutput.LastEvaluatedKey[pk].S, *queryOutput.LastEvaluatedKey[sk].N, nil
+	}
+	resultItem := tables.AccountPublisher{}
+	err = dynamodbattribute.UnmarshalMap(queryOutput.Items[0], &resultItem)
+	if err != nil {
+		log.Printf("error unmarshalling accountPublisher item: %s", err)
+		return resultItem, "", "", err
+	}
+	return resultItem, "", "", nil
+}
+
+func assignPublisher(accountId string, publisherProfileId string, processId string) error {
 	err := takePublisherProfileLock(accountId, publisherProfileId, processId)
 	if err != nil {
 		log.Printf("failed to take account publisher lock: %s", err)
@@ -95,7 +208,7 @@ func canTakeLock(processId string, account tables.AccountPublisher) bool {
 		return true
 	}
 
-	lockExpiry := account.AssignmentLockEpochMilliTTL
+	lockExpiry := account.LockExpiresAtEpochMilliTTL
 	epochNow := time.Now().UnixMilli()
 	if epochNow > lockExpiry {
 		return true
@@ -104,7 +217,7 @@ func canTakeLock(processId string, account tables.AccountPublisher) bool {
 }
 
 func takeLock(processId string, account tables.AccountPublisher) error {
-	const ninetyMinutes = 5400000
+	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
 	expiryTime := time.Now().UnixMilli() + ninetyMinutes
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{

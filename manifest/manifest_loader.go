@@ -70,6 +70,18 @@ func GetManifestLoader() *ManifestLoader {
 	return manifestInstance
 }
 
+func (m *ManifestLoader) ChannelNamesFromFormat(mediaFormat string) []string {
+	result := []string{}
+	for _, f := range m.DistributionFormatToChannel.DistributionFormats {
+		if strings.EqualFold(f.Format, mediaFormat) {
+			for _, cn := range f.Channels {
+				result = append(result, cn.ChannelName)
+			}
+		}
+	}
+	return result
+}
+
 func (m *ManifestLoader) GetScriptPromptsFromSource(sourceName string) []Prompt {
 	categoryKeysFromSource := map[string]bool{}
 	for _, source := range m.SourceToScriptCategoryCollection.Sources {

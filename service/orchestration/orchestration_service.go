@@ -4,11 +4,12 @@ import (
 	"log"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
+	"github.com/google/uuid"
 )
 
 type Workflow interface {
 	GetWorkflowName() string
-	Run(tables.Ledger) error
+	Run(tables.Ledger, string) error
 }
 
 // TODO: Add workflows in-order here.
@@ -22,9 +23,10 @@ func RunWorkflows(ledgerItem tables.Ledger) error {
 	if isCompleteWorkflow(ledgerItem) {
 		return nil
 	}
+	processId := uuid.New().String()
 	for _, w := range workflowsToRun {
 		log.Printf("correlationID: %s running %s", ledgerItem.LedgerID, w.GetWorkflowName())
-		err := w.Run(ledgerItem)
+		err := w.Run(ledgerItem, processId)
 		if err != nil {
 			log.Printf("correlationID: %s workflow %s failed: %s", ledgerItem.LedgerID, w.GetWorkflowName(), err)
 		}

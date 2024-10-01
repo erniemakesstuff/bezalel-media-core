@@ -16,7 +16,7 @@ func (s *ScriptWorkflow) GetWorkflowName() string {
 	return "ScriptWorkflow"
 }
 
-func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger) error {
+func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 	log.Printf("correlationID: %s getting manifest loader", ledgerItem.LedgerID)
 	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
 	log.Printf("correlationID: %s received prompts %s from source %s", ledgerItem.LedgerID, prompts, ledgerItem.RawEventSource)

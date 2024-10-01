@@ -35,9 +35,10 @@ type AccountPublisher struct {
 	AccountSubscriptionStatus SubscriptionStatus
 
 	// Optional - PublisherProfile specific
-	PublisherAPISecretID        string
-	PublisherAPISecretKey       string
-	PublisherLanguage           string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
-	AssignmentLockID            string // ID of the process using the lock
-	AssignmentLockEpochMilliTTL int64  // Time-in-future for when lock can be forcefully released.
+	PublisherAPISecretID       string
+	PublisherAPISecretKey      string
+	PublisherLanguage          string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+	PublisherNiche             string // Drama, news, ...
+	AssignmentLockID           string // ID of the process using the lock
+	LockExpiresAtEpochMilliTTL int64  // Time-in-future for when lock can be forcefully released.
 }
