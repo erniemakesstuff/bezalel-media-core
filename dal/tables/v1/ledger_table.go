@@ -74,6 +74,10 @@ type MediaType string
 
 const (
 	MEDIA_TEXT MediaType = "Text"
+
+	MEDIA_VIDEO MediaType = "Video"
+
+	IMAGE MediaType = "Image"
 )
 
 // DistributionFormat are only set for the Parent/Root MediaEvent.
@@ -84,6 +88,19 @@ type DistributionFormat string
 const (
 	DIST_FORMAT_BLOG   DistributionFormat = "Blog"
 	DIST_FORMAT_LVIDEO DistributionFormat = "LongformVideo"
+)
+
+type PositionLayer string
+
+const (
+	FULLSCREEN       PositionLayer = "FULLSCREEN" // Occupies whole render space.
+	SPLIT_SCR_TOP    PositionLayer = "SPLITSCREEN_TOP"
+	SPLIT_SCR_BOTTOM PositionLayer = "SPLITSCREEN_BOTTOM"
+	SPLIT_SCR_LEFT   PositionLayer = "SPLITSCREEN_LEFT"
+	SPLIT_SCR_RIGHT  PositionLayer = "SPLITSCREEN_RIGHT"
+
+	AVATAR         PositionLayer = "AVATAR"         // screen position for the talking head/body.
+	AVATAR_OVERLAY PositionLayer = "AVATAR_OVERLAY" // apply user specified avatar as higher priority.
 )
 
 type MediaEvent struct {
@@ -97,6 +114,9 @@ type MediaEvent struct {
 	PromptHash              string             // Hash of the prompt instruction
 	EventID                 string             // Although derivable GetEventID, set for convenience on downstream calls.
 	ParentEventID           string             // null for root. Will be set if part of a script ID.
+	IsFinalRender           bool               // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
+	VisualPositionLayer     string             // For determining position of video/image media in the final rendering.
+	RenderSequence          int                // Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent.
 }
 
 func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
@@ -128,12 +148,12 @@ func HashString(text string) string {
 type PublishStatus string
 
 const (
-	ASSIGNED       PublishStatus = "ASSIGNED"       // Lock taken. Assumes base child-events are ready.
-	OVERLAY_ENRICH PublishStatus = "OVERLAY_ENRICH" // Create media events for custom overlay
-	RENDERING      PublishStatus = "RENDERING"      // Once all child-elements are ready, combine to final edit.
-	PUBLISHING     PublishStatus = "PUBLISHING"     // Once final edit is ready, publish.
-	COMPLETE       PublishStatus = "COMPLETE"       // Terminal, success.
-	EXPIRED        PublishStatus = "EXPIRED"        // Terminal, failure, timeout.
+	ASSIGNED   PublishStatus = "ASSIGNED"   // Lock taken. Assumes base child-events are ready.
+	OVERLAY    PublishStatus = "OVERLAY"    // Overlay specific user media such as custom avatars.
+	RENDERING  PublishStatus = "RENDERING"  // Once all child-elements & watermarks are ready, combine to final edit.
+	PUBLISHING PublishStatus = "PUBLISHING" // Once final edit is ready, publish.
+	COMPLETE   PublishStatus = "COMPLETE"   // Terminal, success.
+	EXPIRED    PublishStatus = "EXPIRED"    // Terminal, failure, timeout.
 )
 
 // Associating PublishEvent to a PublisherProfile. Used for softlocking.

@@ -106,7 +106,7 @@ func AssignOldestActivePublisherProfile(processId string, distributionChannelNam
 	lsk := ""
 	var resultItem tables.AccountPublisher
 	for {
-		resultItem, lpk, lsk, err := queryForOldestActivePublisherProfile(distributionChannelName, lpk, lsk)
+		resultItem, lpk, lsk, err := queryActivePublisherProfile(distributionChannelName, lpk, lsk)
 		if err != nil {
 			log.Printf("failed to query account publisher profile table: %s", err)
 			return tables.AccountPublisher{}, err
@@ -127,7 +127,7 @@ func AssignOldestActivePublisherProfile(processId string, distributionChannelNam
 	return resultItem, nil
 }
 
-func queryForOldestActivePublisherProfile(distributionChannelName string, lastPagekeyPK string, lastPageKeySK string) (tables.AccountPublisher, string, string, error) {
+func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK string, lastPageKeySK string) (tables.AccountPublisher, string, string, error) {
 	const maxRecordsPerQuery = 200
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String(dynamo_configuration.TABLE_ACCOUNTS),
@@ -142,7 +142,7 @@ func queryForOldestActivePublisherProfile(distributionChannelName string, lastPa
 				S: aws.String("Expired"),
 			},
 		},
-
+		// TODO fix this to filter by ExpiresAtTime LE, GE on epoch.
 		FilterExpression: aws.String("NOT BEGINS_WITH(AccountSubscriptionStatus, :e)"),
 		Limit:            aws.Int64(maxRecordsPerQuery),
 	}

@@ -17,6 +17,9 @@ type Workflow interface {
 var workflowsToRun = []Workflow{
 	&ScriptWorkflow{},
 	&EnrichmentWorkflow{},
+	&AssignmentWorkflow{},
+	&FinalRenderWorkflow{},
+	&PublishWorkFlow{},
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {

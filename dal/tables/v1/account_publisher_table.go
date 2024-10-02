@@ -13,6 +13,7 @@ const (
 
 type SubscriptionStatus string
 
+// Filter expresision Expired*
 const (
 	EXPIRED_BASIC   SubscriptionStatus = "ExpiredBasicSubscription"
 	EXPIRED_PREMIUM SubscriptionStatus = "ExpiredPremiumSubscription"

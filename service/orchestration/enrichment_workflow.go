@@ -17,6 +17,11 @@ const mediatTypeImage = "Image"
 
 func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 	// TODO: Support images for parent event.
+	// TODO: Set position layer, and render sequence
+	//		Audio and Video can have the same RenderSequence if they are concurrent, or the media template allows (e.g. splitscreen)
+	// TODO: Localize language content by spawning new-root events for destination languages.
+	// WAIT for 30 minutes; periodically polling contentLookupKey to see if finished.
+	//	Set status EXPIRED on timeout.
 	mediaEvents, err := ledgerItem.GetExistingMediaEvents()
 	if err != nil {
 		log.Printf("correlationID: %s error extracting media events from ledger item: %s", ledgerItem.LedgerID, err)
