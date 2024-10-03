@@ -3,7 +3,7 @@ package orchestration
 import (
 	"encoding/json"
 	"log"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,7 +18,8 @@ var sqs_svc = sqs.New(aws_configuration.GetAwsSession())
 const queue_name = "ledger-queue"                    // os.Getenv("LEDGER_SQS_NAME")
 const visibility_timeout = 180                       // seconds
 const time_milliseconds_between_message_polls = 1000 // TODO re-evaluate
-const max_messages_per_poll = 1                      // TODO re-evaluate
+const max_messages_per_poll = 10
+const max_concurrent_process_consumers = 1 // TODO: Update this, should be around 100
 
 func PollForLedgerUpdates() {
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{
@@ -29,14 +30,20 @@ func PollForLedgerUpdates() {
 	}
 	queueURL := urlResult.QueueUrl
 	log.Printf("QUEUE URL: %s", *queueURL)
+	for i := 0; i < max_concurrent_process_consumers; i++ {
+		go startConsumer(queueURL)
+	}
+}
+
+func startConsumer(queueURL *string) {
+	log.Printf("started consumer")
 	for {
-		err = consumeMessages(queueURL)
+		err := consumeMessages(queueURL)
 		time.Sleep(time.Duration(time_milliseconds_between_message_polls) * time.Millisecond)
 		if err != nil {
 			log.Printf("failed to poll queue messages: %s", err)
 		}
 	}
-
 }
 
 func consumeMessages(queueURL *string) error {
@@ -61,17 +68,26 @@ func consumeMessages(queueURL *string) error {
 }
 
 func processMessages(messages []*sqs.Message, queueUrl *string) {
+	var wg sync.WaitGroup
 	for _, m := range messages {
-		err := executeRelevantWorkflow(m)
-		if err != nil {
-			log.Printf("unable to execute workflow for event: %s %s", *m.MessageId, err)
-			continue
-		}
-		err = ackMessage(m, queueUrl)
-		if err != nil {
-			log.Printf("unalbe to ack event: %s %s", m.GoString(), err)
-		}
+		wg.Add(1)
+		go asyncProcessMessage(m, queueUrl, &wg)
 	}
+	wg.Wait()
+}
+
+func asyncProcessMessage(message *sqs.Message, queueUrl *string, wg *sync.WaitGroup) {
+	err := executeRelevantWorkflow(message)
+	if err != nil {
+		log.Printf("unable to execute workflow for event: %s %s", *message.MessageId, err)
+		wg.Done()
+		return
+	}
+	err = ackMessage(message, queueUrl)
+	if err != nil {
+		log.Printf("unalbe to ack event: %s %s", message.GoString(), err)
+	}
+	wg.Done()
 }
 
 func executeRelevantWorkflow(message *sqs.Message) error {
@@ -104,41 +120,13 @@ func decode(message *sqs.Message) (tables.Ledger, error) {
 		log.Printf("failed to unmarshall sqs message: %s", err)
 		return tables.Ledger{}, err
 	}
-	ledgerItem, err := transformToLedger(streamMessage)
+	ledgerItem := transformToLedger(streamMessage)
 	return ledgerItem, err
 }
 
-func transformToLedger(cdc sqs_model.DynamoCDC) (tables.Ledger, error) {
-	createdAtTime, err := strconv.ParseInt(cdc.Dynamodb.NewImage.LedgerCreatedAtEpochMilli.N, 10, 64)
-	if err != nil {
-		log.Printf("failed to parse ledger numerics: %s", err)
-		return tables.Ledger{}, err
-	}
-	mediaVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.MediaEventsVersion.N)
-	if err != nil {
-		log.Printf("failed to parse ledger numerics: %s", err)
-		return tables.Ledger{}, err
-	}
-	publishVersion, err := strconv.Atoi(cdc.Dynamodb.NewImage.PublishEventsVersion.N)
-	if err != nil {
-		log.Printf("failed to parse ledger numerics: %s", err)
-		return tables.Ledger{}, err
-	}
-
+func transformToLedger(cdc sqs_model.DynamoCDC) tables.Ledger {
 	resultItem := tables.Ledger{
-		LedgerID:                  cdc.Dynamodb.Keys.LedgerID.S,
-		LedgerStatus:              tables.LedgerStatus(cdc.Dynamodb.NewImage.LedgerStatus.S),
-		LedgerCreatedAtEpochMilli: createdAtTime,
-		RawEventPayload:           cdc.Dynamodb.NewImage.RawEventPayload.S,
-		RawEventSource:            cdc.Dynamodb.NewImage.RawEventSource.S,
-		RawEventMediaUrls:         cdc.Dynamodb.NewImage.RawEventMediaUrls.S,
-		RawEventWebsiteUrls:       cdc.Dynamodb.NewImage.RawEventWebsiteUrls.S,
-		RawEventLanguage:          cdc.Dynamodb.NewImage.RawEventLanguage.S,
-		RawContentHash:            cdc.Dynamodb.NewImage.RawContentHash.S,
-		MediaEvents:               cdc.Dynamodb.NewImage.MediaEvents.S,
-		PublishEvents:             cdc.Dynamodb.NewImage.PublishEvents.S,
-		MediaEventsVersion:        int64(mediaVersion),
-		PublishEventsVersion:      int64(publishVersion),
+		LedgerID: cdc.Dynamodb.Keys.LedgerID.S,
 	}
-	return resultItem, err
+	return resultItem
 }

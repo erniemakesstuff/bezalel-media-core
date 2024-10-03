@@ -146,7 +146,7 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 		TableName:   aws.String(tableName),
 		StreamSpecification: &dynamodb.StreamSpecification{
 			StreamEnabled:  aws.Bool(true),
-			StreamViewType: aws.String(dynamodb.StreamViewTypeNewImage),
+			StreamViewType: aws.String(dynamodb.StreamViewTypeKeysOnly),
 		},
 	}
 	createTable(svc, input, tableName)

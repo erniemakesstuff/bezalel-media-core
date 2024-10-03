@@ -3,6 +3,7 @@ package orchestration
 import (
 	"log"
 
+	"github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"github.com/google/uuid"
 )
@@ -23,15 +24,20 @@ var workflowsToRun = []Workflow{
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {
-	if isCompleteWorkflow(ledgerItem) {
+	latestLedger, err := dal.GetLedger(ledgerItem.LedgerID)
+	if err != nil {
+		log.Printf("correlationID: %s run workflows error: %s", ledgerItem.LedgerID, err)
+		return err
+	}
+	if isCompleteWorkflow(latestLedger) {
 		return nil
 	}
 	processId := uuid.New().String()
 	for _, w := range workflowsToRun {
-		log.Printf("correlationID: %s running %s", ledgerItem.LedgerID, w.GetWorkflowName())
-		err := w.Run(ledgerItem, processId)
+		log.Printf("correlationID: %s running %s", latestLedger.LedgerID, w.GetWorkflowName())
+		err := w.Run(latestLedger, processId)
 		if err != nil {
-			log.Printf("correlationID: %s workflow %s failed: %s", ledgerItem.LedgerID, w.GetWorkflowName(), err)
+			log.Printf("correlationID: %s workflow %s failed: %s", latestLedger.LedgerID, w.GetWorkflowName(), err)
 		}
 	}
 	return nil
