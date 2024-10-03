@@ -42,5 +42,6 @@ func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 }
 
 func spawnChildMediaEvents(ledgerItem tables.Ledger, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) error {
+	// TODO: Call HandleMediaGeneration
 	return nil
 }

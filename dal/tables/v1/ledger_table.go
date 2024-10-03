@@ -16,7 +16,7 @@ type LedgerStatus string
 
 const (
 	NEW_LEDGER      LedgerStatus = "NEW"
-	FINISHED_LEDGER LedgerStatus = "FINISHED" // Terminal for all cases.
+	FINISHED_LEDGER LedgerStatus = "FINISHED" // Terminal for all cases: expired or success.
 )
 
 type Ledger struct {
@@ -73,11 +73,9 @@ func (ledgerItem *Ledger) GetExistingPublishEvents() ([]PublishEvent, error) {
 type MediaType string
 
 const (
-	MEDIA_TEXT MediaType = "Text"
-
+	MEDIA_TEXT  MediaType = "Text"
 	MEDIA_VIDEO MediaType = "Video"
-
-	IMAGE MediaType = "Image"
+	IMAGE       MediaType = "Image"
 )
 
 // DistributionFormat are only set for the Parent/Root MediaEvent.
@@ -163,7 +161,7 @@ type PublishEvent struct {
 	ExpiresAtTTL        int64         // Lifetime of assignment lock prior to entering EXPIRED state if no associated COMPLETE.
 	PublisherProfileID  string
 	OwnerAccountID      string // PublisherProfile owner.
-	RootMediaEvent      string
+	RootMediaEventID    string
 	ProcessOwner        string // Agent guid performing the publish.
 }
 
@@ -173,6 +171,6 @@ func (m *PublishEvent) GetEventID() string {
 }
 
 func (m *PublishEvent) GetRootMediaAssignmentKey() string {
-	// concat <script_Id>.<publisher_profile_id>.<publish_status>
-	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.RootMediaEvent, m.PublishStatus)
+	// concat <script_Id>.<RootMediaEventID>.<publish_status>
+	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.RootMediaEventID, m.PublishStatus)
 }

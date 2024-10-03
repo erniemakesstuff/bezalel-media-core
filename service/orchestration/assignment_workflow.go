@@ -88,13 +88,13 @@ func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetCh
 	}
 
 	stateKeyCompleted := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.GetEventID(), tables.COMPLETE)
-	// if assigned, but already completed
+	// if assigned, but already completed: cannot assign to distribution channel
 	if _, ok := publishEventMap[stateKeyCompleted]; ok {
 		return false
 	}
 
 	stateKeyExpired := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.GetEventID(), tables.EXPIRED)
-	// if assigned, but expired, true
+	// if assigned, but expired, true: ok to retry same distribution channel
 	if _, ok := publishEventMap[stateKeyExpired]; ok {
 		return true
 	}
@@ -125,6 +125,6 @@ func (s *AssignmentWorkflow) buildPublishEvent(publisherAccount tables.AccountPu
 		PublishStatus:       tables.ASSIGNED,
 		PublisherProfileID:  publisherAccount.PublisherProfileID,
 		OwnerAccountID:      publisherAccount.AccountID,
-		RootMediaEvent:      mediaEvent.GetEventID(),
+		RootMediaEventID:    mediaEvent.GetEventID(),
 	}
 }
