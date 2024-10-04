@@ -17,6 +17,7 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvent tables.MediaEven
 		log.Printf("correlationID: %s media event already in ledger eventID: %s", ledgerItem.LedgerID, mediaEvent.EventID)
 		return nil
 	}
+	// TODO: Check if media exists in PgVector for-reuse.
 	err = publishMediaGenerationSNS(mediaEvent)
 	if err != nil {
 		return err
@@ -53,5 +54,29 @@ func IsParentMediaEvent(mediaEvent tables.MediaEvent) bool {
 }
 
 func AllChildrenRendered(mediaEventRoot tables.MediaEvent, mediaEvents []tables.MediaEvent) bool {
-	return false
+	exists, err := MediaExists(mediaEventRoot.ContentLookupKey)
+	if err != nil {
+		log.Printf("unexpected mediaExists error: %s", err)
+		return false
+	}
+	if !exists {
+		log.Printf("root media not set: %s", mediaEventRoot.ContentLookupKey)
+		return false
+	}
+
+	for _, m := range mediaEvents {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRoot.GetEventID() {
+			continue
+		}
+
+		exists, err = MediaExists(m.ContentLookupKey)
+		if err != nil {
+			log.Printf("unexpected mediaExists error: %s", err)
+			return false
+		}
+		if !exists {
+			return false
+		}
+	}
+	return true
 }

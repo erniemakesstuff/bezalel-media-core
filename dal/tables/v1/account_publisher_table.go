@@ -34,6 +34,7 @@ type AccountPublisher struct {
 
 	// Optional - Account specific
 	AccountSubscriptionStatus SubscriptionStatus
+	PreferredLanguage         string
 
 	// Optional - PublisherProfile specific
 	PublisherAPISecretID       string

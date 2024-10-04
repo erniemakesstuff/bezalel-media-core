@@ -50,26 +50,32 @@ func cleanupTestData() {
 	dal.DeletePublisherAccount(Test_PublisherProfile_Medium.AccountID,
 		Test_PublisherProfile_Medium.PublisherProfileID)
 	dal.DeleteLedger(Test_Ledger_Blog.LedgerID)
+	time.Sleep(time.Duration(40) * time.Second)
 	Purge()
 }
 
 func TestAssignment(t *testing.T) {
 	setupTest()
-	time.Sleep(time.Duration(1) * time.Second)
-	ledgerItem, err := dal.GetLedger(Test_Ledger_Blog.LedgerID)
-	if err != nil {
-		log.Fatalf("test assignment, error retrieving ledger: %s", err)
-	}
-	assert.Equal(t, ledgerItem.LedgerStatus, tables.NEW_LEDGER, "should be status new.")
+	time.Sleep(time.Duration(5) * time.Second)
+	ledgerItem, _ := dal.GetLedger(Test_Ledger_Blog.LedgerID)
+	publisherAcc, _ := dal.GetPublisherAccount(Test_PublisherProfile_Medium.AccountID, Test_PublisherProfile_Medium.PublisherProfileID)
+	// 1. Create new trigger event; verify created.
+	assert.Equal(t, ledgerItem.LedgerStatus, tables.NEW_LEDGER, "should be status new")
+	assert.Empty(t, publisherAcc.AssignmentLockID, "no assignment lock should be present")
 	b, _ := json.MarshalIndent(ledgerItem, "", "  ")
 	log.Print("\n" + string(b) + "\n")
+	// 2. Wait for mediaEvent to be created
+	time.Sleep(time.Duration(15) * time.Second)
+	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
+	assert.NotEmpty(t, ledgerItem.MediaEvents, "media events should not be empty")
 
-	time.Sleep(time.Duration(1) * time.Second)
-	ledgerItem, err = dal.GetLedger(Test_Ledger_Blog.LedgerID)
-	assert.NotEmpty(t, ledgerItem.MediaEvents, "media events should not be empty.")
+	// 3. Assert publisher profile assignment
+	time.Sleep(time.Duration(15) * time.Second)
+	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
+	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_Medium.AccountID, Test_PublisherProfile_Medium.PublisherProfileID)
+	assert.NotEmpty(t, ledgerItem.PublishEvents, "publish events should not be empty")
+	assert.NotEmpty(t, publisherAcc.AssignmentLockID, "publisher account should have assignment lock")
+	assert.NotEmpty(t, publisherAcc.LockExpiresAtEpochMilliTTL, "publisher account should lock ttl")
 
 	cleanupTestData()
-	if err != nil {
-		log.Fatalf("test assignment, error occurred: %s", err)
-	}
 }

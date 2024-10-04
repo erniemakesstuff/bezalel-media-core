@@ -156,9 +156,12 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 			":e": {
 				S: aws.String("Expired"),
 			},
+			":n": {
+				S: aws.String(strconv.FormatInt(time.Now().UnixMilli(), 10)),
+			},
 		},
 		// TODO fix this to filter by ExpiresAtTime LE, GE on epoch.
-		FilterExpression: aws.String("NOT BEGINS_WITH(AccountSubscriptionStatus, :e)"),
+		FilterExpression: aws.String("NOT BEGINS_WITH(AccountSubscriptionStatus, :e) AND LastPublishAtEpochMilli LT :n"),
 		Limit:            aws.Int64(maxRecordsPerQuery),
 	}
 	if lastPagekeyPK != "" {

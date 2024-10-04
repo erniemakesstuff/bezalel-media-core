@@ -19,7 +19,7 @@ func (s *ScriptWorkflow) GetWorkflowName() string {
 func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 	log.Printf("correlationID: %s getting manifest loader", ledgerItem.LedgerID)
 	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
-	log.Printf("correlationID: %s received prompts %s from source %s", ledgerItem.LedgerID, prompts, ledgerItem.RawEventSource)
+	log.Printf("correlationID: %s received prompts %d from source %s", ledgerItem.LedgerID, len(prompts), ledgerItem.RawEventSource)
 	for _, p := range prompts {
 		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
 		if err != nil {
@@ -32,7 +32,8 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 			return err
 		}
 		if alreadyExists {
-			log.Printf("correlationID: %s mediaEvent already exists, mediaEventID: %s", ledgerItem.LedgerID, mediaEvent.EventID)
+			log.Printf("correlationID: %s mediaEvent already exists, mediaEventID: %s mediaVersion: %d", ledgerItem.LedgerID,
+				mediaEvent.EventID, ledgerItem.MediaEventsVersion)
 			continue
 		}
 		err = HandleMediaGeneration(ledgerItem, mediaEvent)
@@ -46,6 +47,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 
 func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (tables.MediaEvent, error) {
 	result := tables.MediaEvent{}
+	result.LedgerID = ledgerItem.LedgerID
 	result.SystemPromptInstruction = prompt.SystemPromptText
 	result.MediaType = scriptMediaType
 	result.Niche = prompt.GetNiche()

@@ -86,7 +86,7 @@ func DeleteLedger(ledgerId string) error {
 func AppendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) error {
 	var err error
 	retryCount := 0
-	const maxRetries = 5
+	const maxRetries = 5 // TODO: Move these to env config values.
 	const minSeconds = 2
 	success := false
 	canRetry := true
@@ -196,7 +196,6 @@ func powInt(x, y int) int {
 }
 
 func updateLedgerEvents(ledgerEntry tables.Ledger, fieldKey string, versionKey string) error {
-
 	updatedValue := getField(&ledgerEntry, fieldKey)
 	// Check to see that no one updated before us.
 	oldVersionNumber := getField(&ledgerEntry, versionKey).Int()

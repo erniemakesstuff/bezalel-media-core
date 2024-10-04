@@ -4,6 +4,7 @@ import (
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 )
 
+// Creates final-render that compiles child media events.
 type FinalRenderWorkflow struct{}
 
 func (s *FinalRenderWorkflow) GetWorkflowName() string {
@@ -21,7 +22,6 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 	// 	Final rendering should specify all visual and audio resources in-order.
 	// 	Final rendering MediaEvent should include watermark info
 	// 	Set IsFinalRender to true for media events.
-	// WAIT for 30 minutes; periodically polling contentLookupKey to see if finished.
-	//	Set status EXPIRED on timeout.
+	// Don't need to wait; rely on reaper-workflow to invalidate the PublishEvent.
 	return nil
 }

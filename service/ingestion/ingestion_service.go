@@ -17,6 +17,8 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 		log.Printf("driver failed to get raw event payload: %s", err)
 		return err
 	}
+	// TODO: Dedupe RawContentHash prior to creating a new ledger item.
+
 	err = dal.CreateLedger(ledgerItem)
 	if err != nil {
 		log.Printf("failed to create a new ledger item: %s", err)

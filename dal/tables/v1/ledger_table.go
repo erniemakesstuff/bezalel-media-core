@@ -102,6 +102,7 @@ const (
 )
 
 type MediaEvent struct {
+	LedgerID                string             // Parent LedgerID
 	PromptInstruction       string             // Instructions for the diffusion models. Will be used to vectorize & re-use media.
 	SystemPromptInstruction string             // Roles, personalities, or response guidelines for the LLM.
 	MediaType               MediaType          // Avatar, Avatar.Custom, Text, Video, ...; used to determine appropriate PGVector table.
@@ -135,7 +136,9 @@ func (m *MediaEvent) GetEventID() string {
 
 func (m *MediaEvent) GetContentLookupKey() string {
 	// Use guid because promptHash for static-scripts will collide.
-	return fmt.Sprintf("%s.%s", m.MediaType, uuid.New().String())
+	// <media_Type>.<ledgerId>.<guid>
+	// LedgerId will be used to redrive ledgerItem from the s3 topic notifications
+	return fmt.Sprintf("%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String())
 }
 
 func HashString(text string) string {
@@ -156,6 +159,7 @@ const (
 
 // Associating PublishEvent to a PublisherProfile. Used for softlocking.
 type PublishEvent struct {
+	LedgerID            string        // Parent LedgerID
 	DistributionChannel string        // YouTube, Medium, Twitter, ...
 	PublishStatus       PublishStatus // Soft lock: ASSIGNED, PUBLISHING, COMPLETE, EXPIRED.
 	ExpiresAtTTL        int64         // Lifetime of assignment lock prior to entering EXPIRED state if no associated COMPLETE.

@@ -17,12 +17,12 @@ type Workflow interface {
 // Workflows run in order.
 var workflowsToRun = []Workflow{
 	&ScriptWorkflow{},
-	&EnrichmentWorkflow{},
-	&EmbeddingWorkflow{},
+	//&EnrichmentWorkflow{},
+	//&EmbeddingWorkflow{},
 	&AssignmentWorkflow{},
-	&FinalRenderWorkflow{},
-	&PublishWorkFlow{},
-	&CompletionWorkflow{},
+	//&FinalRenderWorkflow{},
+	//&PublishWorkFlow{},
+	//&CompletionWorkflow{},
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {

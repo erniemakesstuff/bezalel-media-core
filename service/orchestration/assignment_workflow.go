@@ -53,6 +53,9 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 	publishEventMap := s.createPublisherMap(publishEvents)
 	// 2. For each "ready" media event, collect valid distribution channel names
 	// 3. For each media event & channel name target; if absent from PublishEvent map, and not expired; then publish.
+	if len(mediaEventsReadyToAssign) == 0 {
+		log.Printf("correlationID: %s no media events ready to assign", ledgerItem.LedgerID)
+	}
 	for _, m := range mediaEventsReadyToAssign {
 		targetChannelNames := manifest.GetManifestLoader().ChannelNamesFromFormat(string(m.DistributionFormat))
 		for _, name := range targetChannelNames {
@@ -108,17 +111,19 @@ func (s *AssignmentWorkflow) assignMediaToPublisher(ledgerItem tables.Ledger, me
 		log.Printf("unable to assign media event to publisher profile: %s", err)
 		return err
 	}
-	publishProfileEvent := s.buildPublishEvent(assignedPublisherProfile, mediaEvent, distributionChannelName, processId)
+	publishProfileEvent := s.buildPublishEvent(ledgerItem.LedgerID,
+		assignedPublisherProfile, mediaEvent, distributionChannelName, processId)
 	return dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, []tables.PublishEvent{publishProfileEvent})
 }
 
-func (s *AssignmentWorkflow) buildPublishEvent(publisherAccount tables.AccountPublisher,
+func (s *AssignmentWorkflow) buildPublishEvent(ledgerId string, publisherAccount tables.AccountPublisher,
 	mediaEvent tables.MediaEvent,
 	distributionChannelName string, processId string) tables.PublishEvent {
 
 	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
 	expiryAtTime := time.Now().UnixMilli() + ninetyMinutes
 	return tables.PublishEvent{
+		LedgerID:            ledgerId,
 		DistributionChannel: distributionChannelName,
 		ProcessOwner:        processId,
 		ExpiresAtTTL:        expiryAtTime,
