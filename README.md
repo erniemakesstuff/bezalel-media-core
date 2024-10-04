@@ -11,7 +11,7 @@ Download package imports:
 Run integration tests:
 `cd <directory_of_package_you're testing>`
 `go test`
-Note: ensure your poller and other dependencies are running.
+Note: ensure your poller and other dependencies are running; purge the queues as needed.
 
 Environment variables to set:
 AWS_ACCESS_KEY_ID

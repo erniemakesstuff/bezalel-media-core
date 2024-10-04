@@ -18,11 +18,11 @@ type Workflow interface {
 var workflowsToRun = []Workflow{
 	&ScriptWorkflow{},
 	&EnrichmentWorkflow{},
+	&EmbeddingWorkflow{},
 	&AssignmentWorkflow{},
 	&FinalRenderWorkflow{},
 	&PublishWorkFlow{},
 	&CompletionWorkflow{},
-	&EmbeddingWorkflow{},
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {

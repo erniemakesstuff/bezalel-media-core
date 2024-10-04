@@ -35,6 +35,22 @@ func PollForLedgerUpdates() {
 	}
 }
 
+func Purge() {
+	// TODO: Add env config check to ensure this doesn't run in prod.
+	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{
+		QueueName: aws.String(queue_name),
+	})
+	if err != nil {
+		log.Fatalf("failed to get queue url: %s", err)
+	}
+	_, err = sqs_svc.PurgeQueue(&sqs.PurgeQueueInput{
+		QueueUrl: urlResult.QueueUrl,
+	})
+	if err != nil {
+		log.Fatalf("failed to purge queue url: %s", err)
+	}
+}
+
 func startConsumer(queueURL *string) {
 	log.Printf("started consumer")
 	for {

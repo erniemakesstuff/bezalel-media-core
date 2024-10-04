@@ -50,6 +50,7 @@ func cleanupTestData() {
 	dal.DeletePublisherAccount(Test_PublisherProfile_Medium.AccountID,
 		Test_PublisherProfile_Medium.PublisherProfileID)
 	dal.DeleteLedger(Test_Ledger_Blog.LedgerID)
+	Purge()
 }
 
 func TestAssignment(t *testing.T) {
