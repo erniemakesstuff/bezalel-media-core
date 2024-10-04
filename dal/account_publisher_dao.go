@@ -64,6 +64,21 @@ func GetPublisherAccount(accountId string, publisherProfileId string) (tables.Ac
 	return resultItem, err
 }
 
+func DeletePublisherAccount(accountId string, publisherProfileId string) error {
+	_, err := svc.DeleteItem(&dynamodb.DeleteItemInput{
+		TableName: aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+	})
+	return err
+}
+
 func ReleaseAssignment(accountId string, publisherProfileId string, processId string) error {
 	const releaseLockId = ""
 	const releaseTime = 0

@@ -8,6 +8,10 @@ Build and run
 Download package imports:
 `go get <package name>`
 
+Run integration tests:
+`cd <directory_of_package_you're testing>`
+`go test`
+Note: ensure your poller and other dependencies are running.
 
 Environment variables to set:
 AWS_ACCESS_KEY_ID
@@ -24,6 +28,7 @@ Stopping running containers; prunning images.
 
 Ensure to prune old images to save space!
 https://docs.docker.com/engine/manage-resources/pruning/
+
 
 ## Data Triggers
 ### Scheduled Crons

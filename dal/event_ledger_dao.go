@@ -70,6 +70,19 @@ func GetLedger(ledgerId string) (tables.Ledger, error) {
 	return resultItem, err
 }
 
+func DeleteLedger(ledgerId string) error {
+	_, err := svc.DeleteItem(&dynamodb.DeleteItemInput{
+		TableName: aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
+		Key: map[string]*dynamodb.AttributeValue{
+			"LedgerID": {
+				S: aws.String(ledgerId),
+			},
+		},
+	})
+
+	return err
+}
+
 func AppendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) error {
 	var err error
 	retryCount := 0
