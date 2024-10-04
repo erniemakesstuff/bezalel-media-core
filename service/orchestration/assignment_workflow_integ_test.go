@@ -75,7 +75,7 @@ func TestAssignment(t *testing.T) {
 	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_Medium.AccountID, Test_PublisherProfile_Medium.PublisherProfileID)
 	assert.NotEmpty(t, ledgerItem.PublishEvents, "publish events should not be empty")
 	assert.NotEmpty(t, publisherAcc.AssignmentLockID, "publisher account should have assignment lock")
-	assert.NotEmpty(t, publisherAcc.LockExpiresAtEpochMilliTTL, "publisher account should lock ttl")
+	assert.NotEmpty(t, publisherAcc.AssignmentLockTTL, "publisher account should lock ttl")
 
 	cleanupTestData()
 }

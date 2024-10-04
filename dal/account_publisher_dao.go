@@ -80,6 +80,14 @@ func DeletePublisherAccount(accountId string, publisherProfileId string) error {
 }
 
 func ReleaseAssignment(accountId string, publisherProfileId string, processId string) error {
+	return releaseAssignment(accountId, publisherProfileId, processId, "AssignmentLockID", "AssignmentLockTTL")
+}
+
+func ReleasePublishLock(accountId string, publisherProfileId string, processId string) error {
+	return releaseAssignment(accountId, publisherProfileId, processId, "PublishLockID", "PublishLockTTL")
+}
+
+func releaseAssignment(accountId string, publisherProfileId string, oldLockId string, lockIdField string, lockTtlField string) error {
 	const releaseLockId = ""
 	const releaseTime = 0
 	input := &dynamodb.UpdateItemInput{
@@ -99,13 +107,13 @@ func ReleaseAssignment(accountId string, publisherProfileId string, processId st
 				N: aws.String(strconv.FormatInt(releaseTime, 10)),
 			},
 			":ov": {
-				N: aws.String(processId), // old assignment lock
+				N: aws.String(oldLockId),
 			},
 		},
 		TableName:           aws.String(dynamo_configuration.TABLE_ACCOUNTS),
 		ReturnValues:        aws.String("NONE"),
-		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", "AssignmentLockID", "AssignmentLockEpochMilliTTL")),
-		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "AssignmentLockID")),
+		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", lockIdField, lockTtlField)),
+		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", lockIdField)),
 	}
 
 	_, err := svc.UpdateItem(input)
@@ -134,7 +142,7 @@ func AssignOldestActivePublisherProfile(processId string, distributionChannelNam
 		}
 	}
 
-	err := assignPublisher(resultItem.AccountID, resultItem.PublisherProfileID, processId)
+	err := takeAssignmentLock(resultItem.AccountID, resultItem.PublisherProfileID, processId)
 	if err != nil {
 		log.Printf("error assigning publisher profile: %s", err)
 		return resultItem, err
@@ -194,31 +202,37 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 	return resultItem, "", "", nil
 }
 
-func assignPublisher(accountId string, publisherProfileId string, processId string) error {
-	err := takePublisherProfileLock(accountId, publisherProfileId, processId)
-	if err != nil {
-		log.Printf("failed to take account publisher lock: %s", err)
-		return err
-	}
-	return err
-}
-
-func takePublisherProfileLock(accountId string, publisherProfileId string, processId string) error {
+func takeAssignmentLock(accountId string, publisherProfileId string, processId string) error {
 	account, err := GetPublisherAccount(accountId, publisherProfileId)
 	if err != nil {
 		log.Printf("error getting publisher account: %s", err)
 		return err
 	}
 
-	if !canTakeLock(processId, account) {
-		return fmt.Errorf("unable to take lock. accountId: %s publisherProfileId: %s processId: %s",
+	if !canTakeAssignmentLock(processId, account) {
+		return fmt.Errorf("unable to take assignment lock. accountId: %s publisherProfileId: %s processId: %s",
 			accountId, publisherProfileId, processId)
 	}
-	err = takeLock(processId, account)
+	err = takeLock(processId, account, "AssignmentLockID", "AssignmentLockTTL", account.AssignmentLockID)
 	return err
 }
 
-func canTakeLock(processId string, account tables.AccountPublisher) bool {
+func TakePublishLock(accountId string, publisherProfileId string, processId string) error {
+	account, err := GetPublisherAccount(accountId, publisherProfileId)
+	if err != nil {
+		log.Printf("error getting publisher account: %s", err)
+		return err
+	}
+
+	if !canTakePublishLock(processId, account) {
+		return fmt.Errorf("unable to take publish lock. accountId: %s publisherProfileId: %s processId: %s",
+			accountId, publisherProfileId, processId)
+	}
+	err = takeLock(processId, account, "PublishLockID", "PublishLockTTL", account.PublishLockID)
+	return err
+}
+
+func canTakeAssignmentLock(processId string, account tables.AccountPublisher) bool {
 	if account.AssignmentLockID == processId {
 		return true
 	}
@@ -226,15 +240,25 @@ func canTakeLock(processId string, account tables.AccountPublisher) bool {
 		return true
 	}
 
-	lockExpiry := account.LockExpiresAtEpochMilliTTL
+	lockExpiry := account.AssignmentLockTTL
 	epochNow := time.Now().UnixMilli()
-	if epochNow > lockExpiry {
-		return true
-	}
-	return false
+	return epochNow > lockExpiry
 }
 
-func takeLock(processId string, account tables.AccountPublisher) error {
+func canTakePublishLock(processId string, account tables.AccountPublisher) bool {
+	if account.PublishLockID == processId {
+		return true
+	}
+	if account.PublishLockID == "" {
+		return true
+	}
+
+	lockExpiry := account.PublishLockTTL
+	epochNow := time.Now().UnixMilli()
+	return epochNow > lockExpiry
+}
+
+func takeLock(processId string, account tables.AccountPublisher, lockIdField string, lockTtlField string, oldLockId string) error {
 	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
 	expiryTime := time.Now().UnixMilli() + ninetyMinutes
 	input := &dynamodb.UpdateItemInput{
@@ -254,13 +278,13 @@ func takeLock(processId string, account tables.AccountPublisher) error {
 				N: aws.String(strconv.FormatInt(expiryTime, 10)),
 			},
 			":ov": {
-				N: aws.String(account.AssignmentLockID), // old assignment lock
+				N: aws.String(oldLockId), // old assignment lock
 			},
 		},
 		TableName:           aws.String(dynamo_configuration.TABLE_ACCOUNTS),
 		ReturnValues:        aws.String("NONE"),
-		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", "AssignmentLockID", "AssignmentLockEpochMilliTTL")),
-		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "AssignmentLockID")),
+		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", lockIdField, lockTtlField)),
+		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", lockIdField)),
 	}
 
 	_, err := svc.UpdateItem(input)

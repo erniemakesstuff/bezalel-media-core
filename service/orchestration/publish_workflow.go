@@ -14,7 +14,7 @@ func (s *PublishWorkFlow) Run(ledgerItem tables.Ledger, processId string) error 
 	// TODO:
 	// Collect mediaEvents where IsFinalMedia for an assigned root-media event.
 	// Take Publishing Lock on publish-profile.
-	// Set status to PUBLISHING
+	// Set status to PUBLISHING: TakePublishLock
 	// Start upload to distribution channel. Blocking-upload call.
 	// WAIT for 30 minutes; periodically polling to verify upload.
 	//	Set COMPLETE for success.

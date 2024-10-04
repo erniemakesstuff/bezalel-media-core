@@ -16,5 +16,6 @@ func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 	// Mark LedgerItem COMPLETE if fully syndicated (examine PublishEvents FINISHED per-distributino channel)
 	// Set PublishEvents to Expired if no corresponding FINISHED within TTL.
 	//	Examine AssignmentLocks, and PublishLocks; publish invalidation events as needed.
+	// ReleaseAssignmentLock, ReleasePublishLock
 	return nil
 }
