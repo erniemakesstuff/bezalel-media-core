@@ -2,7 +2,9 @@ package orchestration
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -108,10 +110,10 @@ func asyncProcessMessage(message *sqs.Message, queueUrl *string, wg *sync.WaitGr
 
 func executeRelevantWorkflow(message *sqs.Message) error {
 	ledgerItem, err := decode(message)
-	log.Printf("correlationID: %s, executing workflow", ledgerItem.LedgerID)
 	if err != nil {
 		return err
 	}
+	log.Printf("correlationID: %s, executing workflow", ledgerItem.LedgerID)
 	return RunWorkflows(ledgerItem)
 }
 
@@ -130,19 +132,53 @@ func decode(message *sqs.Message) (tables.Ledger, error) {
 		log.Printf("failed to unmarshall sqs body: %s", err)
 		return tables.Ledger{}, err
 	}
-	var streamMessage sqs_model.DynamoCDC
-	err = json.Unmarshal([]byte(sqsMessage.Message), &streamMessage)
-	if err != nil {
-		log.Printf("failed to unmarshall sqs message: %s", err)
-		return tables.Ledger{}, err
+	isS3Event := strings.Contains(sqsMessage.Message, "aws:s3")
+	if isS3Event {
+		return decodeS3Event(sqsMessage)
+	} else {
+		return decodeDynamoEvent(sqsMessage)
 	}
-	ledgerItem := transformToLedger(streamMessage)
-	return ledgerItem, err
 }
 
-func transformToLedger(cdc sqs_model.DynamoCDC) tables.Ledger {
+func transformDynamoEventToLedger(cdc sqs_model.DynamoCDC) tables.Ledger {
 	resultItem := tables.Ledger{
 		LedgerID: cdc.Dynamodb.Keys.LedgerID.S,
 	}
 	return resultItem
+}
+
+func transformS3EventToLedger(cdc sqs_model.S3CDC) (tables.Ledger, error) {
+	key := cdc.Records[0].S3.Object.Key
+	contentLookupKeySegments := strings.Split(key, ".")
+	if len(contentLookupKeySegments) < 3 {
+		log.Printf("malformed s3-media-bucket key, exptect 3, was: %d for key: %s", len(contentLookupKeySegments), key)
+		return tables.Ledger{}, errors.New("malformed s3 key:" + key)
+	}
+	const index_ledger_id = 1
+	resultItem := tables.Ledger{
+		LedgerID: contentLookupKeySegments[index_ledger_id],
+	}
+	return resultItem, nil
+}
+
+func decodeDynamoEvent(sqsMessage sqs_model.SQSMessage) (tables.Ledger, error) {
+	var streamMessage sqs_model.DynamoCDC
+	err := json.Unmarshal([]byte(sqsMessage.Message), &streamMessage)
+	if err != nil {
+		log.Printf("failed to unmarshall sqs message: %s", err)
+		return tables.Ledger{}, err
+	}
+	ledgerItem := transformDynamoEventToLedger(streamMessage)
+	return ledgerItem, err
+}
+
+func decodeS3Event(sqsMessage sqs_model.SQSMessage) (tables.Ledger, error) {
+	var streamMessage sqs_model.S3CDC
+	err := json.Unmarshal([]byte(sqsMessage.Message), &streamMessage)
+	if err != nil {
+		log.Printf("failed to unmarshall sqs message: %s", err)
+		return tables.Ledger{}, err
+	}
+	ledgerItem, err := transformS3EventToLedger(streamMessage)
+	return ledgerItem, err
 }
