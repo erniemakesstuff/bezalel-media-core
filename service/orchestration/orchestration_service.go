@@ -31,6 +31,10 @@ func RunWorkflows(ledgerItem tables.Ledger) error {
 		log.Printf("correlationID: %s run workflows error: %s", ledgerItem.LedgerID, err)
 		return err
 	}
+	if latestLedger.LedgerID == "" {
+		log.Printf("----\n%+v\n------", latestLedger)
+		log.Panic(latestLedger.LedgerID + " was empty!")
+	}
 	if isCompleteWorkflow(latestLedger) {
 		return nil
 	}
@@ -41,6 +45,7 @@ func RunWorkflows(ledgerItem tables.Ledger) error {
 		if err != nil {
 			log.Printf("correlationID: %s workflow %s failed: %s", latestLedger.LedgerID, w.GetWorkflowName(), err)
 		}
+		log.Printf("correlationID: %s finished %s", latestLedger.LedgerID, w.GetWorkflowName())
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
@@ -43,6 +44,7 @@ func setupTest() {
 		manifest.GetManifestLoader()
 	})
 	dal.CreatePublisherAccount(Test_PublisherProfile_Medium)
+	Test_Ledger_Blog.LedgerID = uuid.New().String() + "-INTEG-TEST"
 	dal.CreateLedger(Test_Ledger_Blog)
 }
 
@@ -63,19 +65,19 @@ func TestAssignment(t *testing.T) {
 	assert.Equal(t, ledgerItem.LedgerStatus, tables.NEW_LEDGER, "should be status new")
 	assert.Empty(t, publisherAcc.AssignmentLockID, "no assignment lock should be present")
 	b, _ := json.MarshalIndent(ledgerItem, "", "  ")
-	log.Print("\n" + string(b) + "\n")
+	log.Print("\n TestAssignmentDebugPrint: " + string(b) + "\n")
 	// 2. Wait for mediaEvent to be created
-	time.Sleep(time.Duration(15) * time.Second)
+	time.Sleep(time.Duration(30) * time.Second)
 	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
 	assert.NotEmpty(t, ledgerItem.MediaEvents, "media events should not be empty")
 
 	// 3. Assert publisher profile assignment
-	time.Sleep(time.Duration(15) * time.Second)
+	time.Sleep(time.Duration(70) * time.Second)
 	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
 	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_Medium.AccountID, Test_PublisherProfile_Medium.PublisherProfileID)
 	assert.NotEmpty(t, ledgerItem.PublishEvents, "publish events should not be empty")
 	assert.NotEmpty(t, publisherAcc.AssignmentLockID, "publisher account should have assignment lock")
 	assert.NotEmpty(t, publisherAcc.AssignmentLockTTL, "publisher account should lock ttl")
 
-	cleanupTestData()
+	//cleanupTestData()
 }

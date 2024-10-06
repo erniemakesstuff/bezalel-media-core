@@ -148,6 +148,9 @@ func transformDynamoEventToLedger(cdc sqs_model.DynamoCDC) tables.Ledger {
 }
 
 func transformS3EventToLedger(cdc sqs_model.S3CDC) (tables.Ledger, error) {
+	if len(cdc.Records) == 0 {
+		return tables.Ledger{}, errors.New("empty s3 event given, no records")
+	}
 	key := cdc.Records[0].S3.Object.Key
 	contentLookupKeySegments := strings.Split(key, ".")
 	if len(contentLookupKeySegments) < 3 {

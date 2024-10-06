@@ -77,7 +77,7 @@ func createTableAccounts(svc *dynamodb.DynamoDB) {
 						AttributeName: aws.String("ChannelName"),
 						KeyType:       aws.String("HASH"),
 					},
-					{
+					{ // Use TTL instead of LastPublish because you don't want to select records that are locked on.
 						AttributeName: aws.String("LastPublishAtEpochMilli"),
 						KeyType:       aws.String("RANGE"),
 					},

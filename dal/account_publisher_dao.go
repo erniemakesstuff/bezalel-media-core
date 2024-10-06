@@ -127,22 +127,23 @@ func releaseAssignment(accountId string, publisherProfileId string, oldLockId st
 func AssignOldestActivePublisherProfile(processId string, distributionChannelName string) (tables.AccountPublisher, error) {
 	lpk := ""
 	lsk := ""
-	var resultItem tables.AccountPublisher
+	var err error
+	resultItem := tables.AccountPublisher{}
 	for {
-		resultItem, lpk, lsk, err := queryActivePublisherProfile(distributionChannelName, lpk, lsk)
+		resultItem, lpk, lsk, err = queryActivePublisherProfile(distributionChannelName, lpk, lsk)
 		if err != nil {
 			log.Printf("failed to query account publisher profile table: %s", err)
 			return tables.AccountPublisher{}, err
 		} else if lpk == "" && lsk == "" {
 			break
 		}
-
-		if resultItem.AccountID == "" {
-			return resultItem, errors.New("no active account publisher profiles found")
-		}
 	}
 
-	err := takeAssignmentLock(resultItem.AccountID, resultItem.PublisherProfileID, processId)
+	if resultItem.AccountID == "" {
+		return resultItem, errors.New("no active account publisher profiles found")
+	}
+
+	err = takeAssignmentLock(resultItem.AccountID, resultItem.PublisherProfileID, processId)
 	if err != nil {
 		log.Printf("error assigning publisher profile: %s", err)
 		return resultItem, err
@@ -165,11 +166,10 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 				S: aws.String("Expired"),
 			},
 			":n": {
-				S: aws.String(strconv.FormatInt(time.Now().UnixMilli(), 10)),
+				N: aws.String(strconv.FormatInt(time.Now().UnixMilli(), 10)),
 			},
 		},
-		// TODO fix this to filter by ExpiresAtTime LE, GE on epoch.
-		FilterExpression: aws.String("NOT BEGINS_WITH(AccountSubscriptionStatus, :e) AND LastPublishAtEpochMilli LT :n"),
+		FilterExpression: aws.String("NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n"),
 		Limit:            aws.Int64(maxRecordsPerQuery),
 	}
 	if lastPagekeyPK != "" {
@@ -189,10 +189,19 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 	}
 	const pk = "ChannelName"
 	const sk = "LastPublishAtEpochMilli"
-	if queryOutput.Count == aws.Int64(0) {
-		log.Printf("no records found in page for account publisher GSI, returning w/ pagination if set")
-		return tables.AccountPublisher{}, *queryOutput.LastEvaluatedKey[pk].S, *queryOutput.LastEvaluatedKey[sk].N, nil
+	pagePk := ""
+	pageSk := ""
+	if _, ok := queryOutput.LastEvaluatedKey[pk]; ok {
+		pagePk = *queryOutput.LastEvaluatedKey[pk].S
 	}
+	if _, ok := queryOutput.LastEvaluatedKey[sk]; ok {
+		pageSk = *queryOutput.LastEvaluatedKey[sk].S
+	}
+	if len(queryOutput.Items) == 0 {
+		log.Printf("no records found in page for account publisher GSI, returning w/ pagination if set")
+		return tables.AccountPublisher{}, pagePk, pageSk, nil
+	}
+
 	resultItem := tables.AccountPublisher{}
 	err = dynamodbattribute.UnmarshalMap(queryOutput.Items[0], &resultItem)
 	if err != nil {
@@ -278,13 +287,16 @@ func takeLock(processId string, account tables.AccountPublisher, lockIdField str
 				N: aws.String(strconv.FormatInt(expiryTime, 10)),
 			},
 			":ov": {
-				N: aws.String(oldLockId), // old assignment lock
+				S: aws.String(oldLockId), // old assignment lock
+			},
+			":n": {
+				S: aws.String("NULL"),
 			},
 		},
 		TableName:           aws.String(dynamo_configuration.TABLE_ACCOUNTS),
 		ReturnValues:        aws.String("NONE"),
 		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", lockIdField, lockTtlField)),
-		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", lockIdField)),
+		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov OR attribute_type(%s, :n)", lockIdField, lockIdField)),
 	}
 
 	_, err := svc.UpdateItem(input)

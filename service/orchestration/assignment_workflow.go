@@ -22,18 +22,28 @@ func (s *AssignmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 		log.Printf("correlationID: %s error extracting media events from ledger item: %s", ledgerItem.LedgerID, err)
 		return err
 	}
+	if len(mediaEvents) == 0 {
+		log.Printf("correlationID: %s no media events found", ledgerItem.LedgerID)
+	}
+
 	publishEvents, err := ledgerItem.GetExistingPublishEvents()
 	if err != nil {
 		log.Printf("correlationID: %s error extracting publish events from ledger item: %s", ledgerItem.LedgerID, err)
 		return err
+	}
+	if len(publishEvents) == 0 {
+		log.Printf("correlationID: %s no publish events found", ledgerItem.LedgerID)
 	}
 	mediaEventsReadyToAssign, err := s.collectRootMediaReadyToPublish(mediaEvents)
 	if err != nil {
 		log.Printf("correlationID: %s error collecting media events to assign, item: %s", ledgerItem.LedgerID, err)
 		return err
 	}
-	err = s.assignMedia(ledgerItem, mediaEventsReadyToAssign, publishEvents, processId)
+	if len(mediaEventsReadyToAssign) != 0 {
+		log.Printf("correlationID: %s found %d events ready to assign", ledgerItem.LedgerID, len(mediaEventsReadyToAssign))
+	}
 
+	err = s.assignMedia(ledgerItem, mediaEventsReadyToAssign, publishEvents, processId)
 	return err
 }
 
@@ -58,6 +68,11 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 	}
 	for _, m := range mediaEventsReadyToAssign {
 		targetChannelNames := manifest.GetManifestLoader().ChannelNamesFromFormat(string(m.DistributionFormat))
+		if len(targetChannelNames) == 0 {
+			log.Printf("correlationID: %s WARN no target channel names found for distribution format %s",
+				ledgerItem.LedgerID, m.DistributionFormat)
+		}
+
 		for _, name := range targetChannelNames {
 			if s.isAssignable(m, name, publishEventMap) {
 				// Assign.
