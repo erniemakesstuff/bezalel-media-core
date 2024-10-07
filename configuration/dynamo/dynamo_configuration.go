@@ -11,6 +11,7 @@ import (
 
 const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
+const TABLE_OVERRIDE_TEMPLATES = "OverrideTemplates"
 
 // Although status is derivable from ledger data, needed for index-lookup replayability.
 const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex"   // {Status, StartedAtEpochMilli}
@@ -24,6 +25,7 @@ func Init() {
 	svc := dynamodb.New(aws_configuration.GetAwsSession())
 	createTableAccounts(svc)
 	createEventLedgerTables(svc)
+	createOverrideTemplates(svc)
 }
 
 // Creates Accounts Table + PublisherProfile details.
@@ -148,6 +150,35 @@ func createEventLedgerTables(svc *dynamodb.DynamoDB) {
 			StreamEnabled:  aws.Bool(true),
 			StreamViewType: aws.String(dynamodb.StreamViewTypeKeysOnly),
 		},
+	}
+	createTable(svc, input, tableName)
+}
+
+func createOverrideTemplates(svc *dynamodb.DynamoDB) {
+	tableName := TABLE_OVERRIDE_TEMPLATES
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("AccountID"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("TemplateID"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("AccountID"),
+				KeyType:       aws.String("HASH"),
+			},
+			{
+				AttributeName: aws.String("TemplateID"),
+				KeyType:       aws.String("RANGE"),
+			},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		TableName:   aws.String(tableName),
 	}
 	createTable(svc, input, tableName)
 }
