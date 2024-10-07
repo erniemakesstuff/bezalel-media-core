@@ -121,7 +121,7 @@ func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetCh
 
 func (s *AssignmentWorkflow) assignMediaToPublisher(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent,
 	distributionChannelName string, processId string) error {
-	assignedPublisherProfile, err := dal.AssignOldestActivePublisherProfile(processId, distributionChannelName)
+	assignedPublisherProfile, err := dal.AssignPublisherProfile(processId, distributionChannelName, mediaEvent.Language)
 	if err != nil {
 		log.Printf("unable to assign media event to publisher profile: %s", err)
 		return err

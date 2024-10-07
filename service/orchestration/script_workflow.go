@@ -18,8 +18,8 @@ func (s *ScriptWorkflow) GetWorkflowName() string {
 
 func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 	log.Printf("correlationID: %s getting manifest loader", ledgerItem.LedgerID)
-	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.RawEventSource)
-	log.Printf("correlationID: %s received prompts %d from source %s", ledgerItem.LedgerID, len(prompts), ledgerItem.RawEventSource)
+	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.TriggerEventSource)
+	log.Printf("correlationID: %s received prompts %d from source %s", ledgerItem.LedgerID, len(prompts), ledgerItem.TriggerEventSource)
 	for _, p := range prompts {
 		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
 		if err != nil {
@@ -61,7 +61,8 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 	}
 
 	// TODO: Replace w/ raws; variable replacement.
-	enrichedPrompt := strings.Replace(prompt.PromptText, manifest.PROMPT_SCRIPT_VAR_RAW_TEXT, ledgerItem.RawEventPayload, -1)
+	enrichedPrompt := strings.Replace(prompt.PromptText, manifest.PROMPT_SCRIPT_VAR_RAW_TEXT, ledgerItem.TriggerEventPayload, -1)
+	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, ledgerItem.TriggerEventLanguage, -1)
 	result.PromptInstruction = enrichedPrompt
 	result.PromptHash = tables.HashString(result.PromptInstruction)
 	result.EventID = result.GetEventID()

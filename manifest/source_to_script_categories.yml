@@ -1,8 +1,8 @@
 sources:
   - sourceName: "v1/source/prompt"
     scriptCategories:
-      - categoryKey: "en.blog.default"
+      - categoryKey: "blog.default"
   - sourceName: "v1/source/blog"
     scriptCategories:
-      - categoryKey: "en.blog.personal"
-      - categoryKey: "en.blog.news_us"
+      - categoryKey: "blog.personal"
+      - categoryKey: "blog.news_us"

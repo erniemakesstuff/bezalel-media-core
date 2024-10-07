@@ -18,7 +18,10 @@ type ManifestLoader struct {
 var manifestInstance *ManifestLoader
 var once sync.Once
 
-const PROMPT_SCRIPT_VAR_RAW_TEXT = "$RAW_TEXT"
+const (
+	PROMPT_SCRIPT_VAR_RAW_TEXT = "$RAW_TEXT"
+	PROMPT_SCRIPT_VAR_LANGUAGE = "$LANGUAGE"
+)
 
 type Prompt struct {
 	PromptCategoryKey string `yaml:"promptCategoryKey"` // Language.MediaType.Niche

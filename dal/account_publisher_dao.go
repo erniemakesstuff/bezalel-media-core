@@ -124,13 +124,13 @@ func releaseAssignment(accountId string, publisherProfileId string, oldLockId st
 	return nil
 }
 
-func AssignOldestActivePublisherProfile(processId string, distributionChannelName string) (tables.AccountPublisher, error) {
+func AssignPublisherProfile(processId string, distributionChannelName string, publisherLanguage string) (tables.AccountPublisher, error) {
 	lpk := ""
 	lsk := ""
 	var err error
 	resultItem := tables.AccountPublisher{}
 	for {
-		resultItem, lpk, lsk, err = queryActivePublisherProfile(distributionChannelName, lpk, lsk)
+		resultItem, lpk, lsk, err = queryActivePublisherProfile(distributionChannelName, lpk, lsk, publisherLanguage)
 		if err != nil {
 			log.Printf("failed to query account publisher profile table: %s", err)
 			return tables.AccountPublisher{}, err
@@ -151,7 +151,8 @@ func AssignOldestActivePublisherProfile(processId string, distributionChannelNam
 	return resultItem, nil
 }
 
-func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK string, lastPageKeySK string) (tables.AccountPublisher, string, string, error) {
+func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK string,
+	lastPageKeySK string, publisherLanguage string) (tables.AccountPublisher, string, string, error) {
 	const maxRecordsPerQuery = 200
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String(dynamo_configuration.TABLE_ACCOUNTS),
@@ -168,8 +169,11 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 			":n": {
 				N: aws.String(strconv.FormatInt(time.Now().UnixMilli(), 10)),
 			},
+			":l": {
+				S: aws.String(publisherLanguage),
+			},
 		},
-		FilterExpression: aws.String("NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n"),
+		FilterExpression: aws.String("NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n AND PublisherLanguage = :l"),
 		Limit:            aws.Int64(maxRecordsPerQuery),
 	}
 	if lastPagekeyPK != "" {
