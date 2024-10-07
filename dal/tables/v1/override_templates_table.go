@@ -16,4 +16,9 @@ type OverrideTemplate struct {
 	TargetContentAssociation  TemplateType // Where or how to apply the template.
 	IsFullReplacement         bool         // Appends-only when false (default). Replaces when true.
 	DistributionChannelScopes string       // [YouTube, Instagram, ...] Where template can apply
+
+	AvatarSeed   string
+	AvatarPrompt string
+
+	DescriptionText string
 }
