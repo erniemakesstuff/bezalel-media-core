@@ -136,6 +136,7 @@ func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildren(
 	result.PromptHash = tables.HashString(result.PromptInstruction)
 	result.EventID = result.GetEventID()
 	result.FinalRenderSequences = s.createJsonOfRenderSequence(children)
+	result.ContentLookupKey = result.GetContentLookupKey()
 	return result
 }
 
