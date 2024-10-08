@@ -17,10 +17,10 @@ type Workflow interface {
 // Workflows run in order.
 var workflowsToRun = []Workflow{
 	&ScriptWorkflow{},
-	//&EnrichmentWorkflow{},
-	//&EmbeddingWorkflow{},
+	&EnrichmentWorkflow{},
+	&EmbeddingWorkflow{},
 	&AssignmentWorkflow{},
-	//&FinalRenderWorkflow{},
+	&FinalRenderWorkflow{},
 	//&PublishWorkFlow{},
 	//&CompletionWorkflow{},
 }

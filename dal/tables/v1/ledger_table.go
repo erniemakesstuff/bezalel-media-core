@@ -76,6 +76,7 @@ const (
 	MEDIA_TEXT  MediaType = "Text"
 	MEDIA_VIDEO MediaType = "Video"
 	IMAGE       MediaType = "Image"
+	RENDER      MediaType = "Render"
 )
 
 // DistributionFormat are only set for the Parent/Root MediaEvent.
@@ -101,6 +102,14 @@ const (
 	AVATAR_OVERLAY PositionLayer = "AVATAR_OVERLAY" // apply user specified avatar as higher priority.
 )
 
+type RenderMediaSequence struct {
+	EventID             string
+	MediaType           MediaType
+	VisualPositionLayer PositionLayer
+	RenderSequence      int
+	ContentLookupKey    string
+}
+
 type MediaEvent struct {
 	LedgerID                string             // Parent LedgerID
 	PromptInstruction       string             // Instructions for the diffusion models. Will be used to vectorize & re-use media.
@@ -113,9 +122,15 @@ type MediaEvent struct {
 	PromptHash              string             // Hash of the prompt instruction
 	EventID                 string             // Although derivable GetEventID, set for convenience on downstream calls.
 	ParentEventID           string             // null for root. Will be set if part of a script ID.
-	IsFinalRender           bool               // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
-	VisualPositionLayer     string             // For determining position of video/image media in the final rendering.
-	RenderSequence          int                // Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent.
+
+	// Set on enrichment parsing JSON callback from script process. Script prompt drives template json.
+	VisualPositionLayer PositionLayer // For determining position of video/image media in the final rendering.
+	RenderSequence      int           // Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent.
+
+	// Set on final rendering.
+	IsFinalRender        bool   // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
+	FinalRenderSequences string // json. []RenderMediaSequence
+	WatermarkText        string
 }
 
 func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
@@ -140,11 +155,26 @@ func (m *MediaEvent) GetContentLookupKey() string {
 	// LedgerId will be used to redrive ledgerItem from the s3 topic notifications
 	return fmt.Sprintf("%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String())
 }
+func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
+	return RenderMediaSequence{
+		EventID:             m.EventID,
+		MediaType:           m.MediaType,
+		VisualPositionLayer: m.VisualPositionLayer,
+		RenderSequence:      m.RenderSequence,
+		ContentLookupKey:    m.ContentLookupKey,
+	}
+}
 
 func HashString(text string) string {
 	hash := md5.Sum([]byte(text))
 	return hex.EncodeToString(hash[:])
 }
+
+type ByRenderSequence []MediaEvent
+
+func (a ByRenderSequence) Len() int           { return len(a) }
+func (a ByRenderSequence) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByRenderSequence) Less(i, j int) bool { return a[i].RenderSequence < a[j].RenderSequence }
 
 type PublishStatus string
 

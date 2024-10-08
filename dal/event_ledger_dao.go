@@ -3,10 +3,12 @@ package dal
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
@@ -82,6 +84,29 @@ func DeleteLedger(ledgerId string) error {
 }
 
 func AppendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) error {
+	var err error
+	retryCount := 0
+	const maxRetries = 5 // TODO: Move these to env config values.
+	const minSeconds = 2
+	success := false
+	canRetry := true
+	for retryCount < maxRetries && !success && canRetry {
+		err = appendLedgerMediaEvents(ledgerId, mediaEvents)
+		retryCount++
+		if err != nil && hasVersionConflict(err) {
+			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
+		} else if err != nil {
+			log.Printf("error appending media event to ledger: %s", err)
+			canRetry = false
+		} else {
+			success = true
+		}
+	}
+
+	return err
+}
+
+func appendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
@@ -131,6 +156,20 @@ func AppendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEv
 	const versionKeyScript = "PublishEventsVersion"
 	err = updateLedgerEvents(ledgerItem, fieldKeyScript, versionKeyScript)
 	return err
+}
+
+func hasVersionConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+	if aerr, ok := err.(awserr.Error); ok {
+		return aerr.Code() == dynamodb.ErrCodeConditionalCheckFailedException
+	}
+	return false
+}
+
+func powInt(x, y int) int {
+	return int(math.Pow(float64(x), float64(y)))
 }
 
 func updateLedgerEvents(ledgerEntry tables.Ledger, fieldKey string, versionKey string) error {

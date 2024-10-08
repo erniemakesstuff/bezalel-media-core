@@ -60,7 +60,7 @@ func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables
 func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsReadyToAssign []tables.MediaEvent,
 	publishEvents []tables.PublishEvent, processId string) error {
 	// 1. Init map of PublishEvent IDs containing states. Val PublishEvent
-	publishEventMap := s.createPublisherMap(publishEvents)
+	publishEventMap := CreatePubStateToPublisherMap(publishEvents)
 	// 2. For each "ready" media event, collect valid distribution channel names
 	// 3. For each media event & channel name target; if absent from PublishEvent map, and not expired; then publish.
 	if len(mediaEventsReadyToAssign) == 0 {
@@ -85,17 +85,6 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 		}
 	}
 	return nil
-}
-
-func (s *AssignmentWorkflow) createPublisherMap(publishEvents []tables.PublishEvent) map[string]tables.PublishEvent {
-	result := make(map[string]tables.PublishEvent)
-	if len(publishEvents) == 0 {
-		return result
-	}
-	for _, p := range publishEvents {
-		result[p.GetRootMediaAssignmentKey()] = p
-	}
-	return result
 }
 
 func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetChannelName string, publishEventMap map[string]tables.PublishEvent) bool {

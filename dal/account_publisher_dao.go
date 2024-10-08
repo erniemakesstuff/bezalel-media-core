@@ -36,6 +36,11 @@ func CreatePublisherAccount(item tables.AccountPublisher) error {
 	return err
 }
 
+func GetPublisherWatermarkInfo(accountId string, publisherProfileId string) (string, error) {
+	// TODO https://trello.com/c/KoxquFya
+	return "TrueVineAI", nil
+}
+
 func GetPublisherAccount(accountId string, publisherProfileId string) (tables.AccountPublisher, error) {
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(dynamo_configuration.TABLE_ACCOUNTS),

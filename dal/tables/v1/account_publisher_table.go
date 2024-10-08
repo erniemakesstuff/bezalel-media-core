@@ -46,4 +46,5 @@ type AccountPublisher struct {
 	AssignmentLockTTL     int64  // Time-in-future for when lock can be forcefully released for re-assignement. Epoch Milliseconds.
 	PublishLockID         string // ID of the process performing the publish to distribution channels.
 	PublishLockTTL        int64  // Epoch Milliseconds.
+	WatermarkText         string
 }

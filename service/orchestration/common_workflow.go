@@ -80,3 +80,42 @@ func AllChildrenRendered(mediaEventRoot tables.MediaEvent, mediaEvents []tables.
 	}
 	return true
 }
+
+func CollectChildrenEvents(mediaEventRoot tables.MediaEvent, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
+	result := []tables.MediaEvent{}
+	for _, m := range mediaEvents {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRoot.GetEventID() {
+			continue
+		}
+		result = append(result, m)
+	}
+	return result
+}
+
+func CreatePubStateToPublisherMap(publishEvents []tables.PublishEvent) map[string]tables.PublishEvent {
+	result := make(map[string]tables.PublishEvent)
+	if len(publishEvents) == 0 {
+		return result
+	}
+	for _, p := range publishEvents {
+		result[p.GetRootMediaAssignmentKey()] = p
+	}
+	return result
+}
+
+func CreateMediaEventToPublisherMap(publishEvents []tables.PublishEvent, mediaEvents []tables.MediaEvent) map[string]tables.PublishEvent {
+	result := make(map[string]tables.PublishEvent)
+	if len(publishEvents) == 0 || len(mediaEvents) == 0 {
+		return result
+	}
+
+	publisherIdMap := make(map[string]tables.PublishEvent)
+	for _, p := range publishEvents {
+		result[p.RootMediaEventID] = p
+	}
+
+	for _, m := range mediaEvents {
+		result[m.GetEventID()] = publisherIdMap[m.GetEventID()]
+	}
+	return result
+}

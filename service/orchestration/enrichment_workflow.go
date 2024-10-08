@@ -42,6 +42,10 @@ func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 }
 
 func spawnChildMediaEvents(ledgerItem tables.Ledger, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) error {
-	// TODO: Call HandleMediaGeneration
+	// TODO:
+	// Parse script json
+	// Output children media events w/ incrementing RenderSequence attribute set.
+	// Set PositionLayer instruction.
+	// Call HandleMediaGeneration
 	return nil
 }
