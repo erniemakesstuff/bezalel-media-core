@@ -18,17 +18,6 @@ func (s *FinalRenderWorkflow) GetWorkflowName() string {
 }
 
 func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
-	// TODO:
-	// Select PublishEvent ASSIGNED w/o RENDERING state recorded.
-	// Verify child media is ready, or Root mediaEvent distribution channel has no children
-	// Spawn child MediaEvent (singular!) for final-rendering
-	// 	Final rendering should specify all visual and audio resources in-order.
-	// 	Final rendering MediaEvent should include watermark info
-	// 	Set IsFinalRender to true for media events.
-	// Append status RENDERING
-	// Don't need to wait; rely on reaper-workflow to invalidate the PublishEvent.
-
-	// TODO: add check for mediaEvent final render exists without a PublishEvent render; republish SNS.
 	assignedPublishEvents, err := s.getPublishEventsWhereAssigned(ledgerItem)
 	if err != nil {
 		return err
