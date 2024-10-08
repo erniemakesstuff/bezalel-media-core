@@ -157,6 +157,8 @@ func transformS3EventToLedger(cdc sqs_model.S3CDC) (tables.Ledger, error) {
 		log.Printf("malformed s3-media-bucket key, exptect 3, was: %d for key: %s", len(contentLookupKeySegments), key)
 		return tables.Ledger{}, errors.New("malformed s3 key:" + key)
 	}
+	// If you set the mediaEventsVersion to anything BUT 0,
+	// your message will be ignored. See orchestration_service stale check.
 	const index_ledger_id = 1
 	resultItem := tables.Ledger{
 		LedgerID: contentLookupKeySegments[index_ledger_id],
