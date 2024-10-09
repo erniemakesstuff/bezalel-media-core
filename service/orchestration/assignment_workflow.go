@@ -117,7 +117,23 @@ func (s *AssignmentWorkflow) assignMediaToPublisher(ledgerItem tables.Ledger, me
 	}
 	publishProfileEvent := s.buildPublishEvent(ledgerItem.LedgerID,
 		assignedPublisherProfile, mediaEvent, distributionChannelName, processId)
-	return dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, []tables.PublishEvent{publishProfileEvent})
+	err = dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, []tables.PublishEvent{publishProfileEvent})
+	if err != nil {
+		log.Printf("unable to write publish-event to ledger: %s", err)
+		// Try release assignment
+		dal.ReleaseAssignment(assignedPublisherProfile.AccountID, assignedPublisherProfile.PublisherProfileID, processId)
+		return err
+	}
+
+	isSuccessfulPublishOwner, err := WaitOptimisticVerifyWroteLedger(publishProfileEvent.GetEventID(), ledgerItem.LedgerID)
+	if err != nil || !isSuccessfulPublishOwner {
+		log.Printf("unable to verify publish-event ledger ownership: %s", err)
+		// Try release assignment
+		dal.ReleaseAssignment(assignedPublisherProfile.AccountID, assignedPublisherProfile.PublisherProfileID, processId)
+		return err
+	}
+
+	return err
 }
 
 func (s *AssignmentWorkflow) buildPublishEvent(ledgerId string, publisherAccount tables.AccountPublisher,

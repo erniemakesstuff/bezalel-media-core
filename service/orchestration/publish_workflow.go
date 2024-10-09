@@ -59,6 +59,15 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 		return err
 	}
 
+	isSuccessfullyLocked, err := WaitOptimisticVerifyWroteLedger(renderEvent.GetEventID(), ledgerId)
+	if err != nil || !isSuccessfullyLocked {
+		log.Printf("correlationID: %s unable to verify publish-event ledger softlock: %s", ledgerId, err)
+		// Try release publish lock
+		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
+		wg.Done()
+		return err
+	}
+
 	err = driver.Publish(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)

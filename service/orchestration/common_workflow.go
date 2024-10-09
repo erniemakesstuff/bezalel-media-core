@@ -2,7 +2,9 @@ package orchestration
 
 import (
 	"log"
+	"time"
 
+	"github.com/bezalel-media-core/v2/dal"
 	dao "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 )
@@ -51,6 +53,31 @@ func ExistsInLedger(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent) (boo
 
 func IsParentMediaEvent(mediaEvent tables.MediaEvent) bool {
 	return mediaEvent.ParentEventID == ""
+}
+
+// Call when appending a soft-lock event to ledger such as ASSIGN or PUBLISHING
+// to verify that you own the ASSIGN or PUBLISH
+func WaitOptimisticVerifyWroteLedger(expectedPublisherEventID string, ledgerId string) (bool, error) {
+	time.Sleep(time.Duration(5) * time.Second)
+
+	ledgerItem, err := dal.GetLedger(ledgerId)
+	if err != nil {
+		log.Printf("correlationID: %s failed to fetch event ledger for verification: %s", ledgerId, err)
+		return false, err
+	}
+
+	existingPublishEvents, err := ledgerItem.GetExistingPublishEvents()
+	if err != nil {
+		log.Printf("correlationID: %s error retreiving existing publish events for verification: %s", ledgerId, err)
+		return false, err
+	}
+
+	for _, p := range existingPublishEvents {
+		if p.GetEventID() == expectedPublisherEventID {
+			return true, nil
+		}
+	}
+	return false, err
 }
 
 func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
