@@ -70,7 +70,7 @@ func (s *FinalRenderWorkflow) getRootMediaAllChildrenReady(ledgerItem tables.Led
 		assignedRootMediaIds[p.RootMediaEventID] = p.GetEventID()
 	}
 	for _, r := range mediaEvents {
-		if _, ok := assignedRootMediaIds[r.GetEventID()]; ok && AllChildrenRendered(r, mediaEvents) {
+		if _, ok := assignedRootMediaIds[r.GetEventID()]; ok && AllChildrenRendered(r.GetEventID(), mediaEvents) {
 			rootMedias = append(rootMedias, r)
 		}
 	}

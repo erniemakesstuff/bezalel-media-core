@@ -21,8 +21,8 @@ var workflowsToRun = []Workflow{
 	&EmbeddingWorkflow{},
 	&AssignmentWorkflow{},
 	&FinalRenderWorkflow{},
-	//&PublishWorkFlow{},
-	//&CompletionWorkflow{},
+	&PublishWorkFlow{},
+	&CompletionWorkflow{},
 }
 
 func RunWorkflows(ledgerItem tables.Ledger) error {

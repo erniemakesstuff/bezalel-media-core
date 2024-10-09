@@ -50,7 +50,7 @@ func (s *AssignmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
 	result := []tables.MediaEvent{}
 	for _, m := range mediaEvents {
-		if IsParentMediaEvent(m) && AllChildrenRendered(m, mediaEvents) {
+		if IsParentMediaEvent(m) && AllChildrenRendered(m.GetEventID(), mediaEvents) {
 			result = append(result, m)
 		}
 	}

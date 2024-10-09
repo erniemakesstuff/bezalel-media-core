@@ -133,6 +133,29 @@ func appendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) e
 }
 
 func AppendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEvent) error {
+	var err error
+	retryCount := 0
+	const maxRetries = 5
+	const minSeconds = 2
+	success := false
+	canRetry := true
+	for retryCount < maxRetries && !success && canRetry {
+		err = appendLedgerPublishEvents(ledgerId, publishEvents)
+		retryCount++
+		if err != nil && hasVersionConflict(err) {
+			time.Sleep(time.Duration(powInt(minSeconds, retryCount)) * time.Second)
+		} else if err != nil {
+			log.Printf("error appending publish event to ledger: %s", err)
+			canRetry = false
+		} else {
+			success = true
+		}
+	}
+
+	return err
+}
+
+func appendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEvent) error {
 	ledgerItem, err := GetLedger(ledgerId)
 	if err != nil {
 		log.Printf("error fetching ledger: %s", err)
@@ -234,11 +257,12 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 	existing := stringset.New()
 	for _, e := range s1 {
 		existing.Add(e.GetEventID())
+		existing.Add(e.GetRootMediaAssignmentKey())
 		result = append(result, e)
 	}
 
 	for _, e := range s2 {
-		if !existing.Contains(e.GetEventID()) {
+		if !existing.Contains(e.GetEventID()) && !existing.Contains(e.GetRootMediaAssignmentKey()) {
 			result = append(result, e)
 		}
 	}

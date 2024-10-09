@@ -53,23 +53,13 @@ func IsParentMediaEvent(mediaEvent tables.MediaEvent) bool {
 	return mediaEvent.ParentEventID == ""
 }
 
-func AllChildrenRendered(mediaEventRoot tables.MediaEvent, mediaEvents []tables.MediaEvent) bool {
-	exists, err := MediaExists(mediaEventRoot.ContentLookupKey)
-	if err != nil {
-		log.Printf("unexpected mediaExists error: %s", err)
-		return false
-	}
-	if !exists {
-		log.Printf("root media not set: %s", mediaEventRoot.ContentLookupKey)
-		return false
-	}
-
+func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	for _, m := range mediaEvents {
-		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRoot.GetEventID() {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId || m.GetEventID() != rootId {
 			continue
 		}
 
-		exists, err = MediaExists(m.ContentLookupKey)
+		exists, err := MediaExists(m.ContentLookupKey)
 		if err != nil {
 			log.Printf("unexpected mediaExists error: %s", err)
 			return false
