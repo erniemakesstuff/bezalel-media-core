@@ -310,7 +310,7 @@ func takeLock(processId string, account tables.AccountPublisher, lockIdField str
 
 	_, err := svc.UpdateItem(input)
 	if err != nil {
-		log.Printf("error calling UpdateItem: %s", err)
+		log.Printf("error calling takeLock: %s", err)
 		return err
 	}
 	return err

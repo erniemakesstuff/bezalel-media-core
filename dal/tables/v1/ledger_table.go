@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -140,7 +139,7 @@ func GetDistributionFormatFromString(format string) (DistributionFormat, error) 
 	case strings.EqualFold(format, string(DIST_FORMAT_LVIDEO)):
 		return DIST_FORMAT_LVIDEO, nil
 	}
-	return DIST_FORMAT_BLOG, errors.New("unable to find matching distribution format from string")
+	return DIST_FORMAT_BLOG, fmt.Errorf("unable to find matching distribution format from string: %s", format)
 }
 
 func (m *MediaEvent) GetEventID() string {

@@ -225,7 +225,7 @@ func updateLedgerEvents(ledgerEntry tables.Ledger, fieldKey string, versionKey s
 
 	_, err := svc.UpdateItem(input)
 	if err != nil {
-		log.Fatalf("error calling UpdateItem: %s", err)
+		log.Printf("error calling updateLedgerEvents: %s", err)
 	}
 	return err
 }
@@ -262,7 +262,7 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 	}
 
 	for _, e := range s2 {
-		if !existing.Contains(e.GetEventID()) && !existing.Contains(e.GetRootMediaAssignmentKey()) {
+		if !existing.Contains(e.GetEventID()) {
 			result = append(result, e)
 		}
 	}

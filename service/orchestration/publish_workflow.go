@@ -23,6 +23,9 @@ func (s *PublishWorkFlow) Run(ledgerItem tables.Ledger, processId string) error 
 		log.Printf("correlationID: %s error generating publish commands: %s", ledgerItem.LedgerID, err)
 		return err
 	}
+	if len(publishCommands) == 0 {
+		log.Printf("correlationID: %s no publish commands created", ledgerItem.LedgerID)
+	}
 	var wg sync.WaitGroup
 	for _, p := range publishCommands {
 		wg.Add(1)
@@ -96,10 +99,15 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 		return []drivers.PublishCommand{}, err
 	}
 
-	publishStateToPubMap := CreatePubStateToPublisherMap(publishEvents)
+	publishStateToPubMap := PubStateByRootMedia(publishEvents)
 	result := []drivers.PublishCommand{}
 	for _, p := range publishEvents {
+		if len(p.DistributionChannel) == 0 {
+			log.Printf("%+v", p)
+			log.Fatalf("errm. what?")
+		}
 		if s.isRenderWithoutPublish(p, publishStateToPubMap) && AllChildrenRendered(p.RootMediaEventID, mediaEvents) {
+			log.Printf("correlationID: %s found RenderWithoutPublish", ledgerItem.LedgerID)
 			finalRenderChildren := s.getFinalChildrenMedia(p.RootMediaEventID, mediaEvents)
 			publishCommand := s.toPublishCommand(p, finalRenderChildren)
 			result = append(result, publishCommand)
@@ -118,7 +126,6 @@ func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publi
 		// Expired, allow append new publish event.
 		return true
 	}
-
 	return !ok
 }
 

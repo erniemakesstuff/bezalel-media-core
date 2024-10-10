@@ -59,10 +59,7 @@ func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables
 
 func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsReadyToAssign []tables.MediaEvent,
 	publishEvents []tables.PublishEvent, processId string) error {
-	// 1. Init map of PublishEvent IDs containing states. Val PublishEvent
-	publishEventMap := CreatePubStateToPublisherMap(publishEvents)
-	// 2. For each "ready" media event, collect valid distribution channel names
-	// 3. For each media event & channel name target; if absent from PublishEvent map, and not expired; then publish.
+	publishEventMap := PubStateByRootMedia(publishEvents)
 	if len(mediaEventsReadyToAssign) == 0 {
 		log.Printf("correlationID: %s no media events ready to assign", ledgerItem.LedgerID)
 	}
@@ -78,7 +75,7 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 				// Assign.
 				err := s.assignMediaToPublisher(ledgerItem, m, name, processId)
 				if err != nil {
-					log.Printf("correlationID: %s failed to assign media to publisher: %s", ledgerItem.LedgerID, err)
+					log.Printf("correlationID: %s unable to assign media to publisher: %s", ledgerItem.LedgerID, err)
 					return err
 				}
 			}

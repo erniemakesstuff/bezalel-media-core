@@ -109,7 +109,7 @@ func CollectChildrenEvents(mediaEventRoot tables.MediaEvent, mediaEvents []table
 	return result
 }
 
-func CreatePubStateToPublisherMap(publishEvents []tables.PublishEvent) map[string]tables.PublishEvent {
+func PubStateByRootMedia(publishEvents []tables.PublishEvent) map[string]tables.PublishEvent {
 	result := make(map[string]tables.PublishEvent)
 	if len(publishEvents) == 0 {
 		return result
@@ -120,19 +120,35 @@ func CreatePubStateToPublisherMap(publishEvents []tables.PublishEvent) map[strin
 	return result
 }
 
+func PubStateByPubEventID(publishEvents []tables.PublishEvent) map[string]tables.PublishEvent {
+	result := make(map[string]tables.PublishEvent)
+	if len(publishEvents) == 0 {
+		return result
+	}
+	for _, p := range publishEvents {
+		result[p.GetEventID()] = p
+	}
+	return result
+}
+
 func CreateMediaEventToPublisherMap(publishEvents []tables.PublishEvent, mediaEvents []tables.MediaEvent) map[string]tables.PublishEvent {
 	result := make(map[string]tables.PublishEvent)
 	if len(publishEvents) == 0 || len(mediaEvents) == 0 {
+		log.Printf("WARN returning empty map")
 		return result
 	}
 
 	publisherIdMap := make(map[string]tables.PublishEvent)
 	for _, p := range publishEvents {
-		result[p.RootMediaEventID] = p
+		publisherIdMap[p.RootMediaEventID] = p
 	}
 
 	for _, m := range mediaEvents {
-		result[m.GetEventID()] = publisherIdMap[m.GetEventID()]
+		p, ok := publisherIdMap[m.GetEventID()]
+		if !ok {
+			continue
+		}
+		result[m.GetEventID()] = p
 	}
 	return result
 }

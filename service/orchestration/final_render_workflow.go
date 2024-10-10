@@ -22,10 +22,16 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 	if err != nil {
 		return err
 	}
+	if len(assignedPublishEvents) == 0 {
+		log.Printf("correlationID: %s no assigned publish events found", ledgerItem.LedgerID)
+	}
 
 	rootMediasReadyForPublish, err := s.getRootMediaAllChildrenReady(ledgerItem, assignedPublishEvents)
 	if err != nil {
 		return err
+	}
+	if len(rootMediasReadyForPublish) == 0 {
+		log.Printf("correlationID: %s no root media events ready for publish found", ledgerItem.LedgerID)
 	}
 
 	err = s.spawnFinalRenderMediaEvent(ledgerItem, rootMediasReadyForPublish)
@@ -40,7 +46,7 @@ func (s *FinalRenderWorkflow) getPublishEventsWhereAssigned(ledgerItem tables.Le
 		return assignedPublishEvents, err
 	}
 
-	publisherEventMap := CreatePubStateToPublisherMap(publishEvents)
+	publisherEventMap := PubStateByPubEventID(publishEvents)
 
 	for _, p := range publishEvents {
 		if s.isAssignedWithoutRender(p, publisherEventMap) {
@@ -92,16 +98,18 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	for _, r := range rootMediaEventsToFinalize {
 		children := CollectChildrenEvents(r, mediaEvents)
 		sort.Sort(tables.ByRenderSequence(children))
-		assignedPublisherProfile := mediaEventToPublisherMap[r.GetEventID()]
+		assignedPublisherProfile, ok := mediaEventToPublisherMap[r.GetEventID()]
+		if !ok || len(assignedPublisherProfile.LedgerID) == 0 {
+			log.Fatalf("missing key: %s %d", r.GetEventID(), len(mediaEventToPublisherMap))
+		}
 		finalMediaEvent := s.createFinalRenderMediaEventFromChildren(ledgerItem, r, children, assignedPublisherProfile)
 		err = HandleMediaGeneration(ledgerItem, finalMediaEvent)
 		if err != nil {
 			log.Printf("correlationID: %s failed to append finalRender media event: %s", ledgerItem.LedgerID, err)
 			return err
 		}
-
-		err = dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, []tables.PublishEvent{
-			s.createPublishEventRender(assignedPublisherProfile)})
+		renderEvent := s.createPublishEventRender(assignedPublisherProfile)
+		err = dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, []tables.PublishEvent{renderEvent})
 		if err != nil {
 			log.Printf("correlationID: %s failed to append RENDERING publish event: %s", ledgerItem.LedgerID, err)
 			return err

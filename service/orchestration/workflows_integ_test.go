@@ -31,10 +31,11 @@ var Test_PublisherProfile_EN_Medium = tables.AccountPublisher{
 }
 
 var Test_Ledger_Blog = tables.Ledger{
-	LedgerID:            "TestLedgerId",
-	LedgerStatus:        tables.NEW_LEDGER,
-	TriggerEventSource:  "v1/source/blog",
-	TriggerEventPayload: "The weather in Seattle is fair.",
+	LedgerID:             "TestLedgerId",
+	LedgerStatus:         tables.NEW_LEDGER,
+	TriggerEventSource:   "v1/source/blog",
+	TriggerEventPayload:  "The weather in Seattle is fair.",
+	TriggerEventLanguage: "EN",
 }
 
 func setupTest() {
@@ -52,14 +53,13 @@ func setupTest() {
 func cleanupTestData() {
 	dal.DeletePublisherAccount(Test_PublisherProfile_EN_Medium.AccountID,
 		Test_PublisherProfile_EN_Medium.PublisherProfileID)
-	dal.DeleteLedger(Test_Ledger_Blog.LedgerID)
+	//dal.DeleteLedger(Test_Ledger_Blog.LedgerID)
 	time.Sleep(time.Duration(40) * time.Second)
 	Purge()
 }
 
 func TestWorkflows(t *testing.T) {
 	setupTest()
-	time.Sleep(time.Duration(5) * time.Second)
 	ledgerItem, _ := dal.GetLedger(Test_Ledger_Blog.LedgerID)
 	publisherAcc, _ := dal.GetPublisherAccount(Test_PublisherProfile_EN_Medium.AccountID, Test_PublisherProfile_EN_Medium.PublisherProfileID)
 	// 1. Create new trigger event; verify created.
@@ -73,12 +73,37 @@ func TestWorkflows(t *testing.T) {
 	assert.NotEmpty(t, ledgerItem.MediaEvents, "media events should not be empty")
 
 	// 3. Assert publisher profile assignment
-	time.Sleep(time.Duration(70) * time.Second)
+	time.Sleep(time.Duration(30) * time.Second)
 	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
 	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_EN_Medium.AccountID, Test_PublisherProfile_EN_Medium.PublisherProfileID)
 	assert.NotEmpty(t, ledgerItem.PublishEvents, "publish events should not be empty")
 	assert.NotEmpty(t, publisherAcc.AssignmentLockID, "publisher account should have assignment lock")
 	assert.NotEmpty(t, publisherAcc.AssignmentLockTTL, "publisher account should lock ttl")
 
-	//cleanupTestData()
+	// 4. Verify final render media event created
+	time.Sleep(time.Duration(5) * time.Second)
+	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
+	assert.True(t, hasFinalMediaRender(ledgerItem), "expected FinalRender media event")
+	assert.True(t, hasRenderPublishEvent(ledgerItem), "expected RENDERING publish event")
+	cleanupTestData()
+}
+
+func hasFinalMediaRender(ledgerItem tables.Ledger) bool {
+	mediaEvents, _ := ledgerItem.GetExistingMediaEvents()
+	for _, m := range mediaEvents {
+		if m.IsFinalRender {
+			return true
+		}
+	}
+	return false
+}
+
+func hasRenderPublishEvent(ledgerItem tables.Ledger) bool {
+	publishEvents, _ := ledgerItem.GetExistingPublishEvents()
+	for _, p := range publishEvents {
+		if p.PublishStatus == tables.RENDERING {
+			return true
+		}
+	}
+	return false
 }

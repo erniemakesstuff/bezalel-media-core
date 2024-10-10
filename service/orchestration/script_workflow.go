@@ -51,7 +51,7 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 	result.SystemPromptInstruction = prompt.SystemPromptText
 	result.MediaType = scriptMediaType
 	result.Niche = prompt.GetNiche()
-	result.Language = prompt.GetLanguage()
+	result.Language = ledgerItem.TriggerEventLanguage
 	var err error
 	result.DistributionFormat, err = tables.GetDistributionFormatFromString(
 		prompt.GetDistributionFormat())

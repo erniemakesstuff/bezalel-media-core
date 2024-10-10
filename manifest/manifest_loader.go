@@ -29,16 +29,12 @@ type Prompt struct {
 	PromptText        string `yaml:"promptText"`
 }
 
-func (p *Prompt) GetLanguage() string {
+func (p *Prompt) GetDistributionFormat() string {
 	return strings.Split(p.PromptCategoryKey, ".")[0]
 }
 
-func (p *Prompt) GetDistributionFormat() string {
-	return strings.Split(p.PromptCategoryKey, ".")[1]
-}
-
 func (p *Prompt) GetNiche() string {
-	return strings.Split(p.PromptCategoryKey, ".")[2]
+	return strings.Split(p.PromptCategoryKey, ".")[1]
 }
 
 type ScriptPromptCollection struct {
