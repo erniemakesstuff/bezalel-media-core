@@ -85,6 +85,14 @@ func TestWorkflows(t *testing.T) {
 	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
 	assert.True(t, hasFinalMediaRender(ledgerItem), "expected FinalRender media event")
 	assert.True(t, hasRenderPublishEvent(ledgerItem), "expected RENDERING publish event")
+
+	// 4. Verify PUBLISHING media event created
+	time.Sleep(time.Duration(5) * time.Second)
+	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
+	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_EN_Medium.AccountID, Test_PublisherProfile_EN_Medium.PublisherProfileID)
+	assert.True(t, hasPublishingPublishEvent(ledgerItem), "expected PUBLISHING publish event")
+	assert.NotEmpty(t, publisherAcc.PublishLockID, "expected PublisherLockID to be set")
+	assert.NotEmpty(t, publisherAcc.PublishLockTTL, "expected PublishLockTTL to be set")
 	cleanupTestData()
 }
 
@@ -102,6 +110,16 @@ func hasRenderPublishEvent(ledgerItem tables.Ledger) bool {
 	publishEvents, _ := ledgerItem.GetExistingPublishEvents()
 	for _, p := range publishEvents {
 		if p.PublishStatus == tables.RENDERING {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPublishingPublishEvent(ledgerItem tables.Ledger) bool {
+	publishEvents, _ := ledgerItem.GetExistingPublishEvents()
+	for _, p := range publishEvents {
+		if p.PublishStatus == tables.PUBLISHING {
 			return true
 		}
 	}
