@@ -3,7 +3,9 @@ package orchestration
 import (
 	"fmt"
 	"log"
+	"time"
 
+	"github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"github.com/bezalel-media-core/v2/manifest"
 )
@@ -16,11 +18,6 @@ func (s *CompletionWorkflow) GetWorkflowName() string {
 }
 
 func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
-	// TODO:
-	// Mark LedgerItem COMPLETE if fully syndicated (examine PublishEvents FINISHED per-distributino channel)
-	// Set PublishEvents to Expired if no corresponding FINISHED within TTL.
-	//	Examine AssignmentLocks, and PublishLocks; publish invalidation events as needed.
-	// ReleaseAssignmentLock, ReleasePublishLock
 	isSyndicated, err := s.isFullySyndicated(ledgerItem)
 	if err != nil {
 		log.Printf("correlationID: %s error determining syndication status: %s", ledgerItem.LedgerID, err)
@@ -29,6 +26,18 @@ func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 	if !isSyndicated {
 		log.Printf("correlationID: %s ledger is not fully syndicated; cannot complete", ledgerItem.LedgerID)
 		return nil
+	}
+
+	err = s.expireLocks(ledgerItem)
+	if err != nil {
+		log.Printf("correlationID: %s error with expireLocks in completion workflow: %s", ledgerItem.LedgerID, err)
+		return err
+	}
+
+	err = dal.SetLedgerStatus(ledgerItem, tables.FINISHED_LEDGER)
+	if err != nil {
+		log.Printf("correlationID: %s unable to mark ledger as completed: %s", ledgerItem.LedgerID, err)
+		return err
 	}
 	return nil
 }
@@ -69,4 +78,77 @@ func (s CompletionWorkflow) isPublishedOnAllChannels(channelNames []string,
 		}
 	}
 	return false
+}
+
+func (s CompletionWorkflow) expireLocks(ledgerItem tables.Ledger) error {
+	pubEvents, err := ledgerItem.GetExistingPublishEvents()
+	if err != nil {
+		log.Printf("correlationID: %s error retrieving publish events in expireLocks: %s", ledgerItem.LedgerID, err)
+	}
+	pubIdToPubs := PubStateByPubEventID(pubEvents)
+	for _, p := range pubEvents {
+		if s.isUnmarkedExpired(p, pubIdToPubs) {
+			err = s.setExpiredPubEvent(p)
+			if err != nil {
+				return err
+			}
+			err = s.releaseAnyExpiredPublisherProfileLocks(p)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return err
+}
+
+func (s CompletionWorkflow) isUnmarkedExpired(pubEvent tables.PublishEvent, pubStateMap map[string]tables.PublishEvent) bool {
+	keyAssigned := fmt.Sprintf("%s.%s.%s", pubEvent.DistributionChannel, pubEvent.PublisherProfileID, tables.ASSIGNED)
+	keyTerminalCom := fmt.Sprintf("%s.%s.%s", pubEvent.DistributionChannel, pubEvent.PublisherProfileID, tables.COMPLETE)
+	keyTerminalExp := fmt.Sprintf("%s.%s.%s", pubEvent.DistributionChannel, pubEvent.PublisherProfileID, tables.EXPIRED)
+	_, isAssigned := pubStateMap[keyAssigned]
+	_, isComplete := pubStateMap[keyTerminalCom]
+	_, isExpired := pubStateMap[keyTerminalExp]
+	if !isAssigned {
+		return false
+	}
+	isAlreadyMarkedTerminal := isComplete || isExpired
+	if isAlreadyMarkedTerminal {
+		return false
+	}
+
+	timeNow := time.Now().UnixMilli()
+	return pubEvent.ExpiresAtTTL < timeNow
+}
+
+func (s CompletionWorkflow) setExpiredPubEvent(pubEvent tables.PublishEvent) error {
+	expiredEvent := pubEvent
+	expiredEvent.PublishStatus = tables.EXPIRED
+	err := dal.AppendLedgerPublishEvents(pubEvent.LedgerID, []tables.PublishEvent{expiredEvent})
+	if err != nil {
+		log.Printf("correlationID: %s error appending expired event in setExpired: %s", pubEvent.LedgerID, err)
+		return err
+	}
+	return err
+}
+
+func (s CompletionWorkflow) releaseAnyExpiredPublisherProfileLocks(pubEvent tables.PublishEvent) error {
+	profile, err := dal.GetPublisherAccount(pubEvent.OwnerAccountID, pubEvent.PublisherProfileID)
+	if err != nil {
+		log.Printf("correlationID: %s error loading publisher profile: %s", pubEvent.LedgerID, err)
+		return err
+	}
+	timeNow := time.Now().UnixMilli()
+	if profile.AssignmentLockTTL > timeNow || profile.PublishLockTTL > timeNow {
+		log.Printf("correlationID: %s valid TTLs on publisherProfile; keeping locks: acc: %s pub: %s",
+			pubEvent.LedgerID, pubEvent.OwnerAccountID, pubEvent.PublisherProfileID)
+		return nil
+	}
+
+	err = dal.ForceAllLocksFree(pubEvent.OwnerAccountID, pubEvent.PublisherProfileID)
+	if err != nil {
+		log.Printf("correlationID: %s error release publishProfile locks in releasePublishProfile: %s", pubEvent.LedgerID, err)
+		return err
+	}
+
+	return err
 }

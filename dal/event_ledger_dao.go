@@ -195,6 +195,30 @@ func powInt(x, y int) int {
 	return int(math.Pow(float64(x), float64(y)))
 }
 
+func SetLedgerStatus(ledgerEntry tables.Ledger, status tables.LedgerStatus) error {
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"LedgerID": {
+				S: aws.String(ledgerEntry.LedgerID),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":r": {
+				S: aws.String(string(status)),
+			},
+		},
+		TableName:        aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
+		ReturnValues:     aws.String("NONE"),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :r", "PublishStatus")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling updateLedgerEvents to set ledger status: %s", err)
+	}
+	return err
+}
+
 func updateLedgerEvents(ledgerEntry tables.Ledger, fieldKey string, versionKey string) error {
 	updatedValue := getField(&ledgerEntry, fieldKey)
 	// Check to see that no one updated before us.
