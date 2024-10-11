@@ -26,7 +26,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 			log.Printf("correlationID: %s failed to get media event from prompt: %s", ledgerItem.LedgerID, err)
 			return err
 		}
-		alreadyExists, err := ExistsInLedger(ledgerItem, mediaEvent)
+		alreadyExists, err := ExistsInLedger(ledgerItem, []tables.MediaEvent{mediaEvent})
 		if err != nil {
 			log.Printf("correlationID: %s failed to determine ledger existence: %s", ledgerItem.LedgerID, err)
 			return err
@@ -36,7 +36,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 				mediaEvent.EventID, ledgerItem.MediaEventsVersion)
 			continue
 		}
-		err = HandleMediaGeneration(ledgerItem, mediaEvent)
+		err = HandleMediaGeneration(ledgerItem, []tables.MediaEvent{mediaEvent})
 		if err != nil {
 			log.Printf("correlationID: %s failed to handle media generation for script workflow: %s", ledgerItem.LedgerID, err)
 			return err

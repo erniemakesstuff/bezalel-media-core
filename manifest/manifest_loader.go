@@ -69,10 +69,10 @@ func GetManifestLoader() *ManifestLoader {
 	return manifestInstance
 }
 
-func (m *ManifestLoader) ChannelNamesFromFormat(mediaFormat string) []string {
+func (m *ManifestLoader) ChannelNamesFromFormat(mediaDistributionFormat string) []string {
 	result := []string{}
 	for _, f := range m.DistributionFormatToChannel.DistributionFormats {
-		if strings.EqualFold(f.Format, mediaFormat) {
+		if strings.EqualFold(f.Format, mediaDistributionFormat) {
 			for _, cn := range f.Channels {
 				result = append(result, cn.ChannelName)
 			}

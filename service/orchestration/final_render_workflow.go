@@ -24,6 +24,7 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 	}
 	if len(assignedPublishEvents) == 0 {
 		log.Printf("correlationID: %s no assigned publish events found", ledgerItem.LedgerID)
+		return nil
 	}
 
 	rootMediasReadyForPublish, err := s.getRootMediaAllChildrenReady(ledgerItem, assignedPublishEvents)
@@ -32,9 +33,10 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 	}
 	if len(rootMediasReadyForPublish) == 0 {
 		log.Printf("correlationID: %s no root media events ready for publish found", ledgerItem.LedgerID)
+		return nil
 	}
 
-	err = s.spawnFinalRenderMediaEvent(ledgerItem, rootMediasReadyForPublish)
+	err = s.spawnFinalRenderMediaEvent(ledgerItem, rootMediasReadyForPublish, assignedPublishEvents)
 	return err
 }
 
@@ -83,33 +85,30 @@ func (s *FinalRenderWorkflow) getRootMediaAllChildrenReady(ledgerItem tables.Led
 	return rootMedias, nil
 }
 
-func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledger, rootMediaEventsToFinalize []tables.MediaEvent) error {
+func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledger, rootMediaEventsToFinalize []tables.MediaEvent,
+	assignedPublisherProfiles []tables.PublishEvent) error {
 	mediaEvents, err := ledgerItem.GetExistingMediaEvents()
 	if err != nil {
 		log.Printf("correlationID: %s error getting media events from ledger: %s", ledgerItem.LedgerID, err)
 		return err
 	}
-	publishEvents, err := ledgerItem.GetExistingPublishEvents()
-	if err != nil {
-		log.Printf("correlationID: %s error getting publish events from ledger: %s", ledgerItem.LedgerID, err)
-		return err
-	}
-	mediaEventToPublisherMap := CreateMediaEventToPublisherMap(publishEvents, mediaEvents)
+	mediaEventToPublisherMap := CreateMediaEventToPublisherMap(assignedPublisherProfiles, rootMediaEventsToFinalize)
 	for _, r := range rootMediaEventsToFinalize {
 		children := CollectChildrenEvents(r, mediaEvents)
 		sort.Sort(tables.ByRenderSequence(children))
-		assignedPublisherProfile, ok := mediaEventToPublisherMap[r.GetEventID()]
-		if !ok || len(assignedPublisherProfile.LedgerID) == 0 {
-			log.Fatalf("missing key: %s %d", r.GetEventID(), len(mediaEventToPublisherMap))
+		assignedPubs, ok := mediaEventToPublisherMap[r.GetEventID()]
+		if !ok || len(assignedPubs) == 0 {
+			log.Printf("correlationID: %s WARN missing PubState for root media: %s", ledgerItem.LedgerID, r.GetEventID())
+			continue
 		}
-		finalMediaEvent := s.createFinalRenderMediaEventFromChildren(ledgerItem, r, children, assignedPublisherProfile)
-		err = HandleMediaGeneration(ledgerItem, finalMediaEvent)
+		finalMediaEvents := s.createFinalRenderMediaEventFromChildrens(ledgerItem, r, children, assignedPubs)
+		err = HandleMediaGeneration(ledgerItem, finalMediaEvents)
 		if err != nil {
 			log.Printf("correlationID: %s failed to append finalRender media event: %s", ledgerItem.LedgerID, err)
 			return err
 		}
-		renderEvent := s.createPublishEventRender(assignedPublisherProfile)
-		err = dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, []tables.PublishEvent{renderEvent})
+		renderEvents := s.createPublishEventRenders(assignedPubs)
+		err = dal.AppendLedgerPublishEvents(ledgerItem.LedgerID, renderEvents)
 		if err != nil {
 			log.Printf("correlationID: %s failed to append RENDERING publish event: %s", ledgerItem.LedgerID, err)
 			return err
@@ -119,33 +118,38 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	return err
 }
 
-func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildren(
+func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildrens(
 	ledgerItem tables.Ledger, root tables.MediaEvent, children []tables.MediaEvent,
-	publishEvent tables.PublishEvent) tables.MediaEvent {
-	watermarkText, err := dal.GetPublisherWatermarkInfo(publishEvent.OwnerAccountID, publishEvent.PublisherProfileID)
-	if err != nil {
-		// non-critical path, continue on failure.
-		log.Printf("correlationID: %s WARN failed retrieve watermark text: %s", ledgerItem.LedgerID, err)
+	publishEvents []tables.PublishEvent) []tables.MediaEvent {
+	resultCollection := []tables.MediaEvent{}
+	for _, p := range publishEvents {
+		watermarkText, err := dal.GetPublisherWatermarkInfo(p.OwnerAccountID, p.PublisherProfileID)
+		if err != nil {
+			// non-critical path, continue on failure.
+			log.Printf("correlationID: %s WARN failed retrieve watermark text: %s", ledgerItem.LedgerID, err)
+		}
+		if watermarkText == "" {
+			log.Printf("correlationID: %s WARN watermark empty, setting default watermark: TrueVineAI", ledgerItem.LedgerID)
+			watermarkText = "TrueVineAI"
+		}
+		result := tables.MediaEvent{
+			Language:           root.Language,
+			Niche:              root.Niche,
+			MediaType:          tables.RENDER,
+			PromptInstruction:  "CREATING FINAL RENDER",
+			DistributionFormat: root.DistributionFormat,
+			IsFinalRender:      true,
+			WatermarkText:      watermarkText,
+			ParentEventID:      root.EventID,
+		}
+		result.PromptHash = tables.HashString(result.PromptInstruction)
+		result.EventID = result.GetEventID()
+		result.FinalRenderSequences = s.createJsonOfRenderSequence(children)
+		result.ContentLookupKey = result.GetContentLookupKey()
+		resultCollection = append(resultCollection, result)
 	}
-	if watermarkText == "" {
-		log.Printf("correlationID: %s WARN watermark empty, setting default watermark: TrueVineAI", ledgerItem.LedgerID)
-		watermarkText = "TrueVineAI"
-	}
-	result := tables.MediaEvent{
-		Language:           root.Language,
-		Niche:              root.Niche,
-		MediaType:          tables.RENDER,
-		PromptInstruction:  "CREATING FINAL RENDER",
-		DistributionFormat: root.DistributionFormat,
-		IsFinalRender:      true,
-		WatermarkText:      watermarkText,
-		ParentEventID:      root.EventID,
-	}
-	result.PromptHash = tables.HashString(result.PromptInstruction)
-	result.EventID = result.GetEventID()
-	result.FinalRenderSequences = s.createJsonOfRenderSequence(children)
-	result.ContentLookupKey = result.GetContentLookupKey()
-	return result
+
+	return resultCollection
 }
 
 func (s *FinalRenderWorkflow) createJsonOfRenderSequence(childrenEvents []tables.MediaEvent) string {
@@ -160,8 +164,13 @@ func (s *FinalRenderWorkflow) createJsonOfRenderSequence(childrenEvents []tables
 	return string(b)
 }
 
-func (s *FinalRenderWorkflow) createPublishEventRender(originalEvent tables.PublishEvent) tables.PublishEvent {
-	result := originalEvent
-	result.PublishStatus = tables.RENDERING
-	return result
+func (s *FinalRenderWorkflow) createPublishEventRenders(originalEvents []tables.PublishEvent) []tables.PublishEvent {
+	resultCollection := []tables.PublishEvent{}
+	for _, o := range originalEvents {
+		result := o
+		result.PublishStatus = tables.RENDERING
+		resultCollection = append(resultCollection, result)
+	}
+
+	return resultCollection
 }

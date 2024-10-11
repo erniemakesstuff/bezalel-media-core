@@ -77,12 +77,20 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 		wg.Done()
 		return err
 	}
+	completionEventRecord := pubCommand.RootPublishEvent
+	completionEventRecord.PublishStatus = tables.COMPLETE
+	err = dal.AppendLedgerPublishEvents(ledgerId, []tables.PublishEvent{completionEventRecord})
+	if err != nil {
+		log.Printf("correlationID: %s error appending completion publish event: %s", ledgerId, err)
+	}
+
 	err = dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 	if err != nil {
 		log.Printf("correlationID: %s error releasing publisher lock: %s", ledgerId, err)
 		wg.Done()
 		return err
 	}
+
 	wg.Done()
 	return err
 }

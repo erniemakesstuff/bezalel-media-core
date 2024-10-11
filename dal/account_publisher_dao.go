@@ -85,14 +85,49 @@ func DeletePublisherAccount(accountId string, publisherProfileId string) error {
 }
 
 func ReleaseAssignment(accountId string, publisherProfileId string, processId string) error {
-	return releaseAssignment(accountId, publisherProfileId, processId, "AssignmentLockID", "AssignmentLockTTL")
+	return releaseLock(accountId, publisherProfileId, processId, "AssignmentLockID", "AssignmentLockTTL")
 }
 
 func ReleasePublishLock(accountId string, publisherProfileId string, processId string) error {
-	return releaseAssignment(accountId, publisherProfileId, processId, "PublishLockID", "PublishLockTTL")
+	return releaseLock(accountId, publisherProfileId, processId, "PublishLockID", "PublishLockTTL")
 }
 
-func releaseAssignment(accountId string, publisherProfileId string, oldLockId string, lockIdField string, lockTtlField string) error {
+func ForceAllLocksFree(accountId string, publisherProfileId string) error {
+	const releaseLockId = ""
+	const releaseTime = 0
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":r": {
+				S: aws.String(releaseLockId),
+			},
+			":v": {
+				N: aws.String(strconv.FormatInt(releaseTime, 10)),
+			},
+		},
+		TableName:    aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		ReturnValues: aws.String("NONE"),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :r, %s = :v, %s = :r, %s = :v",
+			"AssignmentLockID", "AssignmentLockTTL",
+			"PublishLockID", "PublishLockTTL")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling updateItem to release all locks: %s", err)
+		return err
+	}
+	return nil
+}
+
+func releaseLock(accountId string, publisherProfileId string, oldLockId string, lockIdField string, lockTtlField string) error {
 	const releaseLockId = ""
 	const releaseTime = 0
 	input := &dynamodb.UpdateItemInput{
