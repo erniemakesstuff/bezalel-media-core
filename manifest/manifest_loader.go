@@ -19,8 +19,9 @@ var manifestInstance *ManifestLoader
 var once sync.Once
 
 const (
-	PROMPT_SCRIPT_VAR_RAW_TEXT = "$RAW_TEXT"
-	PROMPT_SCRIPT_VAR_LANGUAGE = "$LANGUAGE"
+	PROMPT_SCRIPT_VAR_RAW_TEXT    = "$RAW_TEXT"
+	PROMPT_SCRIPT_VAR_LANGUAGE    = "$LANGUAGE"
+	PROMPT_SCRIPT_VAR_BLOG_FORMAT = "$BLOG_JSON_FORMAT"
 )
 
 type Prompt struct {
@@ -119,6 +120,12 @@ func getScriptPromptCollection() ScriptPromptCollection {
 	err = yaml.Unmarshal(promptFile, &prompts)
 	if err != nil {
 		log.Fatalf("failed to unmarshall manifest prompts: %s", err)
+	}
+
+	for i := range prompts.ScriptPrompts {
+		// TODO: chain other schema replacements here.
+		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
+			PROMPT_SCRIPT_VAR_BLOG_FORMAT, GetBlogJsonSchemaFewShot(), -1)
 	}
 	return prompts
 }

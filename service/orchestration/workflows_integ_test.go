@@ -66,7 +66,7 @@ func TestWorkflows(t *testing.T) {
 	assert.Equal(t, ledgerItem.LedgerStatus, tables.NEW_LEDGER, "should be status new")
 	assert.Empty(t, publisherAcc.AssignmentLockID, "no assignment lock should be present")
 	// If issue with flakey tests; examine sstepWaitSecond
-	const stepWaitSec = 25
+	const stepWaitSec = 50
 	// 2. Wait for mediaEvent to be created
 	time.Sleep(time.Duration(stepWaitSec) * time.Second)
 	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
