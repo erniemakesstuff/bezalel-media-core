@@ -209,7 +209,7 @@ func SetLedgerStatus(ledgerEntry tables.Ledger, status tables.LedgerStatus) erro
 		},
 		TableName:        aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
 		ReturnValues:     aws.String("NONE"),
-		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :r", "PublishStatus")),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :r", "LedgerStatus")),
 	}
 
 	_, err := svc.UpdateItem(input)

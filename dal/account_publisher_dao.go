@@ -164,13 +164,13 @@ func releaseLock(accountId string, publisherProfileId string, oldLockId string, 
 	return nil
 }
 
-func AssignPublisherProfile(processId string, distributionChannelName string, publisherLanguage string) (tables.AccountPublisher, error) {
+func AssignPublisherProfile(processId string, distributionChannelName string, publisherLanguage string, publisherNiche string) (tables.AccountPublisher, error) {
 	lpk := ""
 	lsk := ""
 	var err error
 	resultItem := tables.AccountPublisher{}
 	for {
-		resultItem, lpk, lsk, err = queryActivePublisherProfile(distributionChannelName, lpk, lsk, publisherLanguage)
+		resultItem, lpk, lsk, err = queryActivePublisherProfile(distributionChannelName, lpk, lsk, publisherLanguage, publisherNiche)
 		if err != nil {
 			log.Printf("failed to query account publisher profile table: %s", err)
 			return tables.AccountPublisher{}, err
@@ -192,7 +192,7 @@ func AssignPublisherProfile(processId string, distributionChannelName string, pu
 }
 
 func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK string,
-	lastPageKeySK string, publisherLanguage string) (tables.AccountPublisher, string, string, error) {
+	lastPageKeySK string, publisherLanguage string, publisherNiche string) (tables.AccountPublisher, string, string, error) {
 	const maxRecordsPerQuery = 200
 	queryInput := &dynamodb.QueryInput{
 		TableName:              aws.String(dynamo_configuration.TABLE_ACCOUNTS),
@@ -212,8 +212,11 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 			":l": {
 				S: aws.String(publisherLanguage),
 			},
+			":i": {
+				S: aws.String(publisherNiche),
+			},
 		},
-		FilterExpression: aws.String("NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n AND PublisherLanguage = :l"),
+		FilterExpression: aws.String("NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n AND PublisherLanguage = :l AND PublisherNiche = :i"),
 		Limit:            aws.Int64(maxRecordsPerQuery),
 	}
 	if lastPagekeyPK != "" {
@@ -266,7 +269,9 @@ func takeAssignmentLock(accountId string, publisherProfileId string, processId s
 		return fmt.Errorf("unable to take assignment lock. accountId: %s publisherProfileId: %s processId: %s",
 			accountId, publisherProfileId, processId)
 	}
-	err = takeLock(processId, account, "AssignmentLockID", "AssignmentLockTTL", account.AssignmentLockID)
+	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
+	expiryTime := time.Now().UnixMilli() + ninetyMinutes
+	err = takeLock(processId, account, "AssignmentLockID", "AssignmentLockTTL", account.AssignmentLockID, expiryTime)
 	return err
 }
 
@@ -281,7 +286,9 @@ func TakePublishLock(accountId string, publisherProfileId string, processId stri
 		return fmt.Errorf("unable to take publish lock. accountId: %s publisherProfileId: %s processId: %s",
 			accountId, publisherProfileId, processId)
 	}
-	err = takeLock(processId, account, "PublishLockID", "PublishLockTTL", account.PublishLockID)
+	// Asserts PublishLock and AssignmentLock are for the same media event.
+	expiryTime := account.AssignmentLockTTL
+	err = takeLock(processId, account, "PublishLockID", "PublishLockTTL", account.PublishLockID, expiryTime)
 	return err
 }
 
@@ -311,9 +318,7 @@ func canTakePublishLock(processId string, account tables.AccountPublisher) bool 
 	return epochNow > lockExpiry
 }
 
-func takeLock(processId string, account tables.AccountPublisher, lockIdField string, lockTtlField string, oldLockId string) error {
-	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
-	expiryTime := time.Now().UnixMilli() + ninetyMinutes
+func takeLock(processId string, account tables.AccountPublisher, lockIdField string, lockTtlField string, oldLockId string, lockEpochMilliTtl int64) error {
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"AccountID": {
@@ -328,7 +333,7 @@ func takeLock(processId string, account tables.AccountPublisher, lockIdField str
 				S: aws.String(processId),
 			},
 			":v": {
-				N: aws.String(strconv.FormatInt(expiryTime, 10)),
+				N: aws.String(strconv.FormatInt(lockEpochMilliTtl, 10)),
 			},
 			":ov": {
 				S: aws.String(oldLockId), // old assignment lock

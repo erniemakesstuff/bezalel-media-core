@@ -39,9 +39,6 @@ func (s *AssignmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 		log.Printf("correlationID: %s error collecting media events to assign, item: %s", ledgerItem.LedgerID, err)
 		return err
 	}
-	if len(mediaEventsReadyToAssign) != 0 {
-		log.Printf("correlationID: %s found %d events ready to assign", ledgerItem.LedgerID, len(mediaEventsReadyToAssign))
-	}
 
 	err = s.assignMedia(ledgerItem, mediaEventsReadyToAssign, publishEvents, processId)
 	return err
@@ -60,9 +57,6 @@ func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables
 func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsReadyToAssign []tables.MediaEvent,
 	publishEvents []tables.PublishEvent, processId string) error {
 	publishEventMap := PubStateByRootMedia(publishEvents)
-	if len(mediaEventsReadyToAssign) == 0 {
-		log.Printf("correlationID: %s no media events ready to assign", ledgerItem.LedgerID)
-	}
 	for _, m := range mediaEventsReadyToAssign {
 		targetChannelNames := manifest.GetManifestLoader().ChannelNamesFromFormat(string(m.DistributionFormat))
 		if len(targetChannelNames) == 0 {
@@ -72,7 +66,6 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 
 		for _, name := range targetChannelNames {
 			if s.isAssignable(m, name, publishEventMap) {
-				// Assign.
 				err := s.assignMediaToPublisher(ledgerItem, m, name, processId)
 				if err != nil {
 					log.Printf("correlationID: %s unable to assign media to publisher: %s", ledgerItem.LedgerID, err)
@@ -107,7 +100,7 @@ func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetCh
 
 func (s *AssignmentWorkflow) assignMediaToPublisher(ledgerItem tables.Ledger, mediaEvent tables.MediaEvent,
 	distributionChannelName string, processId string) error {
-	assignedPublisherProfile, err := dal.AssignPublisherProfile(processId, distributionChannelName, mediaEvent.Language)
+	assignedPublisherProfile, err := dal.AssignPublisherProfile(processId, distributionChannelName, mediaEvent.Language, mediaEvent.Niche)
 	if err != nil {
 		log.Printf("unable to assign media event to publisher profile: %s", err)
 		return err

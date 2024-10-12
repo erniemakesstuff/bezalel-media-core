@@ -30,13 +30,13 @@ func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 
 	err = s.expireLocks(ledgerItem)
 	if err != nil {
-		log.Printf("correlationID: %s error with expireLocks in completion workflow: %s", ledgerItem.LedgerID, err)
+		log.Fatalf("correlationID: %s error with expireLocks in completion workflow: %s", ledgerItem.LedgerID, err)
 		return err
 	}
 
 	err = dal.SetLedgerStatus(ledgerItem, tables.FINISHED_LEDGER)
 	if err != nil {
-		log.Printf("correlationID: %s unable to mark ledger as completed: %s", ledgerItem.LedgerID, err)
+		log.Fatalf("correlationID: %s unable to mark ledger as completed: %s", ledgerItem.LedgerID, err)
 		return err
 	}
 	return nil
@@ -52,6 +52,11 @@ func (s CompletionWorkflow) isFullySyndicated(ledgerItem tables.Ledger) (bool, e
 	if err != nil {
 		log.Printf("correlationID: %s error getting publish events for syndication check: %s", ledgerItem.LedgerID, err)
 		return false, err
+	}
+
+	if len(publishEvents) == 0 || len(mediaEvents) == 0 {
+		// If no events, not syndicated anywhere.
+		return false, nil
 	}
 
 	pubStateByRootMediaMap := PubStateByRootMedia(publishEvents)

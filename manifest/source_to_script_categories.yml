@@ -1,4 +1,7 @@
 sources:
+  - sourceName: "WorkflowIntegTest"
+    scriptCategories:
+      - categoryKey: "integBlog.testingNiche"
   - sourceName: "v1/source/prompt"
     scriptCategories:
       - categoryKey: "blog.default"

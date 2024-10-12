@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -17,9 +18,11 @@ func (s *ScriptWorkflow) GetWorkflowName() string {
 }
 
 func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
-	log.Printf("correlationID: %s getting manifest loader", ledgerItem.LedgerID)
 	prompts := manifest.GetManifestLoader().GetScriptPromptsFromSource(ledgerItem.TriggerEventSource)
-	log.Printf("correlationID: %s received prompts %d from source %s", ledgerItem.LedgerID, len(prompts), ledgerItem.TriggerEventSource)
+	if len(prompts) == 0 {
+		return fmt.Errorf("correlationID: %s error no prompts received from source: %s", ledgerItem.LedgerID, ledgerItem.TriggerEventSource)
+	}
+
 	for _, p := range prompts {
 		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
 		if err != nil {
@@ -32,8 +35,6 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 			return err
 		}
 		if alreadyExists {
-			log.Printf("correlationID: %s mediaEvent already exists, mediaEventID: %s mediaVersion: %d", ledgerItem.LedgerID,
-				mediaEvent.EventID, ledgerItem.MediaEventsVersion)
 			continue
 		}
 		err = HandleMediaGeneration(ledgerItem, []tables.MediaEvent{mediaEvent})

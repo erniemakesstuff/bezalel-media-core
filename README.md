@@ -35,3 +35,22 @@ https://docs.docker.com/engine/manage-resources/pruning/
 - Custom Prompt that requests the LLM to create an article; no prompt-branching from manifest.
 ## General Notes
 If you delete the eventLedgerTable, ensure you re-create the pipe in AWS EventBridge.
+
+
+## Expanding Content Selection
+### Definitions
+Source - origination of incomming event such as a news webscraper.
+ScriptCategory - describes the distribution format, and niche.
+Script - the template, structure, and overall instruction for media.
+Channel - YouTube, Medium, Twitter, ...
+
+Relationships:
+Source 1:M ScriptCategory
+ScriptCategory 1:1 ScriptPrompt
+
+### Steps to add a new channel
+
+### Steps to add a new source
+
+### Steps to add a new 
+

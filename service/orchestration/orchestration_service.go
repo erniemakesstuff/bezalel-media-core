@@ -42,22 +42,16 @@ func RunWorkflows(ledgerItem tables.Ledger) error {
 	}
 	processId := uuid.New().String()
 	for _, w := range workflowsToRun {
-		log.Printf("correlationID: %s running %s", latestLedger.LedgerID, w.GetWorkflowName())
 		err := w.Run(latestLedger, processId)
 		if err != nil {
 			log.Printf("correlationID: %s workflow %s failed: %s", latestLedger.LedgerID, w.GetWorkflowName(), err)
 		}
-		log.Printf("correlationID: %s finished %s", latestLedger.LedgerID, w.GetWorkflowName())
 	}
 	return nil
 }
 
 func isCompleteWorkflow(ledgerItem tables.Ledger) bool {
-	if ledgerItem.LedgerStatus == tables.FINISHED_LEDGER {
-		log.Printf("correlationID: %s ledger finished.", ledgerItem.LedgerID)
-		return true
-	}
-	return false
+	return ledgerItem.LedgerStatus == tables.FINISHED_LEDGER
 }
 
 func isStaleLedgerEvent(triggerLedger tables.Ledger, latestLedger tables.Ledger) bool {

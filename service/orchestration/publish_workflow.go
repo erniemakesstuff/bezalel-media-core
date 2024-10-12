@@ -47,7 +47,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 	if err != nil {
 		log.Printf("correlationID: %s error taking publisher lock: %s", ledgerId, err)
 		dao, _ := dal.GetPublisherAccount(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
-		log.Printf("PublisherState: {%+v} processId: %s", dao, processId)
+		log.Printf("correlationID: %s current publock owner: %s attempted lockid: %s", ledgerId, dao.PublishLockID, processId)
 		wg.Done()
 		return err
 	}
@@ -86,9 +86,9 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 		log.Printf("correlationID: %s error appending completion publish event: %s", ledgerId, err)
 	}
 
-	err = dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
+	err = dal.ForceAllLocksFree(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
-		log.Printf("correlationID: %s error releasing publisher lock: %s", ledgerId, err)
+		log.Printf("correlationID: %s error releasing all locks for successful publish: %s", ledgerId, err)
 		wg.Done()
 		return err
 	}

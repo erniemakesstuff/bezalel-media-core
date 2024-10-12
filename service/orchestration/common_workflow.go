@@ -48,7 +48,6 @@ func ExistsInLedger(ledgerItem tables.Ledger, mediaEvents []tables.MediaEvent) (
 	}
 	for _, m := range mediaEvents {
 		if _, ok := existingMediaEventsMap[m.GetEventID()]; !ok {
-			log.Printf("media event found in ledger, cannot duplicate: %s", m.GetEventID())
 			return false, nil
 		}
 	}

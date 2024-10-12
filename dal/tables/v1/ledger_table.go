@@ -84,8 +84,9 @@ const (
 type DistributionFormat string
 
 const (
-	DIST_FORMAT_BLOG   DistributionFormat = "Blog"
-	DIST_FORMAT_LVIDEO DistributionFormat = "LongformVideo"
+	DIST_FORMAT_INTEG_BLOG DistributionFormat = "IntegBlog"
+	DIST_FORMAT_BLOG       DistributionFormat = "Blog"
+	DIST_FORMAT_LVIDEO     DistributionFormat = "LongformVideo"
 )
 
 type PositionLayer string
@@ -134,6 +135,8 @@ type MediaEvent struct {
 
 func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
 	switch {
+	case strings.EqualFold(format, string(DIST_FORMAT_INTEG_BLOG)):
+		return DIST_FORMAT_INTEG_BLOG, nil
 	case strings.EqualFold(format, string(DIST_FORMAT_BLOG)):
 		return DIST_FORMAT_BLOG, nil
 	case strings.EqualFold(format, string(DIST_FORMAT_LVIDEO)):
@@ -199,11 +202,11 @@ type PublishEvent struct {
 }
 
 func (m *PublishEvent) GetEventID() string {
-	// concat <script_Id>.<publisher_profile_id>.<publish_status>
+	// concat <distId>.<publisher_profile_id>.<publish_status>
 	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.PublisherProfileID, m.PublishStatus)
 }
 
 func (m *PublishEvent) GetRootMediaAssignmentKey() string {
-	// concat <script_Id>.<RootMediaEventID>.<publish_status>
+	// concat <distId>.<RootMediaEventID>.<publish_status>
 	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.RootMediaEventID, m.PublishStatus)
 }

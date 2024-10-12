@@ -17,7 +17,7 @@ func GetDriver(source string, payloadIO io.ReadCloser) (Driver, error) {
 	case source == "v1/source/prompt":
 		val := drivers.CustomPromptDriver{PayloadIO: payloadIO, Source: source}
 		return val, nil
-	case source == "v1/source/blog":
+	case source == "v1/source/blog" || source == "WorkflowIntegTest":
 		val := drivers.BlogPromptDriver{PayloadIO: payloadIO, Source: source}
 		return val, nil
 	}

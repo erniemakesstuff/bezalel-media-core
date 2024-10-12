@@ -1,4 +1,7 @@
 distributionFormats:
+  - format: "IntegBlog"
+    channels:
+      - channelName: "Medium"
   - format: "Blog"
     channels:
       - channelName: "Medium"

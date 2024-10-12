@@ -35,7 +35,7 @@ func PublishMediaTopicSns(mediaEvent tables.MediaEvent) error {
 	}
 	snsMessageWrapper := string(snsMessageBytes)
 	topicArn := SNS_MEDIA_TOPIC
-	result, err := snsSvc.Publish(&sns.PublishInput{
+	_, err = snsSvc.Publish(&sns.PublishInput{
 		Message:          &snsMessageWrapper,
 		TopicArn:         &topicArn,
 		MessageStructure: aws.String("json"),
@@ -52,6 +52,5 @@ func PublishMediaTopicSns(mediaEvent tables.MediaEvent) error {
 		return err
 	}
 
-	log.Printf("Sns Publish message id: %s", *result.MessageId)
 	return err
 }
