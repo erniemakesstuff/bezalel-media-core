@@ -14,8 +14,8 @@ import (
 type LedgerStatus string
 
 const (
-	NEW_LEDGER      LedgerStatus = "NEW"
-	FINISHED_LEDGER LedgerStatus = "FINISHED" // Terminal for all cases: expired or success.
+	NEW_LEDGER      LedgerStatus = "New"
+	FINISHED_LEDGER LedgerStatus = "Finished" // Terminal for all cases: expired or success.
 )
 
 type Ledger struct {
@@ -92,14 +92,14 @@ const (
 type PositionLayer string
 
 const (
-	FULLSCREEN       PositionLayer = "FULLSCREEN" // Occupies whole render space.
-	SPLIT_SCR_TOP    PositionLayer = "SPLITSCREEN_TOP"
-	SPLIT_SCR_BOTTOM PositionLayer = "SPLITSCREEN_BOTTOM"
-	SPLIT_SCR_LEFT   PositionLayer = "SPLITSCREEN_LEFT"
-	SPLIT_SCR_RIGHT  PositionLayer = "SPLITSCREEN_RIGHT"
+	FULLSCREEN       PositionLayer = "Fullscreen" // Occupies whole render space.
+	SPLIT_SCR_TOP    PositionLayer = "SplitScreenTop"
+	SPLIT_SCR_BOTTOM PositionLayer = "SplitScreenBottom"
+	SPLIT_SCR_LEFT   PositionLayer = "SplitScreenLeft"
+	SPLIT_SCR_RIGHT  PositionLayer = "SplitScreenRight"
 
-	AVATAR         PositionLayer = "AVATAR"         // screen position for the talking head/body.
-	AVATAR_OVERLAY PositionLayer = "AVATAR_OVERLAY" // apply user specified avatar as higher priority.
+	AVATAR         PositionLayer = "Avatar"        // screen position for the talking head/body.
+	AVATAR_OVERLAY PositionLayer = "AvatarOverlay" // apply user specified avatar as higher priority.
 )
 
 type RenderMediaSequence struct {
@@ -181,12 +181,12 @@ func (a ByRenderSequence) Less(i, j int) bool { return a[i].RenderSequence < a[j
 type PublishStatus string
 
 const (
-	ASSIGNED   PublishStatus = "ASSIGNED"   // Lock taken. Assumes base child-events are ready.
-	OVERLAY    PublishStatus = "OVERLAY"    // Overlay specific user media such as custom avatars.
-	RENDERING  PublishStatus = "RENDERING"  // Once all child-elements & watermarks are ready, combine to final edit.
-	PUBLISHING PublishStatus = "PUBLISHING" // Once final edit is ready, publish.
-	COMPLETE   PublishStatus = "COMPLETE"   // Terminal, success.
-	EXPIRED    PublishStatus = "EXPIRED"    // Terminal, failure, timeout.
+	ASSIGNED   PublishStatus = "Assigned"   // Lock taken. Assumes base child-events are ready.
+	OVERLAY    PublishStatus = "Overlay"    // Overlay specific user media such as custom avatars.
+	RENDERING  PublishStatus = "Rendering"  // Once all child-elements & watermarks are ready, combine to final edit.
+	PUBLISHING PublishStatus = "Publishing" // Once final edit is ready, publish.
+	COMPLETE   PublishStatus = "Complete"   // Terminal, success.
+	EXPIRED    PublishStatus = "Expired"    // Terminal, failure, timeout.
 )
 
 // Associating PublishEvent to a PublisherProfile. Used for softlocking.

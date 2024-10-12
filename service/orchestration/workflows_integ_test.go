@@ -26,7 +26,7 @@ var PubProfile_EN_Medium_1 = tables.AccountPublisher{
 	ChannelName:               tables.Channel_Medium,
 	LastPublishAtEpochMilli:   0,
 	AccountSubscriptionStatus: tables.EVERGREEN_ADMIN,
-	PublisherNiche:            "testingNiche",
+	PublisherNiche:            "TestingNiche",
 	PublisherLanguage:         "EN",
 }
 

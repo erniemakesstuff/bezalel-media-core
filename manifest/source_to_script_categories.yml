@@ -1,11 +1,11 @@
 sources:
   - sourceName: "WorkflowIntegTest"
     scriptCategories:
-      - categoryKey: "integBlog.testingNiche"
+      - categoryKey: "IntegBlog.TestingNiche"
   - sourceName: "v1/source/prompt"
     scriptCategories:
-      - categoryKey: "blog.default"
+      - categoryKey: "Blog.Default"
   - sourceName: "v1/source/blog"
     scriptCategories:
-      - categoryKey: "blog.personal"
-      - categoryKey: "blog.news_us"
+      - categoryKey: "Blog.Personal"
+      - categoryKey: "Blog.NewsUS"
