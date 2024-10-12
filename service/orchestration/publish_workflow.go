@@ -46,6 +46,8 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 	err = dal.TakePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 	if err != nil {
 		log.Printf("correlationID: %s error taking publisher lock: %s", ledgerId, err)
+		dao, _ := dal.GetPublisherAccount(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+		log.Printf("PublisherState: {%+v} processId: %s", dao, processId)
 		wg.Done()
 		return err
 	}
@@ -110,12 +112,8 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 	publishStateToPubMap := PubStateByRootMedia(publishEvents)
 	result := []drivers.PublishCommand{}
 	for _, p := range publishEvents {
-		if len(p.DistributionChannel) == 0 {
-			log.Printf("%+v", p)
-			log.Fatalf("errm. what?")
-		}
 		if s.isRenderWithoutPublish(p, publishStateToPubMap) && AllChildrenRendered(p.RootMediaEventID, mediaEvents) {
-			log.Printf("correlationID: %s found RenderWithoutPublish", ledgerItem.LedgerID)
+			log.Printf("correlationID: %s found RenderWithoutPublish: %s", ledgerItem.LedgerID, p.GetEventID())
 			finalRenderChildren := s.getFinalChildrenMedia(p.RootMediaEventID, mediaEvents)
 			publishCommand := s.toPublishCommand(p, finalRenderChildren)
 			result = append(result, publishCommand)

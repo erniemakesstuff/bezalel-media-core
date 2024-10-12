@@ -73,7 +73,7 @@ func TestWorkflows(t *testing.T) {
 	assert.NotEmpty(t, ledgerItem.MediaEvents, "media events should not be empty")
 
 	// 3. Assert publisher profile assignment
-	time.Sleep(time.Duration(30) * time.Second)
+	time.Sleep(time.Duration(70) * time.Second)
 	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
 	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_EN_Medium.AccountID, Test_PublisherProfile_EN_Medium.PublisherProfileID)
 	assert.NotEmpty(t, ledgerItem.PublishEvents, "publish events should not be empty")
@@ -93,6 +93,23 @@ func TestWorkflows(t *testing.T) {
 	assert.True(t, hasPublishingPublishEvent(ledgerItem), "expected PUBLISHING publish event")
 	assert.NotEmpty(t, publisherAcc.PublishLockID, "expected PublisherLockID to be set")
 	assert.NotEmpty(t, publisherAcc.PublishLockTTL, "expected PublishLockTTL to be set")
+
+	// 5. Confirm ledger is marked complete
+	time.Sleep(time.Duration(5) * time.Second)
+	ledgerItem, _ = dal.GetLedger(Test_Ledger_Blog.LedgerID)
+	publisherAcc, _ = dal.GetPublisherAccount(Test_PublisherProfile_EN_Medium.AccountID, Test_PublisherProfile_EN_Medium.PublisherProfileID)
+	assert.True(t, hasCompletionEvent(ledgerItem), "expected COMPLETE publish event")
+	assert.Empty(t, publisherAcc.PublishLockID, "expected PublisherLockID to be released")
+	assert.Empty(t, publisherAcc.PublishLockTTL, "expected PublishLockTTL to be released")
+	assert.Empty(t, publisherAcc.AssignmentLockID, "expected AssignmentLockID to be released")
+	assert.Empty(t, publisherAcc.AssignmentLockTTL, "expected AssignmentLockTTL to be released")
+	assert.Equal(t, ledgerItem.LedgerStatus, tables.FINISHED_LEDGER, "expected FINISHED_LEDGER status")
+
+	log.Printf("%+v", ledgerItem)
+	pubEvents, _ := ledgerItem.GetExistingPublishEvents()
+	for _, p := range pubEvents {
+		log.Printf("%+v", p)
+	}
 	cleanupTestData()
 }
 
@@ -120,6 +137,16 @@ func hasPublishingPublishEvent(ledgerItem tables.Ledger) bool {
 	publishEvents, _ := ledgerItem.GetExistingPublishEvents()
 	for _, p := range publishEvents {
 		if p.PublishStatus == tables.PUBLISHING {
+			return true
+		}
+	}
+	return false
+}
+
+func hasCompletionEvent(ledgerItem tables.Ledger) bool {
+	publishEvents, _ := ledgerItem.GetExistingPublishEvents()
+	for _, p := range publishEvents {
+		if p.PublishStatus == tables.COMPLETE {
 			return true
 		}
 	}

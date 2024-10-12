@@ -147,7 +147,7 @@ func releaseLock(accountId string, publisherProfileId string, oldLockId string, 
 				N: aws.String(strconv.FormatInt(releaseTime, 10)),
 			},
 			":ov": {
-				N: aws.String(oldLockId),
+				S: aws.String(oldLockId),
 			},
 		},
 		TableName:           aws.String(dynamo_configuration.TABLE_ACCOUNTS),
