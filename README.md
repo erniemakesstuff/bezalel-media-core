@@ -40,7 +40,7 @@ If you delete the eventLedgerTable, ensure you re-create the pipe in AWS EventBr
 ## Expanding Content Selection
 ### Definitions
 Source - origination of incomming event such as a news webscraper.
-ScriptCategory - describes the distribution format, and niche.
+ScriptCategory - describes the distribution format, and niche. Tuple `<format>.<niche>`
 Script - the template, structure, and overall instruction for media.
 Channel - YouTube, Medium, Twitter, ...
 
@@ -49,8 +49,15 @@ Source 1:M ScriptCategory
 ScriptCategory 1:1 ScriptPrompt
 
 ### Steps to add a new channel
+0. Add DistributionChannel in ledger table.
+1. Update publisher_driver factory in orchestration/publisher-drivers.
+2. Update manifest distribution_format_to_channel file.
 
 ### Steps to add a new source
+0. Create a new ingestion driver to accept the source payload.
+1. Update driver_factory in ingestion package to accept new driver.
+2. Assign source to relevant script categories in manifest package: source_to_script...
 
-### Steps to add a new 
+### Steps to add a new niche
+0. Set categoryKeys in manifest package for source_to_script... and script_prompts. Tuple `<format>.<niche>`
 
