@@ -1,8 +1,4 @@
 distributionFormats:
-  - format: "Text"
-    channels:
-      - channelName: "Medium"
-      - channelName: "Reddit"
   - format: "Blog"
     channels:
       - channelName: "Medium"

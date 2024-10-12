@@ -77,7 +77,7 @@ func (s CompletionWorkflow) isPublishedOnAllChannels(channelNames []string,
 			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (s CompletionWorkflow) expireLocks(ledgerItem tables.Ledger) error {
