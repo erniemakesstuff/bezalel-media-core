@@ -75,7 +75,7 @@ const (
 	MEDIA_TEXT  MediaType = "Text"
 	MEDIA_VIDEO MediaType = "Video"
 	IMAGE       MediaType = "Image"
-	RENDER      MediaType = "Render"
+	RENDER      MediaType = "Render" // Multi-media; compilation; replacements.
 )
 
 // DistributionFormat are only set for the Parent/Root MediaEvent.
@@ -160,11 +160,25 @@ func (m *MediaEvent) GetContentLookupKey() string {
 func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
 	return RenderMediaSequence{
 		EventID:             m.EventID,
-		MediaType:           m.MediaType,
+		MediaType:           m.MediaType, // Cannot be Render-type. >:(
 		VisualPositionLayer: m.VisualPositionLayer,
 		RenderSequence:      m.RenderSequence,
 		ContentLookupKey:    m.ContentLookupKey,
 	}
+}
+
+func (m *MediaEvent) GetRenderSequences() ([]RenderMediaSequence, error) {
+	var sequences []RenderMediaSequence
+	if m.FinalRenderSequences == "" {
+		return sequences, nil
+	}
+
+	err := json.Unmarshal([]byte(m.FinalRenderSequences), &sequences)
+	if err != nil {
+		log.Printf("error unmarshalling render sequences: %s", err)
+		return sequences, err
+	}
+	return sequences, err
 }
 
 func HashString(text string) string {

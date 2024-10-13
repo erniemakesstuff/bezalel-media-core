@@ -113,8 +113,11 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 	result := []drivers.PublishCommand{}
 	for _, p := range publishEvents {
 		if s.isRenderWithoutPublish(p, publishStateToPubMap) && AllChildrenRendered(p.RootMediaEventID, mediaEvents) {
-			log.Printf("correlationID: %s found RenderWithoutPublish: %s", ledgerItem.LedgerID, p.GetEventID())
 			finalRenderChildren := s.getFinalChildrenMedia(p.RootMediaEventID, mediaEvents)
+			if len(finalRenderChildren) == 0 {
+				log.Printf("correlationID: %s WARN no finalRenderChildren present for publish, pubEvent: %s", ledgerItem.LedgerID, p.GetEventID())
+				continue
+			}
 			publishCommand := s.toPublishCommand(p, finalRenderChildren)
 			result = append(result, publishCommand)
 		}

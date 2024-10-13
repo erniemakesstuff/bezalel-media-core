@@ -144,7 +144,7 @@ func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildrens(
 		}
 		result.PromptHash = tables.HashString(result.PromptInstruction)
 		result.EventID = result.GetEventID()
-		result.FinalRenderSequences = s.createJsonOfRenderSequence(children)
+		result.FinalRenderSequences = s.createJsonOfRenderSequence(r, children)
 		result.ContentLookupKey = result.GetContentLookupKey()
 		resultCollection = append(resultCollection, result)
 	}
@@ -152,11 +152,11 @@ func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildrens(
 	return resultCollection
 }
 
-func (s *FinalRenderWorkflow) createJsonOfRenderSequence(childrenEvents []tables.MediaEvent) string {
+func (s *FinalRenderWorkflow) createJsonOfRenderSequence(scriptRoot tables.MediaEvent, childrenEvents []tables.MediaEvent) string {
 	if len(childrenEvents) == 0 {
 		return ""
 	}
-	renderSequences := []tables.RenderMediaSequence{}
+	renderSequences := []tables.RenderMediaSequence{scriptRoot.ToRenderSequence()}
 	for _, m := range childrenEvents {
 		renderSequences = append(renderSequences, m.ToRenderSequence())
 	}

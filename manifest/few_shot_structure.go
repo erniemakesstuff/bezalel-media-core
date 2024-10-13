@@ -7,13 +7,17 @@ import (
 
 type BlogJsonSchema struct {
 	Instruction string `json:"instruction"`
+	BlogTitle   string `json:"blogTitle"`
 	BlogText    string `json:"blogText"`
+	BlogHtml    string `json:"blogHtml"`
 }
 
 func GetBlogJsonSchemaFewShot() string {
 	sampleShot := BlogJsonSchema{
 		Instruction: "instructions you received",
-		BlogText:    "your blog content should go here",
+		BlogTitle:   "your blog title goes here",
+		BlogText:    "your raw blog text content goes here",
+		BlogHtml:    "your blog content as HTML",
 	}
 
 	b, err := json.MarshalIndent(sampleShot, "", "  ")

@@ -61,3 +61,9 @@ ScriptCategory 1:1 ScriptPrompt
 ### Steps to add a new niche
 0. Set categoryKeys in manifest package for source_to_script... and script_prompts. Tuple `<format>.<niche>`
 
+
+
+### Channel Requirements
+Medium - requires IntegrationToken: https://medium.com/me/settings/security
+
+

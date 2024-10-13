@@ -20,6 +20,7 @@ import (
 
 var once sync.Once
 
+// Try not to delete test accounts :)
 var PubProfile_EN_Medium_1 = tables.AccountPublisher{
 	AccountID:                 "TestUser1",
 	PublisherProfileID:        "MediumProfileId1",
@@ -45,14 +46,16 @@ func setupTest() {
 		dynamo_configuration.Init()
 		manifest.GetManifestLoader()
 	})
-	dal.CreatePublisherAccount(PubProfile_EN_Medium_1)
 	Test_Ledger_Blog.LedgerID = uuid.New().String() + "-INTEG-TEST"
 	dal.CreateLedger(Test_Ledger_Blog)
 }
 
 func cleanupTestData() {
-	dal.DeletePublisherAccount(PubProfile_EN_Medium_1.AccountID,
+	err := dal.ForceAllLocksFree(PubProfile_EN_Medium_1.AccountID,
 		PubProfile_EN_Medium_1.PublisherProfileID)
+	if err != nil {
+		log.Fatalf("failed to release locks on cleanup: %s", err)
+	}
 	//dal.DeleteLedger(Test_Ledger_Blog.LedgerID)
 	time.Sleep(time.Duration(40) * time.Second)
 	Purge()
