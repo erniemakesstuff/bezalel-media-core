@@ -113,12 +113,13 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 	result := []drivers.PublishCommand{}
 	for _, p := range publishEvents {
 		if s.isRenderWithoutPublish(p, publishStateToPubMap) && AllChildrenRendered(p.RootMediaEventID, mediaEvents) {
-			finalRenderChildren := s.getFinalChildrenMedia(p.RootMediaEventID, mediaEvents)
-			if len(finalRenderChildren) == 0 {
-				log.Printf("correlationID: %s WARN no finalRenderChildren present for publish, pubEvent: %s", ledgerItem.LedgerID, p.GetEventID())
+			finalRenderRoot := s.getFinalRenderRoot(p.RootMediaEventID, p.PublisherProfileID, mediaEvents)
+			if len(finalRenderRoot.EventID) == 0 {
+				log.Printf("correlationID: %s WARN no finalRenderRoot present for publish, pubEvent: %s",
+					ledgerItem.LedgerID, p.GetEventID())
 				continue
 			}
-			publishCommand := s.toPublishCommand(p, finalRenderChildren)
+			publishCommand := s.toPublishCommand(p, finalRenderRoot)
 			result = append(result, publishCommand)
 		}
 	}
@@ -130,7 +131,8 @@ func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publi
 		return false
 	}
 
-	existingPublishingEvent, ok := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel, root.RootMediaEventID, tables.PUBLISHING)]
+	existingPublishingEvent, ok := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
+		root.RootMediaEventID, tables.PUBLISHING)]
 	if ok && existingPublishingEvent.ExpiresAtTTL < time.Now().UnixMilli() {
 		// Expired, allow append new publish event.
 		return true
@@ -138,20 +140,22 @@ func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publi
 	return !ok
 }
 
-func (s *PublishWorkFlow) getFinalChildrenMedia(mediaRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
-	result := []tables.MediaEvent{}
+func (s *PublishWorkFlow) getFinalRenderRoot(mediaRootId string, publisherProfileId string,
+	mediaEvents []tables.MediaEvent) tables.MediaEvent {
 	for _, m := range mediaEvents {
-		if m.ParentEventID == mediaRootId && m.IsFinalRender {
-			result = append(result, m)
+		if m.ParentEventID == mediaRootId && m.IsFinalRender &&
+			m.FinalRenderPublisherID == publisherProfileId {
+			return m
 		}
 	}
-	return result
+	return tables.MediaEvent{}
 }
 
-func (s *PublishWorkFlow) toPublishCommand(publishEvent tables.PublishEvent, finalRenderMedia []tables.MediaEvent) drivers.PublishCommand {
+func (s *PublishWorkFlow) toPublishCommand(publishEvent tables.PublishEvent,
+	finalRenderMedia tables.MediaEvent) drivers.PublishCommand {
 	result := drivers.PublishCommand{
-		RootPublishEvent:       publishEvent,
-		FinalRenderMediaEvents: finalRenderMedia,
+		RootPublishEvent:     publishEvent,
+		FinalRenderMediaRoot: finalRenderMedia,
 	}
 	return result
 }

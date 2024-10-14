@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
@@ -26,7 +25,7 @@ func (s MediumDriver) Publish(pubCommand PublishCommand) error {
 		return err
 	}
 
-	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaEvents)
+	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
@@ -40,54 +39,40 @@ func (s MediumDriver) Publish(pubCommand PublishCommand) error {
 	return err
 }
 
-func (s MediumDriver) loadMediaContents(mediaEvents []tables.MediaEvent) (MediumBlogContents, error) {
+func (s MediumDriver) loadMediaContents(mediaEvent tables.MediaEvent) (MediumBlogContents, error) {
 	// TODO: allow enrichment with images.
 	result := MediumBlogContents{}
-	scriptPayload, err := s.loadScriptPayload(mediaEvents)
+	scriptPayload, err := s.loadScriptPayload(mediaEvent)
 	if err != nil {
+		log.Printf("correlationID: %s error initializing medium blog contents: %s", mediaEvent.LedgerID, err)
 		return result, err
 	}
 
 	result.BlogTitle = scriptPayload.BlogTitle
-	result.BlogTitle = scriptPayload.BlogText
+	result.HtmlBody = scriptPayload.BlogText
 	return result, err
 }
 
-func (s MediumDriver) loadScriptPayload(mediaEvents []tables.MediaEvent) (manifest.BlogJsonSchema, error) {
-	// Assumes first-found media-text is the Script file.
-	for _, m := range mediaEvents {
-		renders, err := m.GetRenderSequences()
-		if err != nil {
-			log.Printf("error eventID: %s retrieving render sequences from media: %s", m.GetEventID(), err)
-			return manifest.BlogJsonSchema{}, err
-		}
-		for _, r := range renders {
-			if r.MediaType != tables.MEDIA_TEXT {
-				continue
-			}
-			payload, err := LoadAsString(r.ContentLookupKey)
-			if err != nil {
-				log.Printf("correlationID: %s error loading script content as string: %s", m.LedgerID, err)
-				return manifest.BlogJsonSchema{}, err
-			}
-			return s.scriptPayloadToBlogJson(payload)
-		}
-
+func (s MediumDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.BlogJsonSchema, error) {
+	payload, err := LoadAsString(rootFinalRender.ContentLookupKey)
+	if err != nil {
+		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
+		return manifest.BlogJsonSchema{}, err
 	}
-	return manifest.BlogJsonSchema{}, fmt.Errorf("no media text script event found in loadScriptPayload")
+	return s.scriptPayloadToBlogJson(payload)
 }
 
 func (s MediumDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJsonSchema, error) {
-	// TODO: Move this string replace logic to be part of the media-render consumer.
-	cleanStringStripJsonPrefix := strings.Replace(payload,
-		"```json", "", -1)
-	cleanStringStripTrailMarks := strings.Replace(cleanStringStripJsonPrefix,
-		"```", "", -1)
 	result := manifest.BlogJsonSchema{}
-	err := json.Unmarshal([]byte(cleanStringStripTrailMarks), &result)
+	err := json.Unmarshal([]byte(payload), &result)
 	if err != nil {
 		log.Printf("error unmarshalling script text to blog schema object: %s", err)
+		log.Printf("error payload: <%s>", payload)
 		return result, err
+	}
+
+	if len(result.BlogHtml) == 0 {
+		return manifest.BlogJsonSchema{}, fmt.Errorf("empty payload received: %s", payload)
 	}
 
 	return result, err

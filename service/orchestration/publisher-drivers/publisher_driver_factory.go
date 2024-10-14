@@ -7,8 +7,8 @@ import (
 )
 
 type PublishCommand struct {
-	RootPublishEvent       tables.PublishEvent
-	FinalRenderMediaEvents []tables.MediaEvent
+	RootPublishEvent     tables.PublishEvent
+	FinalRenderMediaRoot tables.MediaEvent
 }
 
 type PublisherDriver interface {

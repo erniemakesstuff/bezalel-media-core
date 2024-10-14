@@ -35,6 +35,11 @@ func LoadAsString(contentLookupKey string) (string, error) {
 		log.Printf("%s error reading temp file: %s", contentLookupKey, err)
 		return "", err
 	}
+	err = os.Remove(contentLookupKey)
+	if err != nil {
+		log.Printf("%s error cleaning-up file: %s", contentLookupKey, err)
+		return "", err
+	}
 
 	return string(b), nil
 }

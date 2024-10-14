@@ -101,7 +101,7 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 			log.Printf("correlationID: %s WARN missing PubState for root media: %s", ledgerItem.LedgerID, r.GetEventID())
 			continue
 		}
-		finalMediaEvents := s.createFinalRenderMediaEventFromChildrens(ledgerItem, r, children, assignedPubs)
+		finalMediaEvents := s.collectFinalRenderMedia(ledgerItem, r, children, assignedPubs)
 		err = HandleMediaGeneration(ledgerItem, finalMediaEvents)
 		if err != nil {
 			log.Printf("correlationID: %s failed to append finalRender media event: %s", ledgerItem.LedgerID, err)
@@ -118,7 +118,7 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	return err
 }
 
-func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildrens(
+func (s *FinalRenderWorkflow) collectFinalRenderMedia(
 	ledgerItem tables.Ledger, root tables.MediaEvent, children []tables.MediaEvent,
 	publishEvents []tables.PublishEvent) []tables.MediaEvent {
 	resultCollection := []tables.MediaEvent{}
@@ -136,15 +136,16 @@ func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildrens(
 			Language:           root.Language,
 			Niche:              root.Niche,
 			MediaType:          tables.RENDER,
-			PromptInstruction:  "CREATING FINAL RENDER",
+			PromptInstruction:  "CREATING FINAL RENDER: " + p.PublisherProfileID,
 			DistributionFormat: root.DistributionFormat,
 			IsFinalRender:      true,
 			WatermarkText:      watermarkText,
 			ParentEventID:      root.EventID,
 		}
+		result.FinalRenderPublisherID = p.PublisherProfileID
 		result.PromptHash = tables.HashString(result.PromptInstruction)
 		result.EventID = result.GetEventID()
-		result.FinalRenderSequences = s.createJsonOfRenderSequence(r, children)
+		result.FinalRenderSequences = s.createJsonOfRenderSequence(root, children)
 		result.ContentLookupKey = result.GetContentLookupKey()
 		resultCollection = append(resultCollection, result)
 	}
@@ -153,10 +154,12 @@ func (s *FinalRenderWorkflow) createFinalRenderMediaEventFromChildrens(
 }
 
 func (s *FinalRenderWorkflow) createJsonOfRenderSequence(scriptRoot tables.MediaEvent, childrenEvents []tables.MediaEvent) string {
-	if len(childrenEvents) == 0 {
-		return ""
-	}
-	renderSequences := []tables.RenderMediaSequence{scriptRoot.ToRenderSequence()}
+	// Script root included for blog text (i.e. text content is the final render).
+	// TODO: Replace final text body with image/video urls as needed during the final-render consumption process
+	// as needed.
+	scriptRootMetadata := scriptRoot.ToRenderSequence()
+	scriptRootMetadata.RenderSequence = -1
+	renderSequences := []tables.RenderMediaSequence{scriptRootMetadata}
 	for _, m := range childrenEvents {
 		renderSequences = append(renderSequences, m.ToRenderSequence())
 	}

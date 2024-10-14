@@ -125,12 +125,17 @@ type MediaEvent struct {
 
 	// Set on enrichment parsing JSON callback from script process. Script prompt drives template json.
 	VisualPositionLayer PositionLayer // For determining position of video/image media in the final rendering.
-	RenderSequence      int           // Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent.
+	// Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent.
+	// -1 (not part of final render; script / structure metadata)
+	// 0 default
+	// 1 override
+	RenderSequence int
 
 	// Set on final rendering.
-	IsFinalRender        bool   // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
-	FinalRenderSequences string // json. []RenderMediaSequence
-	WatermarkText        string
+	FinalRenderPublisherID string // publisher ID owning this final render media.
+	IsFinalRender          bool   // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
+	FinalRenderSequences   string // json. []RenderMediaSequence
+	WatermarkText          string
 }
 
 func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
