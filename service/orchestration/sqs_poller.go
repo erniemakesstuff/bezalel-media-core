@@ -3,6 +3,7 @@ package orchestration
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -113,7 +114,11 @@ func executeRelevantWorkflow(message *sqs.Message) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("correlationID: %s, executing workflow", ledgerItem.LedgerID)
+	if len(ledgerItem.LedgerID) == 0 {
+		log.Printf("correlationID: %s, malformed ledger for payload: %+v", ledgerItem.LedgerID, message)
+		return fmt.Errorf("correlationID: %s, malformed ledger for payload: %+v", ledgerItem.LedgerID, message)
+	}
+	log.Printf("correlationID: %s consumed message; executing workflow", ledgerItem.LedgerID)
 	return RunWorkflows(ledgerItem)
 }
 

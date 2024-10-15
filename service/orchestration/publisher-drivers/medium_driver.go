@@ -49,7 +49,7 @@ func (s MediumDriver) loadMediaContents(mediaEvent tables.MediaEvent) (MediumBlo
 	}
 
 	result.BlogTitle = scriptPayload.BlogTitle
-	result.HtmlBody = scriptPayload.BlogText
+	result.HtmlBody = scriptPayload.BlogHtml
 	return result, err
 }
 

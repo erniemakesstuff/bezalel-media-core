@@ -3,7 +3,6 @@ package orchestration
 import (
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	dal "github.com/bezalel-media-core/v2/dal"
@@ -26,20 +25,16 @@ func (s *PublishWorkFlow) Run(ledgerItem tables.Ledger, processId string) error 
 	if len(publishCommands) == 0 {
 		log.Printf("correlationID: %s no publish commands created", ledgerItem.LedgerID)
 	}
-	var wg sync.WaitGroup
 	for _, p := range publishCommands {
-		wg.Add(1)
-		go s.handlePublish(p, &wg, ledgerItem.LedgerID, processId)
+		err = s.handlePublish(p, ledgerItem.LedgerID, processId)
 	}
-	wg.Wait()
-	return nil
+	return err
 }
 
-func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *sync.WaitGroup, ledgerId string, processId string) error {
+func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledgerId string, processId string) error {
 	driver, err := drivers.GetDriver(pubCommand.RootPublishEvent.DistributionChannel)
 	if err != nil {
 		log.Printf("correlationID: %s error fetching driver: %s", ledgerId, err)
-		wg.Done()
 		return err
 	}
 
@@ -48,7 +43,6 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 		log.Printf("correlationID: %s error taking publisher lock: %s", ledgerId, err)
 		dao, _ := dal.GetPublisherAccount(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 		log.Printf("correlationID: %s current publock owner: %s attempted lockid: %s", ledgerId, dao.PublishLockID, processId)
-		wg.Done()
 		return err
 	}
 
@@ -60,7 +54,6 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 		log.Printf("correlationID: %s error appending publisher publishing-event to ledger: %s", ledgerId, err)
 		// Try release publish lock
 		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
-		wg.Done()
 		return err
 	}
 
@@ -69,14 +62,12 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 		log.Printf("correlationID: %s unable to verify publish-event ledger softlock: %s", ledgerId, err)
 		// Try release publish lock
 		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
-		wg.Done()
 		return err
 	}
 
 	err = driver.Publish(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
-		wg.Done()
 		return err
 	}
 	completionEventRecord := pubCommand.RootPublishEvent
@@ -89,11 +80,9 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, wg *s
 	err = dal.ForceAllLocksFree(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error releasing all locks for successful publish: %s", ledgerId, err)
-		wg.Done()
 		return err
 	}
 
-	wg.Done()
 	return err
 }
 

@@ -133,6 +133,7 @@ func (s *FinalRenderWorkflow) collectFinalRenderMedia(
 			watermarkText = "TrueVineAI"
 		}
 		result := tables.MediaEvent{
+			LedgerID:           root.LedgerID,
 			Language:           root.Language,
 			Niche:              root.Niche,
 			MediaType:          tables.RENDER,

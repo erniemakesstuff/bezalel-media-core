@@ -12,6 +12,7 @@ scriptPrompts:
     $BLOG_JSON_FORMAT
   promptText: |
     Rewrite the following text into a blog article. You will write using the $LANGUAGE language.
+    Ensure that your response is valid JSON.
     ###
     $RAW_TEXT
 - promptCategoryKey: "Blog.Default"
@@ -27,6 +28,7 @@ scriptPrompts:
     $BLOG_JSON_FORMAT
   promptText: |
     Rewrite the following text into a blog article. You will write using the $LANGUAGE language.
+    Ensure that your response is valid JSON.
     ###
     $RAW_TEXT
 - promptCategoryKey: "Blog.Personal"
@@ -43,6 +45,7 @@ scriptPrompts:
   promptText: |
     Rewrite the following text into a blog article, and incoporate anecdotes from your personal experience.
     You will write using the $LANGUAGE language.
+    Ensure that your response is valid JSON.
     ###
     $RAW_TEXT
 - promptCategoryKey: "Blog.NewsUS"
@@ -60,5 +63,6 @@ scriptPrompts:
     Rewrite the following text into a sensationalist news article meant to attract readers attention.
     Focus on highlighting the recency of the event by using dates, and reference other recent events in
     the United States. You will write using the $LANGUAGE language.
+    Ensure that your response is valid JSON.
     ###
     $RAW_TEXT
