@@ -8,4 +8,3 @@ sources:
   - sourceName: "v1/source/blog"
     scriptCategories:
       - categoryKey: "Blog.Personal"
-      - categoryKey: "Blog.NewsUS"
