@@ -69,6 +69,35 @@ func GetPublisherAccount(accountId string, publisherProfileId string) (tables.Ac
 	return resultItem, err
 }
 
+func RecordPublishTime(accountId string, publisherProfileId string) error {
+	releaseTime := time.Now().UnixMilli()
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":v": {
+				N: aws.String(strconv.FormatInt(releaseTime, 10)),
+			},
+		},
+		TableName:        aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		ReturnValues:     aws.String("NONE"),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v", "LastPublishAtEpochMilli")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling updateItem to record publish time: %s", err)
+		return err
+	}
+	return nil
+}
+
 func DeletePublisherAccount(accountId string, publisherProfileId string) error {
 	_, err := svc.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String(dynamo_configuration.TABLE_ACCOUNTS),

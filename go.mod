@@ -20,5 +20,6 @@ require (
 	github.com/aws/smithy-go v1.22.0
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/medium/medium-sdk-go v0.0.0-20171230201202-4daca056cf6a
+	github.com/michimani/gotwi v0.16.1
 	github.com/stretchr/testify v1.9.0
 )

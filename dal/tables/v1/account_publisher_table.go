@@ -13,7 +13,7 @@ const (
 
 type SubscriptionStatus string
 
-// Filter expresision Expired*
+// Filter expresision Expired* regex.
 const (
 	EXPIRED_BASIC   SubscriptionStatus = "ExpiredBasicSubscription"
 	EXPIRED_PREMIUM SubscriptionStatus = "ExpiredPremiumSubscription"
@@ -37,8 +37,10 @@ type AccountPublisher struct {
 	PreferredLanguage         string
 
 	// Optional - PublisherProfile specific
-	PublisherAPISecretID  string
-	PublisherAPISecretKey string
+	PublisherAPISecretID  string // The backend credentials service "app" calling the api. This should be set once, globally for the whole enterprise.
+	PublisherAPISecretKey string // TODO: Refactor this out to be enterprise global.
+	UserAccessToken       string // For impersonating the user.
+	UserAccessTokenSecret string
 	PublisherLanguage     string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
 	PublisherNiche        string // Drama, news, ...
 	OverrideTemplateIDs   string
@@ -47,4 +49,5 @@ type AccountPublisher struct {
 	PublishLockID         string // ID of the process performing the publish to distribution channels.
 	PublishLockTTL        int64  // Epoch Milliseconds.
 	WatermarkText         string
+	IsStaleProfile        bool // TODO: https://trello.com/c/ugotbYnQ
 }

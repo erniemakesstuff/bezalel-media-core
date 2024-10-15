@@ -41,7 +41,7 @@ func cleanupTestData() {
 	}
 }
 
-func TestPublish(t *testing.T) {
+func TestMediumPublish(t *testing.T) {
 	setupTest()
 	pubEvent := tables.PublishEvent{
 		OwnerAccountID:     PubProfile_EN_Medium_1.AccountID,
@@ -51,6 +51,24 @@ func TestPublish(t *testing.T) {
 		RootPublishEvent: pubEvent,
 	}
 	driver := MediumDriver{}
+	err := driver.Publish(cmd)
+	if err != nil {
+		log.Printf("publisher error: %s", err)
+	}
+	cleanupTestData()
+}
+
+func TestTwitterPublish(t *testing.T) {
+	setupTest()
+	pubEvent := tables.PublishEvent{
+		OwnerAccountID:     Live_EN_Twitter_1.AccountID,
+		PublisherProfileID: Live_EN_Twitter_1.PublisherProfileID,
+		LedgerID:           "INTEG-TestTwitterPublish",
+	}
+	cmd := PublishCommand{
+		RootPublishEvent: pubEvent,
+	}
+	driver := TwitterDriver{}
 	err := driver.Publish(cmd)
 	if err != nil {
 		log.Printf("publisher error: %s", err)

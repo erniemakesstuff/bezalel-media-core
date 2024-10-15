@@ -70,11 +70,19 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
 		return err
 	}
+
 	completionEventRecord := pubCommand.RootPublishEvent
 	completionEventRecord.PublishStatus = tables.COMPLETE
 	err = dal.AppendLedgerPublishEvents(ledgerId, []tables.PublishEvent{completionEventRecord})
 	if err != nil {
 		log.Printf("correlationID: %s error appending completion publish event: %s", ledgerId, err)
+		return err
+	}
+
+	err = dal.RecordPublishTime(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+	if err != nil {
+		log.Printf("correlationID: %s error recording last publish time: %s", ledgerId, err)
+		return err
 	}
 
 	err = dal.ForceAllLocksFree(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)

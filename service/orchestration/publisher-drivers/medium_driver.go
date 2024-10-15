@@ -88,7 +88,7 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 	// the user id (alphanumeric string with 65 chars)
 	u, err := m2.GetUser("")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("correlationID: %s error retrieving user context: %s", ledgerId, err)
 	}
 
 	p, err := m2.CreatePost(medium.CreatePostOptions{
@@ -104,6 +104,7 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 	}
 
 	// Confirm everything went ok. p.URL has the location of the created post.
+	// TODO: send publish-url to work-engagement queue.
 	log.Println(u, p)
 	return err
 }
