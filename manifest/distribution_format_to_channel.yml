@@ -5,3 +5,6 @@ distributionFormats:
   - format: "Blog"
     channels:
       - channelName: "Medium"
+  - format: "TinyBlog"
+    channels:
+      - channelName: "Twitter"

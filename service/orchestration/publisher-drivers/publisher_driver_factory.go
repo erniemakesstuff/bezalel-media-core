@@ -19,6 +19,8 @@ func GetDriver(dsitributionChannelName string) (PublisherDriver, error) {
 	switch {
 	case dsitributionChannelName == "Medium":
 		return MediumDriver{}, nil
+	case dsitributionChannelName == "Twitter":
+		return TwitterDriver{}, nil
 	}
 	return nil, errors.New("no matching source-to-driver found")
 }

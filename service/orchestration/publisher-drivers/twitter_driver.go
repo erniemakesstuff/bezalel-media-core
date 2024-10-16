@@ -26,17 +26,12 @@ func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
 		log.Printf("correlationID: %s error loading publisher account for medium driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
-	/*
-		blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
-		if err != nil {
-			log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
-			return err
-		}
-	*/
-
-	blogPayload := TwitterPostContents{
-		TweetTextBody: "Hello World",
+	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
+	if err != nil {
+		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
+		return err
 	}
+
 	err = s.publishTwitterPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayload)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading blog contents to Medium: %s", pubCommand.RootPublishEvent.LedgerID, err)
@@ -49,14 +44,13 @@ func (s TwitterDriver) loadMediaContents(mediaEvent tables.MediaEvent) (TwitterP
 	// TODO: allow enrichment with images.
 	result := TwitterPostContents{}
 	var err error
-	//scriptPayload, err := s.loadScriptPayload(mediaEvent)
+	scriptPayload, err := s.loadScriptPayload(mediaEvent)
 	if err != nil {
 		log.Printf("correlationID: %s error initializing medium blog contents: %s", mediaEvent.LedgerID, err)
 		return result, err
 	}
 
-	//result.BlogTitle = scriptPayload.BlogTitle
-	//result.HtmlBody = scriptPayload.BlogHtml
+	result.TweetTextBody = scriptPayload.BlogText
 	return result, err
 }
 

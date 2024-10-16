@@ -1,3 +1,14 @@
+# <DistributionFormat>.<Niche>
+# Used for mapping to ScriptPrompts.
+# Used for mapping to downstream distribution channels.
+#
+# DistributionFormat Definitions:
+# Blog - primary method of viewer-consumption is via text. At most 1 page of static content.
+#   TinyBlog - smaller blog post ~Tweeting.
+#
+# Niche Definitions:
+# Personal - content is self-referential to an assigned persona.
+
 sources:
   - sourceName: "WorkflowIntegTest"
     scriptCategories:
@@ -8,3 +19,4 @@ sources:
   - sourceName: "v1/source/blog"
     scriptCategories:
       - categoryKey: "Blog.Personal"
+      - categoryKey: "TinyBlog.Personal"
