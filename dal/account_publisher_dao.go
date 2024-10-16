@@ -1,7 +1,6 @@
 package dal
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -209,7 +208,8 @@ func AssignPublisherProfile(processId string, distributionChannelName string, pu
 	}
 
 	if resultItem.AccountID == "" {
-		return resultItem, errors.New("no active account publisher profiles found")
+		return resultItem, fmt.Errorf("no active account publisher profiles found distChannel: %s language: %s niche: %s",
+			distributionChannelName, publisherLanguage, publisherNiche)
 	}
 
 	err = takeAssignmentLock(resultItem.AccountID, resultItem.PublisherProfileID, processId)

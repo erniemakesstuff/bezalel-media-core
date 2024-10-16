@@ -78,7 +78,7 @@ func (s CompletionWorkflow) isPublishedOnAllChannels(channelNames []string,
 		key := fmt.Sprintf("%s.%s.%s", cn, rootMedia.GetEventID(), tables.COMPLETE)
 		_, ok := pubStateMap[key]
 		if !ok {
-			log.Printf("correlationID: %s missing syndication to %s for eventId: %s", rootMedia.LedgerID, cn, rootMedia.GetEventID())
+			log.Printf("correlationID: %s missing syndication to %s of %s for eventId: %s", rootMedia.LedgerID, cn, channelNames, rootMedia.GetEventID())
 			return false
 		}
 	}

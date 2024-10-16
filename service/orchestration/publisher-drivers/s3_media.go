@@ -26,7 +26,7 @@ func LoadAsString(contentLookupKey string) (string, error) {
 			Key:    aws.String(contentLookupKey),
 		})
 	if err != nil {
-		log.Printf("error checking media existence: %s", err)
+		log.Printf("error checking %s media existence within LoadAsString: %s", contentLookupKey, err)
 		return "", err
 	}
 

@@ -86,6 +86,7 @@ type DistributionFormat string
 const (
 	DIST_FORMAT_INTEG_BLOG DistributionFormat = "IntegBlog"
 	DIST_FORMAT_BLOG       DistributionFormat = "Blog"
+	DIST_FORMAT_BLOG_TINY  DistributionFormat = "TinyBlog"
 	DIST_FORMAT_LVIDEO     DistributionFormat = "LongformVideo"
 )
 
@@ -144,6 +145,8 @@ func GetDistributionFormatFromString(format string) (DistributionFormat, error) 
 		return DIST_FORMAT_INTEG_BLOG, nil
 	case strings.EqualFold(format, string(DIST_FORMAT_BLOG)):
 		return DIST_FORMAT_BLOG, nil
+	case strings.EqualFold(format, string(DIST_FORMAT_BLOG_TINY)):
+		return DIST_FORMAT_BLOG_TINY, nil
 	case strings.EqualFold(format, string(DIST_FORMAT_LVIDEO)):
 		return DIST_FORMAT_LVIDEO, nil
 	}

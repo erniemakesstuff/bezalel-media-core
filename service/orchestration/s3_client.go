@@ -27,7 +27,7 @@ func MediaExists(contentLookupKey string) (bool, error) {
 		}
 	}
 	if err != nil {
-		log.Printf("error checking media existence: %s", err)
+		log.Printf("error checking %s media existence within MediaExists: %s", contentLookupKey, err)
 		return false, err
 	}
 

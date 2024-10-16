@@ -22,7 +22,7 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 	if len(prompts) == 0 {
 		return fmt.Errorf("correlationID: %s error no prompts received from source: %s", ledgerItem.LedgerID, ledgerItem.TriggerEventSource)
 	}
-
+	mediaEventsToRender := []tables.MediaEvent{}
 	for _, p := range prompts {
 		mediaEvent, err := getMediaEventFromPrompt(p, ledgerItem)
 		if err != nil {
@@ -37,11 +37,13 @@ func (s *ScriptWorkflow) Run(ledgerItem tables.Ledger, processId string) error {
 		if alreadyExists {
 			continue
 		}
-		err = HandleMediaGeneration(ledgerItem, []tables.MediaEvent{mediaEvent})
-		if err != nil {
-			log.Printf("correlationID: %s failed to handle media generation for script workflow: %s", ledgerItem.LedgerID, err)
-			return err
-		}
+		mediaEventsToRender = append(mediaEventsToRender, mediaEvent)
+	}
+
+	err := HandleMediaGeneration(ledgerItem, mediaEventsToRender)
+	if err != nil {
+		log.Printf("correlationID: %s failed to handle media generation for script workflow: %s", ledgerItem.LedgerID, err)
+		return err
 	}
 	return nil
 }
