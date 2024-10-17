@@ -52,6 +52,7 @@ ScriptCategory 1:1 ScriptPrompt
 0. Add DistributionChannel in ledger table.
 1. Update publisher_driver factory in orchestration/publisher-drivers.
 2. Update manifest distribution_format_to_channel file.
+3. Update the media-pollers package to support the new DistributionFormat.
 
 ### Steps to add a new source
 0. Create a new ingestion driver to accept the source payload.
