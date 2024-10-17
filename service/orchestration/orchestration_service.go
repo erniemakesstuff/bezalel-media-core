@@ -63,5 +63,6 @@ func isStaleLedgerEvent(triggerLedger tables.Ledger, latestLedger tables.Ledger)
 	}
 
 	return (triggerLedger.MediaEventsVersion < latestLedger.MediaEventsVersion) ||
-		(triggerLedger.PublishEventsVersion < latestLedger.PublishEventsVersion)
+		(triggerLedger.PublishEventsVersion < latestLedger.PublishEventsVersion) ||
+		(triggerLedger.HeartbeatCount < latestLedger.HeartbeatCount)
 }
