@@ -20,6 +20,7 @@ func LoadAsString(contentLookupKey string) (string, error) {
 		log.Printf("%s error creating temp file: %s", contentLookupKey, err)
 		return "", err
 	}
+
 	_, err = s3_downloader.Download(file,
 		&s3.GetObjectInput{
 			Bucket: aws.String(media_bucket_name),
@@ -27,6 +28,7 @@ func LoadAsString(contentLookupKey string) (string, error) {
 		})
 	if err != nil {
 		log.Printf("error checking %s media existence within LoadAsString: %s", contentLookupKey, err)
+		os.Remove(contentLookupKey)
 		return "", err
 	}
 

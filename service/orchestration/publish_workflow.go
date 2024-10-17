@@ -22,9 +22,7 @@ func (s *PublishWorkFlow) Run(ledgerItem tables.Ledger, processId string) error 
 		log.Printf("correlationID: %s error generating publish commands: %s", ledgerItem.LedgerID, err)
 		return err
 	}
-	if len(publishCommands) == 0 {
-		log.Printf("correlationID: %s no publish commands created", ledgerItem.LedgerID)
-	}
+
 	for _, p := range publishCommands {
 		err = s.handlePublish(p, ledgerItem.LedgerID, processId)
 	}
@@ -41,8 +39,6 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 	err = dal.TakePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 	if err != nil {
 		log.Printf("correlationID: %s error taking publisher lock: %s", ledgerId, err)
-		dao, _ := dal.GetPublisherAccount(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
-		log.Printf("correlationID: %s current publock owner: %s attempted lockid: %s", ledgerId, dao.PublishLockID, processId)
 		return err
 	}
 
@@ -68,6 +64,8 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 	err = driver.Publish(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
+		// Try release publish lock
+		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
 	}
 
@@ -109,35 +107,75 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 	publishStateToPubMap := PubStateByRootMedia(publishEvents)
 	result := []drivers.PublishCommand{}
 	for _, p := range publishEvents {
-		if s.isRenderWithoutPublish(p, publishStateToPubMap) && AllChildrenRendered(p.RootMediaEventID, mediaEvents) {
-			finalRenderRoot := s.getFinalRenderRoot(p.RootMediaEventID, p.PublisherProfileID, mediaEvents)
-			if len(finalRenderRoot.EventID) == 0 {
+		shouldCreatePublishEvent, err := s.isRenderWithoutPublish(p, publishStateToPubMap)
+		if err != nil {
+			return []drivers.PublishCommand{}, err
+		}
+
+		if !shouldCreatePublishEvent || s.isRenderAlreadyCompleted(p, publishStateToPubMap) {
+			continue
+		}
+
+		childrenMediaEvents := CollectChildrenEvents(p.RootMediaEventID, mediaEvents)
+		if len(childrenMediaEvents) == 0 {
+			continue
+		}
+
+		if AllChildrenRendered(p.RootMediaEventID, childrenMediaEvents) {
+			finalRenderEvent := s.getFinalRenderEvent(p.RootMediaEventID, p.PublisherProfileID, childrenMediaEvents)
+			if len(finalRenderEvent.EventID) == 0 {
 				log.Printf("correlationID: %s WARN no finalRenderRoot present for publish, pubEvent: %s",
 					ledgerItem.LedgerID, p.GetEventID())
 				continue
 			}
-			publishCommand := s.toPublishCommand(p, finalRenderRoot)
+			publishCommand := s.toPublishCommand(p, finalRenderEvent)
 			result = append(result, publishCommand)
 		}
 	}
 	return result, err
 }
 
-func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publishStates map[string]tables.PublishEvent) bool {
+func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publishStates map[string]tables.PublishEvent) (bool, error) {
 	if root.PublishStatus != tables.RENDERING {
-		return false
+		return false, nil
 	}
 
 	existingPublishingEvent, ok := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
 		root.RootMediaEventID, tables.PUBLISHING)]
 	if ok && existingPublishingEvent.ExpiresAtTTL < time.Now().UnixMilli() {
 		// Expired, allow append new publish event.
-		return true
+		return true, nil
 	}
-	return !ok
+	if !ok {
+		return true, nil
+	}
+
+	// check that publish is still holding the profile-publish lock, otherwise retry by creating a new pub-event
+	pubAccount, err := dal.GetPublisherAccount(existingPublishingEvent.OwnerAccountID, existingPublishingEvent.PublisherProfileID)
+	if err != nil {
+		log.Printf("correlationID: %s error retrieving publisher account within isRenderWithoutPublish: %s",
+			existingPublishingEvent.LedgerID, err)
+		return false, err
+	}
+
+	if len(pubAccount.PublishLockID) == 0 || pubAccount.PublishLockTTL < time.Now().UnixMilli() {
+		return true, nil
+	}
+
+	return !ok, nil
 }
 
-func (s *PublishWorkFlow) getFinalRenderRoot(mediaRootId string, publisherProfileId string,
+func (s *PublishWorkFlow) isRenderAlreadyCompleted(root tables.PublishEvent, publishStates map[string]tables.PublishEvent) bool {
+	if root.PublishStatus != tables.RENDERING {
+		return false
+	}
+
+	_, ok := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
+		root.RootMediaEventID, tables.COMPLETE)]
+	return ok
+}
+
+func (s *PublishWorkFlow) getFinalRenderEvent(mediaRootId string, publisherProfileId string,
 	mediaEvents []tables.MediaEvent) tables.MediaEvent {
 	for _, m := range mediaEvents {
 		if m.ParentEventID == mediaRootId && m.IsFinalRender &&

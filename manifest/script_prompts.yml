@@ -75,7 +75,7 @@ scriptPrompts:
     You relate the contents of your blog to your personal and professional experiences.
     Your output should be no more than 280 characters long.
     Your output should be valid json:
-    $BLOG_JSON_FORMAT
+    $TINY_BLOG_JSON_FORMAT
   promptText: |
     Rewrite the following text into a pithy Twitter post, at most 280 characters.
     Use at most two relevant hashtags.

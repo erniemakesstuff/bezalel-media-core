@@ -28,7 +28,7 @@ var workflowsToRun = []Workflow{
 func RunWorkflows(ledgerItem tables.Ledger) error {
 	latestLedger, err := dal.GetLedger(ledgerItem.LedgerID)
 	if err != nil {
-		log.Printf("correlationID: %s run workflows error: %s", ledgerItem.LedgerID, err)
+		log.Printf("correlationID: %s run workflows error retrieving latest ledger: %s", ledgerItem.LedgerID, err)
 		return err
 	}
 

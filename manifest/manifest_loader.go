@@ -19,9 +19,10 @@ var manifestInstance *ManifestLoader
 var once sync.Once
 
 const (
-	PROMPT_SCRIPT_VAR_RAW_TEXT    = "$RAW_TEXT"
-	PROMPT_SCRIPT_VAR_LANGUAGE    = "$LANGUAGE"
-	PROMPT_SCRIPT_VAR_BLOG_FORMAT = "$BLOG_JSON_FORMAT"
+	PROMPT_SCRIPT_VAR_RAW_TEXT         = "$RAW_TEXT"
+	PROMPT_SCRIPT_VAR_LANGUAGE         = "$LANGUAGE"
+	PROMPT_SCRIPT_VAR_BLOG_FORMAT      = "$BLOG_JSON_FORMAT"
+	PROMPT_SCRIPT_VAR_TINY_BLOG_FORMAT = "$TINY_BLOG_JSON_FORMAT"
 )
 
 type Prompt struct {
@@ -126,6 +127,8 @@ func getScriptPromptCollection() ScriptPromptCollection {
 		// TODO: chain other schema replacements here.
 		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
 			PROMPT_SCRIPT_VAR_BLOG_FORMAT, GetBlogJsonSchemaFewShot(), -1)
+		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
+			PROMPT_SCRIPT_VAR_TINY_BLOG_FORMAT, GetTinyBlogJson(), -1)
 	}
 	return prompts
 }

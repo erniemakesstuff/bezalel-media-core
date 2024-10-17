@@ -35,6 +35,7 @@ type Ledger struct {
 	PublishEvents           string // Publish to distribution channel: YouTube, Instagram, ...
 	MediaEventsVersion      int64
 	PublishEventsVersion    int64
+	HeartbeatCount          int64
 }
 type Event interface {
 	GetEventID() string

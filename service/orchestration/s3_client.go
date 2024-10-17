@@ -30,7 +30,6 @@ func MediaExists(contentLookupKey string) (bool, error) {
 		log.Printf("error checking %s media existence within MediaExists: %s", contentLookupKey, err)
 		return false, err
 	}
-
 	return true, nil
 }
 
@@ -45,3 +44,6 @@ func listObjs() {
 		log.Println("")
 	}
 }
+
+// Render.877bbde6-676f-4fbe-b2cb-570f5afb9472.1bc57e9c-aeb1-4016-a576-a7ef4c3a6895
+// Render.877bbde6-676f-4fbe-b2cb-570f5afb9472.26478a60-2daa-451c-bd6b-6de5da78bbfc

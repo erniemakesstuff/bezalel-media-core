@@ -292,3 +292,36 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 	}
 	return result
 }
+
+func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
+	const maxHeartbeat = 100
+	if ledgerEntry.HeartbeatCount >= maxHeartbeat {
+		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerEntry.LedgerID)
+		return nil
+	}
+	// Prevent system spam messages onto diff queue.
+	time.Sleep(time.Duration(ledgerEntry.HeartbeatCount) * time.Second)
+
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"LedgerID": {
+				S: aws.String(ledgerEntry.LedgerID),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":v": {
+				N: aws.String(strconv.FormatInt(1, 10)),
+			},
+		},
+		TableName:        aws.String(dynamo_configuration.TABLE_EVENT_LEDGER),
+		ReturnValues:     aws.String("NONE"),
+		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v", "HeartbeatCount")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("correlationID: %s error incrementing heartbeat: %s", ledgerEntry.LedgerID, err)
+	}
+
+	return err
+}

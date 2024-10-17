@@ -28,10 +28,9 @@ func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
 	}
 	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
 	if err != nil {
-		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
+		log.Printf("correlationID: %s error downloading content for tinyblog: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
-
 	err = s.publishTwitterPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayload)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading blog contents to Medium: %s", pubCommand.RootPublishEvent.LedgerID, err)
@@ -46,7 +45,7 @@ func (s TwitterDriver) loadMediaContents(mediaEvent tables.MediaEvent) (TwitterP
 	var err error
 	scriptPayload, err := s.loadScriptPayload(mediaEvent)
 	if err != nil {
-		log.Printf("correlationID: %s error initializing medium blog contents: %s", mediaEvent.LedgerID, err)
+		log.Printf("correlationID: %s error initializing twitter blog contents: %s", mediaEvent.LedgerID, err)
 		return result, err
 	}
 
@@ -54,17 +53,17 @@ func (s TwitterDriver) loadMediaContents(mediaEvent tables.MediaEvent) (TwitterP
 	return result, err
 }
 
-func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.BlogJsonSchema, error) {
+func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.TinyBlogJsonSchema, error) {
 	payload, err := LoadAsString(rootFinalRender.ContentLookupKey)
 	if err != nil {
 		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
-		return manifest.BlogJsonSchema{}, err
+		return manifest.TinyBlogJsonSchema{}, err
 	}
 	return s.scriptPayloadToBlogJson(payload)
 }
 
-func (s TwitterDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJsonSchema, error) {
-	result := manifest.BlogJsonSchema{}
+func (s TwitterDriver) scriptPayloadToBlogJson(payload string) (manifest.TinyBlogJsonSchema, error) {
+	result := manifest.TinyBlogJsonSchema{}
 	err := json.Unmarshal([]byte(payload), &result)
 	if err != nil {
 		log.Printf("error unmarshalling script text to blog schema object: %s", err)
@@ -72,8 +71,8 @@ func (s TwitterDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJso
 		return result, err
 	}
 
-	if len(result.BlogHtml) == 0 {
-		return manifest.BlogJsonSchema{}, fmt.Errorf("empty payload received: %s", payload)
+	if len(result.BlogText) == 0 {
+		return manifest.TinyBlogJsonSchema{}, fmt.Errorf("empty payload received: %s", payload)
 	}
 
 	return result, err

@@ -16,7 +16,6 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvents []tables.MediaE
 		return err
 	}
 	if existsInLedger {
-		log.Printf("correlationID: %s media event already in ledger", ledgerItem.LedgerID)
 		return nil
 	}
 	// TODO: Check if media exists in PgVector for-reuse.
@@ -85,7 +84,7 @@ func WaitOptimisticVerifyWroteLedger(expectedPublisherEventID string, ledgerId s
 
 func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	for _, m := range mediaEvents {
-		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId || m.GetEventID() != rootId {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId || m.GetEventID() == rootId {
 			continue
 		}
 
@@ -101,10 +100,10 @@ func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	return true
 }
 
-func CollectChildrenEvents(mediaEventRoot tables.MediaEvent, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
+func CollectChildrenEvents(mediaEventRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
 	result := []tables.MediaEvent{}
 	for _, m := range mediaEvents {
-		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRoot.GetEventID() {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRootId {
 			continue
 		}
 		result = append(result, m)

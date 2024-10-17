@@ -23,7 +23,6 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 		return err
 	}
 	if len(assignedPublishEvents) == 0 {
-		log.Printf("correlationID: %s no assigned publish events found", ledgerItem.LedgerID)
 		return nil
 	}
 
@@ -32,7 +31,6 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 		return err
 	}
 	if len(rootMediasReadyForPublish) == 0 {
-		log.Printf("correlationID: %s no root media events ready for publish found", ledgerItem.LedgerID)
 		return nil
 	}
 
@@ -94,7 +92,7 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	}
 	mediaEventToPublisherMap := CreateMediaEventToPublisherMap(assignedPublisherProfiles, rootMediaEventsToFinalize)
 	for _, r := range rootMediaEventsToFinalize {
-		children := CollectChildrenEvents(r, mediaEvents)
+		children := CollectChildrenEvents(r.GetEventID(), mediaEvents)
 		sort.Sort(tables.ByRenderSequence(children))
 		assignedPubs, ok := mediaEventToPublisherMap[r.GetEventID()]
 		if !ok || len(assignedPubs) == 0 {
