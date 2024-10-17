@@ -89,6 +89,7 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 	u, err := m2.GetUser("")
 	if err != nil {
 		log.Printf("correlationID: %s error retrieving user context: %s", ledgerId, err)
+		return err
 	}
 
 	p, err := m2.CreatePost(medium.CreatePostOptions{

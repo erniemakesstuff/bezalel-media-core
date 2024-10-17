@@ -244,9 +244,13 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 			":i": {
 				S: aws.String(publisherNiche),
 			},
+			":b": {
+				BOOL: aws.Bool(false),
+			},
 		},
-		FilterExpression: aws.String("NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n AND PublisherLanguage = :l AND PublisherNiche = :i"),
-		Limit:            aws.Int64(maxRecordsPerQuery),
+		FilterExpression: aws.String(`NOT contains(AccountSubscriptionStatus, :e) AND AssignmentLockTTL < :n 
+		AND PublisherLanguage = :l AND PublisherNiche = :i AND IsStaleProfile = :b`),
+		Limit: aws.Int64(maxRecordsPerQuery),
 	}
 	if lastPagekeyPK != "" {
 		queryInput.SetExclusiveStartKey(map[string]*dynamodb.AttributeValue{

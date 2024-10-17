@@ -14,7 +14,6 @@ import (
 
 var once sync.Once
 
-// Try not to delete test accounts :)
 var PubProfile_EN_Medium_1 = tables.AccountPublisher{
 	AccountID:                 "TestPublisherUser1",
 	PublisherProfileID:        "MediumProfileId1",
@@ -24,6 +23,7 @@ var PubProfile_EN_Medium_1 = tables.AccountPublisher{
 	PublisherNiche:            "TestingNiche",
 	PublisherLanguage:         "EN",
 	PublisherAPISecretID:      "TrueVineAIToken",
+	// TODO: Inject api secret when testing.
 }
 
 func setupTest() {
@@ -35,9 +35,9 @@ func setupTest() {
 }
 
 func cleanupTestData() {
-	err := dal.ForceAllLocksFree(PubProfile_EN_Medium_1.AccountID, PubProfile_EN_Medium_1.PublisherProfileID)
+	err := dal.DeletePublisherAccount(PubProfile_EN_Medium_1.AccountID, PubProfile_EN_Medium_1.PublisherProfileID)
 	if err != nil {
-		log.Fatalf("failed to release locks on cleanup: %s", err)
+		log.Fatalf("failed to delete publisher account: %s", err)
 	}
 }
 

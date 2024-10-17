@@ -15,7 +15,6 @@ type TinyBlogJsonSchema struct {
 	Instruction string `json:"instruction"`
 	BlogTitle   string `json:"blogTitle"`
 	BlogText    string `json:"blogText"`
-	BlogHtml    string `json:"blogHtml"`
 }
 
 func GetBlogJsonSchemaFewShot() string {
@@ -36,7 +35,7 @@ func GetTinyBlogJson() string {
 	sampleShot := TinyBlogJsonSchema{
 		Instruction: "instructions you received",
 		BlogTitle:   "your blog title goes here",
-		BlogText:    "your raw blog text content goes here",
+		BlogText:    "your plaintext content goes here",
 	}
 
 	b, err := json.MarshalIndent(sampleShot, "", "  ")
