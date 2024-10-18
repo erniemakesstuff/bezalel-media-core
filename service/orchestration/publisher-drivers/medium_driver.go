@@ -111,10 +111,11 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 }
 
 func (s MediumDriver) setAnyBadRequestCode(err error) error {
-	is400StatusCode := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=4") ||
+	isCredentialError := strings.Contains(fmt.Sprintf("%s", err), "401") ||
+		strings.Contains(fmt.Sprintf("%s", err), "403") ||
 		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "forbidden") ||
-		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "forbidden")
-	if is400StatusCode {
+		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "unauthorized")
+	if isCredentialError {
 		return fmt.Errorf("%s: Medium profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
 	}
 	return err

@@ -20,9 +20,9 @@ var sqs_svc = sqs.New(aws_configuration.GetAwsSession())
 
 const queue_name = "ledger-queue"                    // os.Getenv("LEDGER_SQS_NAME")
 const visibility_timeout = 180                       // seconds
-const time_milliseconds_between_message_polls = 1000 // TODO re-evaluate
-const max_messages_per_poll = 10
-const max_concurrent_process_consumers = 1 // TODO: Update this, should be around 100
+const time_milliseconds_between_message_polls = 1500 // TODO re-evaluate
+const max_messages_per_poll = 1
+const max_concurrent_process_consumers = 1 // TODO: evaluate this; avoid spamming downstream publishers; rate limits.
 
 func PollForLedgerUpdates() {
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{

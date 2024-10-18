@@ -109,8 +109,9 @@ func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.Accoun
 }
 
 func (s TwitterDriver) setAnyBadRequestCode(err error) error {
-	is400StatusCode := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=4")
-	if is400StatusCode {
+	isCredentialError := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=403") ||
+		strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=401")
+	if isCredentialError {
 		return fmt.Errorf("%s: Twitter profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
 	}
 	return err
