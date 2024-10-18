@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
@@ -21,7 +22,7 @@ type TwitterPostContents struct {
 }
 
 func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
-	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for medium driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
@@ -100,9 +101,17 @@ func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.Accoun
 
 	res, err := managetweet.Create(context.Background(), c, p)
 	if err != nil {
-		return err
+		return s.setAnyBadRequestCode(err)
 	}
 
 	log.Printf("correlationID: %s tweeted: %s", ledgerId, gotwi.StringValue(res.Data.ID))
+	return err
+}
+
+func (s TwitterDriver) setAnyBadRequestCode(err error) error {
+	is400StatusCode := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=4")
+	if is400StatusCode {
+		return fmt.Errorf("%s: Twitter profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
+	}
 	return err
 }

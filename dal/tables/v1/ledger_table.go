@@ -219,7 +219,7 @@ type PublishEvent struct {
 	PublishStatus       PublishStatus // Soft lock: ASSIGNED, PUBLISHING, COMPLETE, EXPIRED.
 	ExpiresAtTTL        int64         // Lifetime of assignment lock prior to entering EXPIRED state if no associated COMPLETE.
 	PublisherProfileID  string
-	OwnerAccountID      string // PublisherProfile owner.
+	AccountID           string // PublisherProfile owner.
 	RootMediaEventID    string
 	ProcessOwner        string // Agent guid performing the publish.
 }

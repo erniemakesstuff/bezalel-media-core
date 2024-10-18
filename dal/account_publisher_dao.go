@@ -120,6 +120,34 @@ func ReleasePublishLock(accountId string, publisherProfileId string, processId s
 	return releaseLock(accountId, publisherProfileId, processId, "PublishLockID", "PublishLockTTL")
 }
 
+func SetProfileStaleFlag(accountId string, publisherProfileId string, isStale bool) error {
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":v": {
+				BOOL: aws.Bool(isStale),
+			},
+		},
+		TableName:        aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		ReturnValues:     aws.String("NONE"),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v", "IsStaleProfile")),
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling updateItem in setProfileStaleFlag: %s", err)
+		return err
+	}
+	return nil
+}
+
 func ForceAllLocksFree(accountId string, publisherProfileId string) error {
 	const releaseLockId = ""
 	const releaseTime = 0

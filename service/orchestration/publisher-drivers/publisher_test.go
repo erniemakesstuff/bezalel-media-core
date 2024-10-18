@@ -44,7 +44,7 @@ func cleanupTestData() {
 func TestMediumPublish(t *testing.T) {
 	setupTest()
 	pubEvent := tables.PublishEvent{
-		OwnerAccountID:     PubProfile_EN_Medium_1.AccountID,
+		AccountID:          PubProfile_EN_Medium_1.AccountID,
 		PublisherProfileID: PubProfile_EN_Medium_1.PublisherProfileID,
 	}
 	cmd := PublishCommand{
@@ -61,7 +61,7 @@ func TestMediumPublish(t *testing.T) {
 func TestTwitterPublish(t *testing.T) {
 	setupTest()
 	pubEvent := tables.PublishEvent{
-		OwnerAccountID:     Live_EN_Twitter_1.AccountID,
+		AccountID:          Live_EN_Twitter_1.AccountID,
 		PublisherProfileID: Live_EN_Twitter_1.PublisherProfileID,
 		LedgerID:           "INTEG-TestTwitterPublish",
 	}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
@@ -19,7 +20,7 @@ type MediumBlogContents struct {
 }
 
 func (s MediumDriver) Publish(pubCommand PublishCommand) error {
-	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for medium driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
@@ -31,7 +32,7 @@ func (s MediumDriver) Publish(pubCommand PublishCommand) error {
 		return err
 	}
 
-	err = s.publishMediumArticle(pubCommand.RootPublishEvent.LedgerID, acc.PublisherAPISecretKey, blogPayload)
+	err = s.publishMediumArticle(pubCommand.RootPublishEvent.LedgerID, acc.PublisherAPISecretKey, blogPayload, acc)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading blog contents to Medium: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
@@ -78,7 +79,7 @@ func (s MediumDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJson
 	return result, err
 }
 
-func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, blogPayload MediumBlogContents) error {
+func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, blogPayload MediumBlogContents, account tables.AccountPublisher) error {
 	// If you have a self-issued access token, you can skip these steps and
 	// create a new client directly:
 	m2 := medium.NewClientWithAccessToken(apiSecret)
@@ -100,12 +101,21 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 		PublishStatus: medium.PublishStatusPublic,
 	})
 	if err != nil {
-		log.Printf("correlationID: %s error publishing to Medium: %s", ledgerId, err)
-		return err
+		return s.setAnyBadRequestCode(err)
 	}
 
 	// Confirm everything went ok. p.URL has the location of the created post.
 	// TODO: send publish-url to work-engagement queue.
 	log.Println(u, p)
+	return err
+}
+
+func (s MediumDriver) setAnyBadRequestCode(err error) error {
+	is400StatusCode := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=4") ||
+		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "forbidden") ||
+		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "forbidden")
+	if is400StatusCode {
+		return fmt.Errorf("%s: Medium profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
+	}
 	return err
 }

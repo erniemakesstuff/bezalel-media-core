@@ -3,6 +3,7 @@ package orchestration
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	dal "github.com/bezalel-media-core/v2/dal"
@@ -36,7 +37,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 		return err
 	}
 
-	err = dal.TakePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
+	err = dal.TakePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 	if err != nil {
 		log.Printf("correlationID: %s error taking publisher lock: %s", ledgerId, err)
 		return err
@@ -49,7 +50,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 	if err != nil {
 		log.Printf("correlationID: %s error appending publisher publishing-event to ledger: %s", ledgerId, err)
 		// Try release publish lock
-		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
+		dal.ReleasePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
 	}
 
@@ -57,15 +58,16 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 	if err != nil || !isSuccessfullyLocked {
 		log.Printf("correlationID: %s unable to verify publish-event ledger softlock: %s", ledgerId, err)
 		// Try release publish lock
-		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
+		dal.ReleasePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
 	}
 
 	err = driver.Publish(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
+		s.handleBadRequestCode(err, ledgerId, pubCommand.RootPublishEvent)
 		// Try release publish lock
-		dal.ReleasePublishLock(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
+		dal.ReleasePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
 	}
 
@@ -77,19 +79,32 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 		return err
 	}
 
-	err = dal.RecordPublishTime(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+	err = dal.RecordPublishTime(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error recording last publish time: %s", ledgerId, err)
 		return err
 	}
 
-	err = dal.ForceAllLocksFree(pubCommand.RootPublishEvent.OwnerAccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+	err = dal.ForceAllLocksFree(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error releasing all locks for successful publish: %s", ledgerId, err)
 		return err
 	}
 
 	return err
+}
+
+func (s *PublishWorkFlow) handleBadRequestCode(err error, ledgerId string, pubEvent tables.PublishEvent) {
+	if !strings.Contains(fmt.Sprintf("%s", err), drivers.BAD_REQUEST_PROFILE_CODE) {
+		return
+	}
+	log.Printf("correlationID: %s received bad request from drivers - marking profile stale and descheduling: %s %s",
+		ledgerId, pubEvent.AccountID, pubEvent.PublisherProfileID)
+	expiredEvent := pubEvent
+	expiredEvent.PublishStatus = tables.EXPIRED
+	dal.AppendLedgerPublishEvents(ledgerId, []tables.PublishEvent{expiredEvent})
+	dal.SetProfileStaleFlag(pubEvent.AccountID, pubEvent.PublisherProfileID, true)
+	dal.ForceAllLocksFree(pubEvent.AccountID, pubEvent.PublisherProfileID)
 }
 
 func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]drivers.PublishCommand, error) {
@@ -151,7 +166,7 @@ func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publi
 	}
 
 	// check that publish is still holding the profile-publish lock, otherwise retry by creating a new pub-event
-	pubAccount, err := dal.GetPublisherAccount(existingPublishingEvent.OwnerAccountID, existingPublishingEvent.PublisherProfileID)
+	pubAccount, err := dal.GetPublisherAccount(existingPublishingEvent.AccountID, existingPublishingEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error retrieving publisher account within isRenderWithoutPublish: %s",
 			existingPublishingEvent.LedgerID, err)
@@ -170,9 +185,11 @@ func (s *PublishWorkFlow) isRenderAlreadyCompleted(root tables.PublishEvent, pub
 		return false
 	}
 
-	_, ok := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
+	_, isComplete := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
 		root.RootMediaEventID, tables.COMPLETE)]
-	return ok
+	_, isExpired := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
+		root.RootMediaEventID, tables.EXPIRED)]
+	return isComplete || isExpired
 }
 
 func (s *PublishWorkFlow) getFinalRenderEvent(mediaRootId string, publisherProfileId string,

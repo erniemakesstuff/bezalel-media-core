@@ -139,7 +139,7 @@ func (s *AssignmentWorkflow) buildPublishEvent(ledgerId string, publisherAccount
 		ExpiresAtTTL:        expiryAtTime,
 		PublishStatus:       tables.ASSIGNED,
 		PublisherProfileID:  publisherAccount.PublisherProfileID,
-		OwnerAccountID:      publisherAccount.AccountID,
+		AccountID:           publisherAccount.AccountID,
 		RootMediaEventID:    mediaEvent.GetEventID(),
 	}
 }

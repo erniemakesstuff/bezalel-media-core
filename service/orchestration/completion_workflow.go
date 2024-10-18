@@ -139,7 +139,7 @@ func (s CompletionWorkflow) setExpiredPubEvent(pubEvent tables.PublishEvent) err
 }
 
 func (s CompletionWorkflow) releaseAnyExpiredPublisherProfileLocks(pubEvent tables.PublishEvent) error {
-	profile, err := dal.GetPublisherAccount(pubEvent.OwnerAccountID, pubEvent.PublisherProfileID)
+	profile, err := dal.GetPublisherAccount(pubEvent.AccountID, pubEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher profile: %s", pubEvent.LedgerID, err)
 		return err
@@ -147,11 +147,11 @@ func (s CompletionWorkflow) releaseAnyExpiredPublisherProfileLocks(pubEvent tabl
 	timeNow := time.Now().UnixMilli()
 	if profile.AssignmentLockTTL > timeNow || profile.PublishLockTTL > timeNow {
 		log.Printf("correlationID: %s valid TTLs on publisherProfile; keeping locks: acc: %s pub: %s",
-			pubEvent.LedgerID, pubEvent.OwnerAccountID, pubEvent.PublisherProfileID)
+			pubEvent.LedgerID, pubEvent.AccountID, pubEvent.PublisherProfileID)
 		return nil
 	}
 
-	err = dal.ForceAllLocksFree(pubEvent.OwnerAccountID, pubEvent.PublisherProfileID)
+	err = dal.ForceAllLocksFree(pubEvent.AccountID, pubEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error release publishProfile locks in releasePublishProfile: %s", pubEvent.LedgerID, err)
 		return err

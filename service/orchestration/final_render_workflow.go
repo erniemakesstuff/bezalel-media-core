@@ -121,7 +121,7 @@ func (s *FinalRenderWorkflow) collectFinalRenderMedia(
 	publishEvents []tables.PublishEvent) []tables.MediaEvent {
 	resultCollection := []tables.MediaEvent{}
 	for _, p := range publishEvents {
-		watermarkText, err := dal.GetPublisherWatermarkInfo(p.OwnerAccountID, p.PublisherProfileID)
+		watermarkText, err := dal.GetPublisherWatermarkInfo(p.AccountID, p.PublisherProfileID)
 		if err != nil {
 			// non-critical path, continue on failure.
 			log.Printf("correlationID: %s WARN failed retrieve watermark text: %s", ledgerItem.LedgerID, err)
