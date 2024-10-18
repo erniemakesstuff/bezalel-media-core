@@ -24,7 +24,7 @@ type TwitterPostContents struct {
 func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
 	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
-		log.Printf("correlationID: %s error loading publisher account for medium driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
+		log.Printf("correlationID: %s error loading publisher account for Twitter driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
 	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
@@ -34,7 +34,7 @@ func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
 	}
 	err = s.publishTwitterPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayload)
 	if err != nil {
-		log.Printf("correlationID: %s error uploading blog contents to Medium: %s", pubCommand.RootPublishEvent.LedgerID, err)
+		log.Printf("correlationID: %s error uploading blog contents to Twitter: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
 	return err

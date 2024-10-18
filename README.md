@@ -68,3 +68,7 @@ ScriptCategory 1:1 ScriptPrompt
 Medium - requires IntegrationToken: https://medium.com/me/settings/security
 
 
+### Notes / Resources
+Onboarding Reddit account: https://github.com/reddit-archive/reddit/wiki/OAuth2-Quick-Start-Example#first-steps (Create as script-app)
+
+

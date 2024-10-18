@@ -49,5 +49,9 @@ type AccountPublisher struct {
 	PublishLockID         string // ID of the process performing the publish to distribution channels.
 	PublishLockTTL        int64  // Epoch Milliseconds.
 	WatermarkText         string
-	IsStaleProfile        bool // TODO: https://trello.com/c/ugotbYnQ
+	IsStaleProfile        bool   // TODO: https://trello.com/c/ugotbYnQ
+	ProfileAlias          string // custom user specified profile name for readability.
+
+	// Optional -- DistributionChannel specific
+	RedditSubredditTargetsCSV string // [subreddit1, ,,,, subredditN] Testaimediaplatform
 }

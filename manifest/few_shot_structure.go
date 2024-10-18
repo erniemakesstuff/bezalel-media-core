@@ -8,6 +8,7 @@ import (
 type BlogJsonSchema struct {
 	Instruction string `json:"instruction"`
 	BlogTitle   string `json:"blogTitle"`
+	BlogText    string `json:"blogText"`
 	BlogHtml    string `json:"blogHtml"`
 }
 
@@ -21,6 +22,7 @@ func GetBlogJsonSchemaFewShot() string {
 	sampleShot := BlogJsonSchema{
 		Instruction: "instructions you received",
 		BlogTitle:   "your blog title goes here",
+		BlogText:    "your blog content as plaintext",
 		BlogHtml:    "your blog content as HTML",
 	}
 

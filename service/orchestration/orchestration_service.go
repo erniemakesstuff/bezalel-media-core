@@ -1,6 +1,7 @@
 package orchestration
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/bezalel-media-core/v2/dal"
@@ -40,7 +41,7 @@ func RunWorkflows(ledgerItem tables.Ledger) error {
 		log.Printf("correlationID: %s ignoring stale ledger event", ledgerItem.LedgerID)
 		return nil
 	}
-	processId := uuid.New().String()
+	processId := fmt.Sprintf("%s.LedgerID:%s", uuid.New().String(), latestLedger.LedgerID)
 	for _, w := range workflowsToRun {
 		err := w.Run(latestLedger, processId)
 		if err != nil {

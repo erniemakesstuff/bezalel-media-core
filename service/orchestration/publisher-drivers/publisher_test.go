@@ -75,3 +75,21 @@ func TestTwitterPublish(t *testing.T) {
 	}
 	cleanupTestData()
 }
+
+func TestRedditPublish(t *testing.T) {
+	setupTest()
+	pubEvent := tables.PublishEvent{
+		AccountID:          Live_EN_Reddit_1.AccountID,
+		PublisherProfileID: Live_EN_Reddit_1.PublisherProfileID,
+		LedgerID:           "INTEG-TestRedditPublish",
+	}
+	cmd := PublishCommand{
+		RootPublishEvent: pubEvent,
+	}
+	driver := RedditDriver{}
+	err := driver.Publish(cmd)
+	if err != nil {
+		log.Printf("publisher error: %s", err)
+	}
+	cleanupTestData()
+}
