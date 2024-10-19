@@ -17,11 +17,28 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 		log.Printf("driver failed to get raw event payload: %s", err)
 		return err
 	}
-	// TODO: Dedupe RawContentHash prior to creating a new ledger item.
+
+	entry, err := dal.GetHashEntry(ledgerItem.TriggerEventContentHash)
+	if err != nil {
+		log.Printf("failed to get hash entry: %s", err)
+	}
+
+	if len(entry.EventHash) != 0 {
+		log.Printf("duplicate ingestion event, skipping: %s", ledgerItem.TriggerEventContentHash)
+		return nil
+	}
 
 	err = dal.CreateLedger(ledgerItem)
 	if err != nil {
 		log.Printf("failed to create a new ledger item: %s", err)
+		return err
 	}
+
+	err = dal.CreateHashEntry(ledgerItem.TriggerEventContentHash)
+	if err != nil {
+		log.Printf("failed to create a new hash entry: %s", err)
+		return err
+	}
+
 	return err
 }

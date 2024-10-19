@@ -12,6 +12,7 @@ import (
 const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
 const TABLE_OVERRIDE_TEMPLATES = "OverrideTemplates"
+const TABLE_DEDUPE_EVENTS = "DedupeEvents"
 
 // Although status is derivable from ledger data, needed for index-lookup replayability.
 const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex"   // {Status, StartedAtEpochMilli}
@@ -26,6 +27,8 @@ func Init() {
 	createTableAccounts(svc)
 	createEventLedgerTables(svc)
 	createOverrideTemplates(svc)
+	createEventDedupeTable(svc)
+	setTTL(svc, TABLE_DEDUPE_EVENTS)
 }
 
 // Creates Accounts Table + PublisherProfile details.
@@ -181,6 +184,40 @@ func createOverrideTemplates(svc *dynamodb.DynamoDB) {
 		TableName:   aws.String(tableName),
 	}
 	createTable(svc, input, tableName)
+}
+
+func createEventDedupeTable(svc *dynamodb.DynamoDB) {
+	tableName := TABLE_DEDUPE_EVENTS
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("EventHash"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("EventHash"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		TableName:   aws.String(tableName),
+	}
+	createTable(svc, input, tableName)
+}
+
+func setTTL(svc *dynamodb.DynamoDB, tableName string) {
+	_, err := svc.UpdateTimeToLive(&dynamodb.UpdateTimeToLiveInput{
+		TableName: aws.String(tableName),
+		TimeToLiveSpecification: &dynamodb.TimeToLiveSpecification{
+			AttributeName: aws.String("TTL"),
+			Enabled:       aws.Bool(true),
+		},
+	})
+	if err != nil {
+		log.Printf("error enabling ttl table: %s", err)
+	}
 }
 
 func createTable(svc *dynamodb.DynamoDB, input *dynamodb.CreateTableInput, tableName string) {
