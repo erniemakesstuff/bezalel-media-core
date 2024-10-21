@@ -11,18 +11,18 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	aws_configuration "github.com/bezalel-media-core/v2/configuration"
+	config "github.com/bezalel-media-core/v2/configuration"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	sqs_model "github.com/bezalel-media-core/v2/service/models"
 )
 
-var sqs_svc = sqs.New(aws_configuration.GetAwsSession())
+var sqs_svc = sqs.New(config.GetAwsSession())
 
-const queue_name = "ledger-queue"                    // os.Getenv("LEDGER_SQS_NAME")
-const visibility_timeout = 180                       // seconds
-const time_milliseconds_between_message_polls = 1500 // TODO re-evaluate
-const max_messages_per_poll = 1
-const max_concurrent_process_consumers = 1 // TODO: evaluate this; avoid spamming downstream publishers; rate limits.
+var queue_name = config.GetEnvConfigs().LedgerQueueName
+var visibility_timeout = config.GetEnvConfigs().PollVisibilityTimeoutSec
+var time_milliseconds_between_message_polls = config.GetEnvConfigs().PollPeriodMilli
+var max_messages_per_poll = config.GetEnvConfigs().MaxMessagesPerPoll // max size 10
+var max_concurrent_process_consumers = config.GetEnvConfigs().MaxConsumers
 
 func PollForLedgerUpdates() {
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{

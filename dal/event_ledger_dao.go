@@ -6,17 +6,18 @@ import (
 	"math"
 	"strconv"
 
+	"log"
+	"reflect"
+	"time"
+
 	"bitbucket.org/creachadair/stringset"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	env "github.com/bezalel-media-core/v2/configuration"
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
-
-	"log"
-	"reflect"
-	"time"
 )
 
 func CreateLedger(item tables.Ledger) error {
@@ -86,8 +87,8 @@ func DeleteLedger(ledgerId string) error {
 func AppendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) error {
 	var err error
 	retryCount := 0
-	const maxRetries = 5 // TODO: Move these to env config values.
-	const minSeconds = 2
+	maxRetries := env.GetEnvConfigs().AppendLedgerMaxRetries
+	minSeconds := env.GetEnvConfigs().AppendLedgerRetryDelaySec
 	success := false
 	canRetry := true
 	for retryCount < maxRetries && !success && canRetry {
@@ -135,8 +136,8 @@ func appendLedgerMediaEvents(ledgerId string, mediaEvents []tables.MediaEvent) e
 func AppendLedgerPublishEvents(ledgerId string, publishEvents []tables.PublishEvent) error {
 	var err error
 	retryCount := 0
-	const maxRetries = 5
-	const minSeconds = 2
+	maxRetries := env.GetEnvConfigs().AppendLedgerMaxRetries
+	minSeconds := env.GetEnvConfigs().AppendLedgerRetryDelaySec
 	success := false
 	canRetry := true
 	for retryCount < maxRetries && !success && canRetry {

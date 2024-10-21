@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"github.com/bezalel-media-core/v2/manifest"
@@ -130,8 +131,7 @@ func (s *AssignmentWorkflow) buildPublishEvent(ledgerId string, publisherAccount
 	mediaEvent tables.MediaEvent,
 	distributionChannelName string, processId string) tables.PublishEvent {
 
-	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
-	expiryAtTime := time.Now().UnixMilli() + ninetyMinutes
+	expiryAtTime := time.Now().UnixMilli() + env.GetEnvConfigs().PublishLockMilliTTL
 	return tables.PublishEvent{
 		LedgerID:            ledgerId,
 		DistributionChannel: distributionChannelName,

@@ -14,7 +14,6 @@ type Workflow interface {
 	Run(tables.Ledger, string) error
 }
 
-// TODO: Add workflows in-order here.
 // Workflows run in order.
 var workflowsToRun = []Workflow{
 	&ScriptWorkflow{},

@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	env "github.com/bezalel-media-core/v2/configuration"
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 
@@ -37,7 +38,7 @@ func CreatePublisherAccount(item tables.AccountPublisher) error {
 
 func GetPublisherWatermarkInfo(accountId string, publisherProfileId string) (string, error) {
 	// TODO https://trello.com/c/KoxquFya
-	return "TrueVineAI", nil
+	return env.GetEnvConfigs().DefaultPublisherWatermarkText, nil
 }
 
 func GetPublisherAccount(accountId string, publisherProfileId string) (tables.AccountPublisher, error) {
@@ -330,8 +331,7 @@ func takeAssignmentLock(accountId string, publisherProfileId string, processId s
 		return fmt.Errorf("unable to take assignment lock. accountId: %s publisherProfileId: %s processId: %s",
 			accountId, publisherProfileId, processId)
 	}
-	const ninetyMinutes = 5400000 // TODO: Replace w/ env config
-	expiryTime := time.Now().UnixMilli() + ninetyMinutes
+	expiryTime := time.Now().UnixMilli() + env.GetEnvConfigs().AssignmentLockMilliTTL
 	err = takeLock(processId, account, "AssignmentLockID", "AssignmentLockTTL", account.AssignmentLockID, expiryTime)
 	return err
 }

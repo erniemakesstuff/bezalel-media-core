@@ -63,7 +63,6 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 		return result, err
 	}
 
-	// TODO: Replace w/ raws; variable replacement.
 	enrichedPrompt := strings.Replace(prompt.PromptText, manifest.PROMPT_SCRIPT_VAR_RAW_TEXT, ledgerItem.TriggerEventPayload, -1)
 	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, ledgerItem.TriggerEventLanguage, -1)
 	result.PromptInstruction = enrichedPrompt

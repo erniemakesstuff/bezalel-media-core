@@ -29,6 +29,7 @@ func Init() {
 	createOverrideTemplates(svc)
 	createEventDedupeTable(svc)
 	setTTL(svc, TABLE_DEDUPE_EVENTS)
+	setTTL(svc, TABLE_EVENT_LEDGER)
 }
 
 // Creates Accounts Table + PublisherProfile details.
