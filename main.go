@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	config "github.com/bezalel-media-core/v2/configuration"
 	dynamo_configuration "github.com/bezalel-media-core/v2/configuration/dynamo"
 	manifest "github.com/bezalel-media-core/v2/manifest"
 	ingestion_service "github.com/bezalel-media-core/v2/service/ingestion"
@@ -21,6 +22,7 @@ func main() {
 	http.HandleFunc(route_source_blog, handlerCustomPrompt)
 	dynamo_configuration.Init()
 	manifest.GetManifestLoader()
+	config.GetEnvConfigs()
 	go pubsub.PollForLedgerUpdates()
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
