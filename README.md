@@ -22,6 +22,11 @@ Running in docker
 `docker build -t core --build-arg AwsSecretId=$AWS_ACCESS_KEY_ID --build-arg AwsSecretKey=$AWS_SECRET_ACCESS_KEY --build-arg AwsRegion=$AWS_REGION .`
 `docker run core`
 
+# Pushing to ECR
+`aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 971422718801.dkr.ecr.us-west-2.amazonaws.com`
+`docker build -t bezalel-truevine-core .`
+`docker tag bezalel-truevine-core:latest 971422718801.dkr.ecr.us-west-2.amazonaws.com/bezalel-truevine-core:latest`
+`docker push 971422718801.dkr.ecr.us-west-2.amazonaws.com/bezalel-truevine-core:latest`
 
 Stopping running containers; prunning images.
 `docker stop $(docker ps -a -q)`
