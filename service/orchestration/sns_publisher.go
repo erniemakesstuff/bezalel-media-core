@@ -6,13 +6,13 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sns"
-	aws_configuration "github.com/bezalel-media-core/v2/configuration"
+	config "github.com/bezalel-media-core/v2/configuration"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 )
 
-var snsSvc = sns.New(aws_configuration.GetAwsSession())
+var snsSvc = sns.New(config.GetAwsSession())
 
-const SNS_MEDIA_TOPIC = "arn:aws:sns:us-west-2:971422718801:media-topic"
+var SNS_MEDIA_TOPIC = config.GetEnvConfigs().SNSMediaTopic
 
 type Message struct {
 	Default string `json:"default"`

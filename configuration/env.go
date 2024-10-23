@@ -19,6 +19,7 @@ type EnvConfigVals struct {
 	PollPeriodMilli               int64  `yaml:"PollPeriodMilli"`
 	MaxMessagesPerPoll            int64  `yaml:"MaxMessagesPerPoll"`
 	MaxConsumers                  int    `yaml:"MaxConsumers"`
+	SNSMediaTopic                 string `yaml:"SNSMediaTopic"`
 }
 
 var configSync sync.Once

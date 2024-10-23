@@ -5,8 +5,9 @@ PublishLockMilliTTL: 5400000
 AppendLedgerMaxRetries: 5
 AppendLedgerRetryDelaySec: 2
 # SQS
-LedgerQueueName: ledger-queue
+LedgerQueueName: state-callback-queue
 PollVisibilityTimeoutSec: 180
 PollPeriodMilli: 1500
 MaxMessagesPerPoll: 1
 MaxConsumers: 1
+SNSMediaTopic: arn:aws:sns:us-west-2:971422718801:media-topic
