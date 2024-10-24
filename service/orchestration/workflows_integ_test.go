@@ -32,11 +32,11 @@ var PubProfile_EN_Medium_1 = tables.AccountPublisher{
 }
 
 var Test_Ledger_Blog = tables.Ledger{
-	LedgerID:             "TestLedgerId",
-	LedgerStatus:         tables.NEW_LEDGER,
-	TriggerEventSource:   "WorkflowIntegTest",
-	TriggerEventPayload:  "The weather in Seattle is fair.",
-	TriggerEventLanguage: "EN",
+	LedgerID:                   "TestLedgerId",
+	LedgerStatus:               tables.NEW_LEDGER,
+	TriggerEventSource:         "WorkflowIntegTest",
+	TriggerEventPayload:        "The weather in Seattle is fair.",
+	TriggerEventTargetLanguage: "EN",
 }
 
 func setupTest() {

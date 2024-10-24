@@ -24,12 +24,12 @@ func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	}
 
 	ledger := tables.Ledger{
-		LedgerID:                uuid.New().String(),
-		LedgerStatus:            tables.NEW_LEDGER,
-		TriggerEventPayload:     rawEvent.Text,
-		TriggerEventSource:      d.Source,
-		TriggerEventContentHash: d.getMD5Hash(rawEvent.Text), // Set, but prompts aren't deduped.
-		TriggerEventLanguage:    "EN",
+		LedgerID:                   uuid.New().String(),
+		LedgerStatus:               tables.NEW_LEDGER,
+		TriggerEventPayload:        rawEvent.Text,
+		TriggerEventSource:         d.Source,
+		TriggerEventContentHash:    d.getMD5Hash(rawEvent.Text),
+		TriggerEventTargetLanguage: rawEvent.TargetLanguage,
 	}
 	return ledger, err
 }

@@ -24,12 +24,12 @@ func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	}
 
 	ledger := tables.Ledger{
-		LedgerID:                uuid.New().String(),
-		LedgerStatus:            tables.NEW_LEDGER,
-		TriggerEventPayload:     rawEvent.PromptText,
-		TriggerEventSource:      d.Source,
-		TriggerEventContentHash: d.getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
-		TriggerEventLanguage:    "EN",
+		LedgerID:                   uuid.New().String(),
+		LedgerStatus:               tables.NEW_LEDGER,
+		TriggerEventPayload:        rawEvent.PromptText,
+		TriggerEventSource:         d.Source,
+		TriggerEventContentHash:    d.getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
+		TriggerEventTargetLanguage: "EN",
 	}
 	return ledger, err
 }

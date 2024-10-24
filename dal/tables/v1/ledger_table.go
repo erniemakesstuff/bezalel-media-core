@@ -25,17 +25,17 @@ type Ledger struct {
 	LedgerCreatedAtEpochMilli int64        // CreatedAt for replayability
 
 	// Optional
-	TriggerEventPayload     string // article text, ...
-	TriggerEventSource      string
-	TriggerEventMediaUrls   string // Images, videos, ... [url1, url2,...]
-	TriggerEventWebsiteUrls string // product pages, news article sources crawled. [url1, url2,...]
-	TriggerEventLanguage    string // EN, CN, ... Specifies the overall downstream language as set by Drivers.
-	TriggerEventContentHash string // for deduping raw events.
-	MediaEvents             string // Media generation: audio, video, ...
-	PublishEvents           string // Publish to distribution channel: YouTube, Instagram, ...
-	MediaEventsVersion      int64
-	PublishEventsVersion    int64
-	HeartbeatCount          int64
+	TriggerEventPayload        string // article text, ...
+	TriggerEventSource         string
+	TriggerEventMediaUrls      string // Images, videos, ... [url1, url2,...]
+	TriggerEventWebsiteUrls    string // product pages, news article sources crawled. [url1, url2,...]
+	TriggerEventTargetLanguage string // EN, CN, ... Specifies the overall downstream language as set by Drivers.
+	TriggerEventContentHash    string // for deduping raw events.
+	MediaEvents                string // Media generation: audio, video, ...
+	PublishEvents              string // Publish to distribution channel: YouTube, Instagram, ...
+	MediaEventsVersion         int64
+	PublishEventsVersion       int64
+	HeartbeatCount             int64
 }
 type Event interface {
 	GetEventID() string

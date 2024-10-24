@@ -54,7 +54,7 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 	result.SystemPromptInstruction = prompt.SystemPromptText
 	result.MediaType = scriptMediaType
 	result.Niche = prompt.GetNiche()
-	result.Language = ledgerItem.TriggerEventLanguage
+	result.Language = ledgerItem.TriggerEventTargetLanguage
 	var err error
 	result.DistributionFormat, err = tables.GetDistributionFormatFromString(
 		prompt.GetDistributionFormat())
@@ -64,7 +64,7 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 	}
 
 	enrichedPrompt := strings.Replace(prompt.PromptText, manifest.PROMPT_SCRIPT_VAR_RAW_TEXT, ledgerItem.TriggerEventPayload, -1)
-	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, ledgerItem.TriggerEventLanguage, -1)
+	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, ledgerItem.TriggerEventTargetLanguage, -1)
 	result.PromptInstruction = enrichedPrompt
 	result.PromptHash = tables.HashString(result.PromptInstruction)
 	result.EventID = result.GetEventID()

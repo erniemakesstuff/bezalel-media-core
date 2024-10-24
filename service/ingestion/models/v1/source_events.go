@@ -6,6 +6,7 @@ type Custom_Prompt_Request struct {
 }
 
 type Blog_Request struct {
-	Source string `json:"source"`
-	Text   string `json:"text"`
+	Source         string `json:"source"`
+	TargetLanguage string `json:"targetLanguage"`
+	Text           string `json:"text"`
 }
