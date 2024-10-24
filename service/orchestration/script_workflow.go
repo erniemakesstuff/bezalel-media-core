@@ -7,6 +7,8 @@ import (
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	manifest "github.com/bezalel-media-core/v2/manifest"
+	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 type ScriptWorkflow struct{}
@@ -62,9 +64,14 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 		log.Printf("correlationID: %s Mismatched distribution format, %s", ledgerItem.LedgerID, err)
 		return result, err
 	}
-
+	lang, err := language.Parse(ledgerItem.TriggerEventTargetLanguage)
+	if err != nil {
+		log.Printf("correlationID: %s error processing language code in scriptWorkflow, %s", ledgerItem.LedgerID, err)
+		return result, err
+	}
+	en := display.English.Languages()
 	enrichedPrompt := strings.Replace(prompt.PromptText, manifest.PROMPT_SCRIPT_VAR_RAW_TEXT, ledgerItem.TriggerEventPayload, -1)
-	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, ledgerItem.TriggerEventTargetLanguage, -1)
+	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, en.Name(lang), -1)
 	result.PromptInstruction = enrichedPrompt
 	result.PromptHash = tables.HashString(result.PromptInstruction)
 	result.EventID = result.GetEventID()

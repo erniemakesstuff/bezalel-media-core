@@ -27,4 +27,5 @@ require (
 	github.com/michimani/gotwi v0.16.1
 	github.com/stretchr/testify v1.9.0
 	github.com/vartanbeno/go-reddit/v2 v2.0.1
+	golang.org/x/text v0.19.0
 )
