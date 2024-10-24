@@ -29,7 +29,7 @@ func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 		TriggerEventPayload:        rawEvent.Text,
 		TriggerEventSource:         d.Source,
 		TriggerEventContentHash:    d.getMD5Hash(rawEvent.Text),
-		TriggerEventTargetLanguage: rawEvent.TargetLanguage,
+		TriggerEventTargetLanguage: rawEvent.TargetLanguage, // TODO: Expand ISO Language Code to canonical name.
 	}
 	return ledger, err
 }

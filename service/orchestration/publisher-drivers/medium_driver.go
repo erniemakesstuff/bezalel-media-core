@@ -96,7 +96,7 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 	u, err := m2.GetUser("")
 	if err != nil {
 		log.Printf("correlationID: %s error retrieving user context: %s", ledgerId, err)
-		return err
+		return s.setAnyBadRequestCode(err)
 	}
 
 	p, err := m2.CreatePost(medium.CreatePostOptions{
@@ -120,7 +120,8 @@ func (s MediumDriver) setAnyBadRequestCode(err error) error {
 	isCredentialError := strings.Contains(fmt.Sprintf("%s", err), "401") ||
 		strings.Contains(fmt.Sprintf("%s", err), "403") ||
 		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "forbidden") ||
-		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "unauthorized")
+		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "unauthorized") ||
+		strings.Contains(strings.ToLower(fmt.Sprintf("%s", err)), "user not found")
 	if isCredentialError {
 		return fmt.Errorf("%s: Medium profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
 	}
