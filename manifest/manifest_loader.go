@@ -126,7 +126,7 @@ func getScriptPromptCollection() ScriptPromptCollection {
 	for i := range prompts.ScriptPrompts {
 		// TODO: chain other schema replacements here.
 		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
-			PROMPT_SCRIPT_VAR_BLOG_FORMAT, GetBlogJsonSchemaFewShot(), -1)
+			PROMPT_SCRIPT_VAR_BLOG_FORMAT, GetBlogJsonSchema(), -1)
 		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
 			PROMPT_SCRIPT_VAR_TINY_BLOG_FORMAT, GetTinyBlogJson(), -1)
 	}

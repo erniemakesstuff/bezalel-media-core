@@ -73,7 +73,7 @@ func (s TwitterDriver) scriptPayloadToBlogJson(payload string) (manifest.TinyBlo
 	}
 
 	if len(result.BlogText) == 0 {
-		return manifest.TinyBlogJsonSchema{}, fmt.Errorf("empty payload received: %s", payload)
+		return manifest.TinyBlogJsonSchema{}, fmt.Errorf("twitter empty payload received: %s", payload)
 	}
 
 	return result, err

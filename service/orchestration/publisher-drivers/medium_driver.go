@@ -73,7 +73,13 @@ func (s MediumDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJson
 	}
 
 	if len(result.BlogHtml) == 0 {
-		return manifest.BlogJsonSchema{}, fmt.Errorf("empty payload received: %s", payload)
+		// Try attempt substitute with "some" acceptable value.
+		// Occurs when LLM refuses to populate blogHtml, but populates blogText.
+		result.BlogHtml = result.BlogText
+	}
+
+	if len(result.BlogHtml) == 0 {
+		return manifest.BlogJsonSchema{}, fmt.Errorf("medium empty payload received: %s", payload)
 	}
 
 	return result, err

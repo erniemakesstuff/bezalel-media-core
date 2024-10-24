@@ -84,8 +84,8 @@ func (s RedditDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJson
 		return result, err
 	}
 
-	if len(result.BlogHtml) == 0 {
-		return manifest.BlogJsonSchema{}, fmt.Errorf("empty payload received: %s", payload)
+	if len(result.BlogText) == 0 {
+		return manifest.BlogJsonSchema{}, fmt.Errorf("reddit empty payload received: %s", payload)
 	}
 
 	return result, err
