@@ -1,5 +1,5 @@
 # Specifies a parent image
-FROM golang:1.23.1-bullseye
+FROM --platform=linux/amd64 golang:1.23.1-bullseye
 
 ARG AwsSecretKey
 ARG AwsSecretId
