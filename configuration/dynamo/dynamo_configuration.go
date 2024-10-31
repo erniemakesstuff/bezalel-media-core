@@ -13,6 +13,7 @@ const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
 const TABLE_OVERRIDE_TEMPLATES = "OverrideTemplates"
 const TABLE_DEDUPE_EVENTS = "DedupeEvents"
+const TABLE_FARM_SCALER_LOCK = "FarmScalerLock"
 
 // Although status is derivable from ledger data, needed for index-lookup replayability.
 const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex"   // {Status, StartedAtEpochMilli}
@@ -28,6 +29,7 @@ func Init() {
 	createEventLedgerTables(svc)
 	createOverrideTemplates(svc)
 	createEventDedupeTable(svc)
+	createFarmScalerLock(svc)
 	setTTL(svc, TABLE_DEDUPE_EVENTS)
 	setTTL(svc, TABLE_EVENT_LEDGER)
 }
@@ -199,6 +201,27 @@ func createEventDedupeTable(svc *dynamodb.DynamoDB) {
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
 				AttributeName: aws.String("EventHash"),
+				KeyType:       aws.String("HASH"),
+			},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		TableName:   aws.String(tableName),
+	}
+	createTable(svc, input, tableName)
+}
+
+func createFarmScalerLock(svc *dynamodb.DynamoDB) {
+	tableName := TABLE_FARM_SCALER_LOCK
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("SystemID"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("SystemID"),
 				KeyType:       aws.String("HASH"),
 			},
 		},
