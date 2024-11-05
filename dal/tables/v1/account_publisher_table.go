@@ -28,7 +28,7 @@ const (
 type AccountPublisher struct {
 	// Required
 	AccountID               string // email, phone, social sub identity
-	PublisherProfileID      string // guid. Also ACCOUNT_DETAILS_RESERVED
+	PublisherProfileID      string // Guid. Also ACCOUNT_DETAILS_RESERVED
 	ChannelName             ChannelName
 	LastPublishAtEpochMilli int64
 
@@ -37,21 +37,29 @@ type AccountPublisher struct {
 	PreferredLanguage         string
 
 	// Optional - PublisherProfile specific
+	// Credentials
 	PublisherAPISecretID  string // The backend credentials service "app" calling the api. This should be set once, globally for the whole enterprise.
 	PublisherAPISecretKey string // TODO: Refactor this out to be enterprise global.
 	UserAccessToken       string // For impersonating the user.
 	UserAccessTokenSecret string
 	PublisherLanguage     string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
 	PublisherNiche        string // Drama, news, ...
-	OverrideTemplateIDs   string
-	AssignmentLockID      string // ID of the process using the lock for assignment and media rendering.
-	AssignmentLockTTL     int64  // Time-in-future for when lock can be forcefully released for re-assignement. Epoch Milliseconds.
-	PublishLockID         string // ID of the process performing the publish to distribution channels.
-	PublishLockTTL        int64  // Epoch Milliseconds.
-	WatermarkText         string
-	IsStaleProfile        bool   // TODO: https://trello.com/c/ugotbYnQ
-	ProfileAlias          string // custom user specified profile name for readability.
+
+	// Profile customization
+	OverrideTemplateIDs string // TODO: prompt personalization; custom avatars.
+	WatermarkText       string
+	ProfileAlias        string // custom user specified profile name for readability; canonical name.
+
+	// Locking / System fields.
+	AssignmentLockID  string // ID of the process using the lock for assignment and media rendering.
+	AssignmentLockTTL int64  // Time-in-future for when lock can be forcefully released for re-assignement. Epoch Milliseconds.
+	PublishLockID     string // ID of the process performing the publish to distribution channels.
+	PublishLockTTL    int64  // Epoch Milliseconds.
+	IsStaleProfile    bool
 
 	// Optional -- DistributionChannel specific
+	// TODO: Move these fields to override templates: https://trello.com/c/Pwe4VVaF
+	// Blogs
 	RedditSubredditTargetsCSV string // [subreddit1, ,,,, subredditN] Testaimediaplatform
+	BlogPromptText            string
 }
