@@ -24,6 +24,7 @@ func main() {
 	manifest.GetManifestLoader()
 	config.GetEnvConfigs()
 	go pubsub.PollForLedgerUpdates()
+	//go scaler.StartWatching()
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 

@@ -2,6 +2,7 @@ package scaling
 
 import (
 	"log"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -10,40 +11,33 @@ import (
 
 var sqs_svc = sqs.New(config.GetAwsSession())
 
-var queue_name = config.GetEnvConfigs().LedgerQueueName
-var visibility_timeout = config.GetEnvConfigs().PollVisibilityTimeoutSec
-var time_milliseconds_between_message_polls = config.GetEnvConfigs().PollPeriodMilli
-var max_messages_per_poll = config.GetEnvConfigs().MaxMessagesPerPoll // max size 10
-var max_concurrent_process_consumers = config.GetEnvConfigs().MaxConsumers
-
-func PollForLedgerUpdates() {
+func getPendingMessagesCount(queueName string) (int, error) {
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{
-		QueueName: aws.String(queue_name),
+		QueueName: aws.String(queueName),
 	})
 	if err != nil {
 		log.Fatalf("failed to get queue url: %s", err)
 	}
 	queueURL := urlResult.QueueUrl
-	log.Printf("QUEUE URL: %s", *queueURL)
-	for i := 0; i < max_concurrent_process_consumers; i++ {
-		go consumeMessages(queueURL)
-	}
-}
 
-func consumeMessages(queueURL *string) error {
-	_, err := sqs_svc.ReceiveMessage(&sqs.ReceiveMessageInput{
+	resp, err := sqs_svc.GetQueueAttributes(&sqs.GetQueueAttributesInput{
 		AttributeNames: []*string{
-			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
+			aws.String(sqs.QueueAttributeNameApproximateNumberOfMessages),
+			aws.String(sqs.QueueAttributeNameApproximateNumberOfMessagesNotVisible),
 		},
-		MessageAttributeNames: []*string{
-			aws.String(sqs.QueueAttributeNameAll),
-		},
-		QueueUrl:            queueURL,
-		MaxNumberOfMessages: aws.Int64(max_messages_per_poll),
-		VisibilityTimeout:   aws.Int64(visibility_timeout),
+		QueueUrl: queueURL,
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return err
+
+	inFlightCount, err := strconv.Atoi(*resp.Attributes[sqs.QueueAttributeNameApproximateNumberOfMessagesNotVisible])
+	if err != nil {
+		return 0, err
+	}
+	pendingCount, err := strconv.Atoi(*resp.Attributes[sqs.QueueAttributeNameApproximateNumberOfMessages])
+	if err != nil {
+		return 0, err
+	}
+	return inFlightCount + pendingCount, nil
 }

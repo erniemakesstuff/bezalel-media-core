@@ -24,6 +24,7 @@ var time_milliseconds_between_message_polls = config.GetEnvConfigs().PollPeriodM
 var max_messages_per_poll = config.GetEnvConfigs().MaxMessagesPerPoll // max size 10
 var max_concurrent_process_consumers = config.GetEnvConfigs().MaxConsumers
 
+// Should be started as background thread.
 func PollForLedgerUpdates() {
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{
 		QueueName: aws.String(queue_name),

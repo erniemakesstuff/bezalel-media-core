@@ -100,6 +100,8 @@ func TakeSystemLockOwnership(systemId string, processId string) (bool, error) {
 	// Check to see that no one updated before us.
 	oldVersionNumber := existingValue.Version
 	newVersionNumber := oldVersionNumber + 1
+	const tenMinutesMilli = 600_000
+	expiryTime := time.Now().UnixMilli() + tenMinutesMilli
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"SystemID": {
@@ -116,10 +118,13 @@ func TakeSystemLockOwnership(systemId string, processId string) (bool, error) {
 			":ov": {
 				N: aws.String(strconv.FormatInt(oldVersionNumber, 10)),
 			},
+			":e": {
+				N: aws.String(strconv.FormatInt(expiryTime, 10)),
+			},
 		},
 		TableName:           aws.String(dynamo_configuration.TABLE_FARM_SCALER_LOCK),
 		ReturnValues:        aws.String("NONE"),
-		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v", "ProcessID", "Version")),
+		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v, %s = :e", "ProcessID", "Version", "ExpiryTimeMilli")),
 		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "Version")),
 	}
 

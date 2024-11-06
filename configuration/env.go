@@ -20,6 +20,11 @@ type EnvConfigVals struct {
 	MaxMessagesPerPoll            int64  `yaml:"MaxMessagesPerPoll"`
 	MaxConsumers                  int    `yaml:"MaxConsumers"`
 	SNSMediaTopic                 string `yaml:"SNSMediaTopic"`
+	ECSCoreClusterName            string `yaml:"ECSCoreClusterName"`
+	ECSCoreServiceName            string `yaml:"ECSCoreServiceName"`
+	ECSMediaClusterName           string `yaml:"ECSMediaClusterName"`
+	ECSMediaConsumerTextService   string `yaml:"ECSMediaConsumerTextService"`
+	ECSMediaConsumerRenderService string `yaml:"ECSMediaConsumerRenderService"`
 }
 
 var configSync sync.Once
