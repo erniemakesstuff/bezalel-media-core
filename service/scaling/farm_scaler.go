@@ -25,11 +25,9 @@ func processWatch(processId string) {
 		waitForOwnership(processId, dal.SYSTEM_RENDER_FARM)
 
 		// if yes, update status, scaling, and increment expiry every 5 min
-		_, err := getPendingMessagesCount(config.GetEnvConfigs().LedgerQueueName)
-		if err != nil {
-			log.Printf("error fetching pending ledger messages count: %s", err)
-		}
-
+		scaleCoreService()
+		scaleMediaTextConsumer()
+		scaleMediaRenderConsumer()
 		dal.TakeSystemLockOwnership(dal.SYSTEM_RENDER_FARM, processId)
 		time.Sleep(time.Duration(5) * time.Minute)
 	}
@@ -50,8 +48,39 @@ func waitForOwnership(processId string, system string) {
 	}
 }
 
-func setScaleIn(pendingMessages int) {
-	if pendingMessages > 0 {
-
+func scaleCoreService() {
+	pendingMessagesCount, err := getPendingMessagesCount(config.GetEnvConfigs().LedgerQueueName)
+	if err != nil {
+		log.Printf("error fetching pending ledger messages count: %s", err)
 	}
+	numTasks := (pendingMessagesCount / config.GetEnvConfigs().ConsumerTaskPerMessages) + 1 // Always at-least one active Service for HTTP-request traffic.
+	ScaleEcsTasks(config.GetEnvConfigs().ECSCoreClusterName, numTasks, config.GetEnvConfigs().ECSCoreTaskName)
+}
+
+func scaleMediaTextConsumer() {
+	pendingMessagesCount, err := getPendingMessagesCount(config.GetEnvConfigs().MediaTextQueueName)
+	if err != nil {
+		log.Printf("error fetching pending ledger messages count: %s", err)
+	}
+
+	if pendingMessagesCount == 0 {
+		return
+	}
+
+	numTasks := (pendingMessagesCount / config.GetEnvConfigs().ConsumerTaskPerMessages) + 1 // Always at-least one active Service for HTTP-request traffic.
+	ScaleEcsTasks(config.GetEnvConfigs().ECSMediaClusterName, numTasks, config.GetEnvConfigs().ECSMediaConsumerTextTaskName)
+}
+
+func scaleMediaRenderConsumer() {
+	pendingMessagesCount, err := getPendingMessagesCount(config.GetEnvConfigs().MediaRenderQueueName)
+	if err != nil {
+		log.Printf("error fetching pending ledger messages count: %s", err)
+	}
+
+	if pendingMessagesCount == 0 {
+		return
+	}
+
+	numTasks := (pendingMessagesCount / config.GetEnvConfigs().ConsumerTaskPerMessages) + 1 // Always at-least one active Service for HTTP-request traffic.
+	ScaleEcsTasks(config.GetEnvConfigs().ECSMediaClusterName, numTasks, config.GetEnvConfigs().ECSMediaConsumerTextTaskName)
 }

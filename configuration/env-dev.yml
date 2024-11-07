@@ -11,3 +11,4 @@ PollPeriodMilli: 1500
 MaxMessagesPerPoll: 1
 MaxConsumers: 1
 SNSMediaTopic: arn:aws:sns:us-west-2:971422718801:media-topic
+ConsumerTaskPerMessages: 500

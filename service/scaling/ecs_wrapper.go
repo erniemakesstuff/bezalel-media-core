@@ -11,8 +11,7 @@ import (
 
 var ecs_svc = ecs.New(config.GetAwsSession())
 
-func scaleTask(clusterName string, desiredRunningTasks int, taskDefinition string) error {
-	const MAX_TASKS = 20
+func ScaleEcsTasks(clusterName string, desiredRunningTasks int, taskDefinition string) error {
 	result, err := ecs_svc.ListTasks(&ecs.ListTasksInput{
 		Cluster:       &clusterName,
 		DesiredStatus: aws.String(ecs.DesiredStatusRunning),
@@ -21,27 +20,39 @@ func scaleTask(clusterName string, desiredRunningTasks int, taskDefinition strin
 	if err != nil {
 		return err
 	}
-	runningTasks := len(result.TaskArns)
-	insufficientTasks := runningTasks < desiredRunningTasks
-	withinTaskLimit := desiredRunningTasks+runningTasks < MAX_TASKS
-	desiredTasksDelta := int64(desiredRunningTasks) - int64(runningTasks)
-	if desiredTasksDelta < 0 { // indicates more tasks running than desired; scale to 0.
-		desiredTasksDelta = 0
+	desiredTasks := int64(desiredRunningTasks)
+	return executeScaling(&clusterName, &desiredTasks, &taskDefinition, result.TaskArns)
+}
+
+func executeScaling(clusterName *string, desiredTasks *int64, taskDefinition *string, runningTaskIds []*string) error {
+	shouldScaleDown := int64(len(runningTaskIds)) > *desiredTasks
+	noScalingRequired := int64(len(runningTaskIds)) == *desiredTasks
+	if noScalingRequired {
+		log.Printf("no scaling required")
+		return nil
 	}
 
-	if insufficientTasks && withinTaskLimit {
-		return scaleEcsCluster(&clusterName, &desiredTasksDelta, &taskDefinition, result.TaskArns)
+	if shouldScaleDown {
+
+		scaleDownDeltaIndex := int64(len(runningTaskIds)) - *desiredTasks
+		return stopTasks(clusterName, runningTaskIds[:scaleDownDeltaIndex])
 	} else {
-		log.Printf("unable to scale, withinTaskLimit %t insufficientTasks %t", withinTaskLimit, insufficientTasks)
+		return runTasks(clusterName, desiredTasks, taskDefinition, runningTaskIds)
 	}
-	return nil
 }
 
-func scaleEcsCluster(clusterName *string, desiredTasks *int64, taskDefinition *string, runningTaskIds []*string) error {
-	// TODO:
-	return runTasks(clusterName, desiredTasks, taskDefinition, runningTaskIds)
-}
-func stopTask(taskId string) error {
+func stopTasks(clusterName *string, runningTaskIds []*string) error {
+	for _, t := range runningTaskIds {
+		_, err := ecs_svc.StopTask(&ecs.StopTaskInput{
+			Cluster: clusterName,
+			Reason:  aws.String("SCALE DOWN, ScalerDaemon"),
+			Task:    t,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 func runTasks(clusterName *string, desiredTasks *int64, taskDefinition *string, runningTaskIds []*string) error {

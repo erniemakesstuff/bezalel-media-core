@@ -15,16 +15,21 @@ type EnvConfigVals struct {
 	AppendLedgerMaxRetries        int    `yaml:"AppendLedgerMaxRetries"`
 	AppendLedgerRetryDelaySec     int    `yaml:"AppendLedgerRetryDelaySec"`
 	LedgerQueueName               string `yaml:"LedgerQueueName"`
-	PollVisibilityTimeoutSec      int64  `yaml:"PollVisibilityTimeoutSec"`
-	PollPeriodMilli               int64  `yaml:"PollPeriodMilli"`
-	MaxMessagesPerPoll            int64  `yaml:"MaxMessagesPerPoll"`
-	MaxConsumers                  int    `yaml:"MaxConsumers"`
-	SNSMediaTopic                 string `yaml:"SNSMediaTopic"`
-	ECSCoreClusterName            string `yaml:"ECSCoreClusterName"`
-	ECSCoreServiceName            string `yaml:"ECSCoreServiceName"`
-	ECSMediaClusterName           string `yaml:"ECSMediaClusterName"`
-	ECSMediaConsumerTextService   string `yaml:"ECSMediaConsumerTextService"`
-	ECSMediaConsumerRenderService string `yaml:"ECSMediaConsumerRenderService"`
+	MediaTextQueueName            string `yaml:"MediaTextQueueName"`   // TODO
+	MediaRenderQueueName          string `yaml:"MediaRenderQueueName"` // TODO
+
+	PollVisibilityTimeoutSec int64  `yaml:"PollVisibilityTimeoutSec"`
+	PollPeriodMilli          int64  `yaml:"PollPeriodMilli"`
+	MaxMessagesPerPoll       int64  `yaml:"MaxMessagesPerPoll"`
+	MaxConsumers             int    `yaml:"MaxConsumers"`
+	SNSMediaTopic            string `yaml:"SNSMediaTopic"`
+	ECSCoreClusterName       string `yaml:"ECSCoreClusterName"` // TODO
+	ECSCoreTaskName          string `yaml:"ECSCoreTaskName"`    // TODO
+
+	ECSMediaClusterName            string `yaml:"ECSMediaClusterName"`            // TODO
+	ECSMediaConsumerTextTaskName   string `yaml:"ECSMediaConsumerTextTaskName"`   // TODO
+	ECSMediaConsumerRenderTaskName string `yaml:"ECSMediaConsumerRenderTaskName"` // TODO
+	ConsumerTaskPerMessages        int    `yaml:"ConsumerTaskPerMessages"`        // TODO
 }
 
 var configSync sync.Once

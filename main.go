@@ -24,7 +24,7 @@ func main() {
 	manifest.GetManifestLoader()
 	config.GetEnvConfigs()
 	go pubsub.PollForLedgerUpdates()
-	//go scaler.StartWatching()
+	//go scaler.StartWatching() TODO Set this when ECS provisioned.
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
