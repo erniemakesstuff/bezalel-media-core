@@ -95,6 +95,7 @@ type PositionLayer string
 
 const (
 	FULLSCREEN       PositionLayer = "Fullscreen" // Occupies whole render space.
+	BACKGROUND       PositionLayer = "Background" // Occupies whole render space.
 	SPLIT_SCR_TOP    PositionLayer = "SplitScreenTop"
 	SPLIT_SCR_BOTTOM PositionLayer = "SplitScreenBottom"
 	SPLIT_SCR_LEFT   PositionLayer = "SplitScreenLeft"
@@ -112,6 +113,13 @@ type RenderMediaSequence struct {
 	ContentLookupKey    string
 }
 
+type MetaMediaDescriptor string
+
+const (
+	FINAL_RENDER    = "FinalRender"       // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
+	SCRIPT_ENRICHED = "ScriptWasEnriched" // metadata to indicate script data was enriched.
+)
+
 type MediaEvent struct {
 	LedgerID                string             // Parent LedgerID
 	PromptInstruction       string             // Instructions for the diffusion models. Will be used to vectorize & re-use media.
@@ -127,17 +135,16 @@ type MediaEvent struct {
 
 	// Set on enrichment parsing JSON callback from script process. Script prompt drives template json.
 	VisualPositionLayer PositionLayer // For determining position of video/image media in the final rendering.
-	// Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent.
-	// -1 (not part of final render; script / structure metadata)
-	// 0 default
-	// 1 override
+	// Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent [0, N]
 	RenderSequence int
 
 	// Set on final rendering.
-	FinalRenderPublisherID string // publisher ID owning this final render media.
-	IsFinalRender          bool   // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
-	FinalRenderSequences   string // json. []RenderMediaSequence
-	WatermarkText          string
+	FinalRenderSequences string // json. []RenderMediaSequence
+	WatermarkText        string
+
+	// Metadata
+	RestrictToPublisherID string // publisher ID owning this render media; prevents re-assignment.
+	MetaMediaDescriptor   MetaMediaDescriptor
 }
 
 func GetDistributionFormatFromString(format string) (DistributionFormat, error) {
@@ -169,7 +176,7 @@ func (m *MediaEvent) GetContentLookupKey() string {
 func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
 	return RenderMediaSequence{
 		EventID:             m.EventID,
-		MediaType:           m.MediaType, // Cannot be Render-type. >:(
+		MediaType:           m.MediaType, // Should not be Render-type! >:(
 		VisualPositionLayer: m.VisualPositionLayer,
 		RenderSequence:      m.RenderSequence,
 		ContentLookupKey:    m.ContentLookupKey,
@@ -188,6 +195,25 @@ func (m *MediaEvent) GetRenderSequences() ([]RenderMediaSequence, error) {
 		return sequences, err
 	}
 	return sequences, err
+}
+
+func (m *MediaEvent) ToMetadataEventEntry(metaDescriptor MetaMediaDescriptor,
+	pubProfileId string, desiredMediaType MediaType) MediaEvent {
+	result := *m
+	result.MetaMediaDescriptor = metaDescriptor
+	result.PromptInstruction = string(metaDescriptor) + pubProfileId
+	result.RestrictToPublisherID = pubProfileId
+	result.MediaType = desiredMediaType
+	result.PromptHash = HashString(result.PromptInstruction)
+	result.EventID = result.GetEventID()
+	result.ContentLookupKey = result.GetContentLookupKey()
+	return result
+}
+
+// Don't publish metadata entries that are used solely core core-service instruction.
+// Nothing to render; generate.
+func (m *MediaEvent) NotUsedInGenerators() bool {
+	return m.MetaMediaDescriptor == SCRIPT_ENRICHED
 }
 
 func HashString(text string) string {

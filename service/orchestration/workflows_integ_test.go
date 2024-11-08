@@ -115,7 +115,7 @@ func TestWorkflows(t *testing.T) {
 func hasFinalMediaRender(ledgerItem tables.Ledger) bool {
 	mediaEvents, _ := ledgerItem.GetExistingMediaEvents()
 	for _, m := range mediaEvents {
-		if m.IsFinalRender {
+		if m.MetaMediaDescriptor == tables.FINAL_RENDER {
 			return true
 		}
 	}

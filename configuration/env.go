@@ -1,8 +1,10 @@
 package configuration
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 	"sync"
 
 	"gopkg.in/yaml.v2"
@@ -42,6 +44,12 @@ func GetEnvConfigs() *EnvConfigVals {
 	configSync.Do(func() {
 		var configFile []byte
 		var err error
+		dir, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(dir)
+
 		if os.Getenv("env") == "" || os.Getenv("env") != "prod" {
 			configFile, err = os.ReadFile("./configuration/env-dev.yml")
 		} else {
@@ -49,6 +57,7 @@ func GetEnvConfigs() *EnvConfigVals {
 		}
 
 		if err != nil {
+			debug.PrintStack()
 			log.Fatalf("failed to load config file: %s", err)
 		}
 

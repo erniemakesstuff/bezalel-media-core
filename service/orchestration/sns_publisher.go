@@ -12,8 +12,6 @@ import (
 
 var snsSvc = sns.New(config.GetAwsSession())
 
-var SNS_MEDIA_TOPIC = config.GetEnvConfigs().SNSMediaTopic
-
 type Message struct {
 	Default string `json:"default"`
 }
@@ -34,7 +32,7 @@ func PublishMediaTopicSns(mediaEvent tables.MediaEvent) error {
 		return err
 	}
 	snsMessageWrapper := string(snsMessageBytes)
-	topicArn := SNS_MEDIA_TOPIC
+	topicArn := config.GetEnvConfigs().SNSMediaTopic
 	_, err = snsSvc.Publish(&sns.PublishInput{
 		Message:          &snsMessageWrapper,
 		TopicArn:         &topicArn,

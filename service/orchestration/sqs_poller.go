@@ -18,23 +18,17 @@ import (
 
 var sqs_svc = sqs.New(config.GetAwsSession())
 
-var queue_name = config.GetEnvConfigs().LedgerQueueName
-var visibility_timeout = config.GetEnvConfigs().PollVisibilityTimeoutSec
-var time_milliseconds_between_message_polls = config.GetEnvConfigs().PollPeriodMilli
-var max_messages_per_poll = config.GetEnvConfigs().MaxMessagesPerPoll // max size 10
-var max_concurrent_process_consumers = config.GetEnvConfigs().MaxConsumers
-
 // Should be started as background thread.
 func PollForLedgerUpdates() {
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{
-		QueueName: aws.String(queue_name),
+		QueueName: aws.String(config.GetEnvConfigs().LedgerQueueName),
 	})
 	if err != nil {
 		log.Fatalf("failed to get queue url: %s", err)
 	}
 	queueURL := urlResult.QueueUrl
 	log.Printf("QUEUE URL: %s", *queueURL)
-	for i := 0; i < max_concurrent_process_consumers; i++ {
+	for i := 0; i < config.GetEnvConfigs().MaxConsumers; i++ {
 		go startConsumer(queueURL)
 	}
 }
@@ -42,7 +36,7 @@ func PollForLedgerUpdates() {
 func Purge() {
 	// TODO: Add env config check to ensure this doesn't run in prod.
 	urlResult, err := sqs_svc.GetQueueUrl(&sqs.GetQueueUrlInput{
-		QueueName: aws.String(queue_name),
+		QueueName: aws.String(config.GetEnvConfigs().LedgerQueueName),
 	})
 	if err != nil {
 		log.Fatalf("failed to get queue url: %s", err)
@@ -59,7 +53,7 @@ func startConsumer(queueURL *string) {
 	log.Printf("started consumer")
 	for {
 		err := consumeMessages(queueURL)
-		time.Sleep(time.Duration(time_milliseconds_between_message_polls) * time.Millisecond)
+		time.Sleep(time.Duration(config.GetEnvConfigs().PollPeriodMilli) * time.Millisecond)
 		if err != nil {
 			log.Printf("failed to poll queue messages: %s", err)
 		}
@@ -75,8 +69,8 @@ func consumeMessages(queueURL *string) error {
 			aws.String(sqs.QueueAttributeNameAll),
 		},
 		QueueUrl:            queueURL,
-		MaxNumberOfMessages: aws.Int64(max_messages_per_poll),
-		VisibilityTimeout:   aws.Int64(visibility_timeout),
+		MaxNumberOfMessages: aws.Int64(config.GetEnvConfigs().MaxMessagesPerPoll), // Max size 10
+		VisibilityTimeout:   aws.Int64(config.GetEnvConfigs().PollVisibilityTimeoutSec),
 	})
 	if err != nil {
 		return err

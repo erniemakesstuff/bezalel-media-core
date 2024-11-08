@@ -20,9 +20,9 @@ func main() {
 	http.HandleFunc(route_health, handlerHealthCheck)
 	http.HandleFunc(route_source_prompt, handlerCustomPrompt)
 	http.HandleFunc(route_source_blog, handlerCustomPrompt)
+	config.GetEnvConfigs()
 	dynamo_configuration.Init()
 	manifest.GetManifestLoader()
-	config.GetEnvConfigs()
 	go pubsub.PollForLedgerUpdates()
 	//go scaler.StartWatching() TODO Set this when ECS provisioned.
 	log.Fatal(http.ListenAndServe(":8080", nil))

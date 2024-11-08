@@ -131,7 +131,7 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 			continue
 		}
 
-		childrenMediaEvents := CollectChildrenEvents(p.RootMediaEventID, mediaEvents)
+		childrenMediaEvents := CollectRenderableChildrenEvents(p.RootMediaEventID, mediaEvents)
 		if len(childrenMediaEvents) == 0 {
 			continue
 		}
@@ -195,8 +195,8 @@ func (s *PublishWorkFlow) isRenderAlreadyCompleted(root tables.PublishEvent, pub
 func (s *PublishWorkFlow) getFinalRenderEvent(mediaRootId string, publisherProfileId string,
 	mediaEvents []tables.MediaEvent) tables.MediaEvent {
 	for _, m := range mediaEvents {
-		if m.ParentEventID == mediaRootId && m.IsFinalRender &&
-			m.FinalRenderPublisherID == publisherProfileId {
+		if m.ParentEventID == mediaRootId && m.MetaMediaDescriptor == tables.FINAL_RENDER &&
+			m.RestrictToPublisherID == publisherProfileId {
 			return m
 		}
 	}

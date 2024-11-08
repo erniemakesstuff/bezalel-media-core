@@ -48,11 +48,20 @@ func (s *AssignmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
 	result := []tables.MediaEvent{}
 	for _, m := range mediaEvents {
-		if IsParentMediaEvent(m) && AllChildrenRendered(m.GetEventID(), mediaEvents) {
+		if IsParentMediaEvent(m) && AllChildrenRendered(m.GetEventID(), mediaEvents) && s.isEnriched(m, mediaEvents) {
 			result = append(result, m)
 		}
 	}
 	return result, nil
+}
+
+func (s *AssignmentWorkflow) isEnriched(root tables.MediaEvent, mediaEvents []tables.MediaEvent) bool {
+	for _, m := range mediaEvents {
+		if m.ParentEventID == root.GetEventID() && m.MetaMediaDescriptor == tables.SCRIPT_ENRICHED {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsReadyToAssign []tables.MediaEvent,

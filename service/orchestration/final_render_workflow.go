@@ -92,7 +92,7 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	}
 	mediaEventToPublisherMap := CreateMediaEventToPublisherMap(assignedPublisherProfiles, rootMediaEventsToFinalize)
 	for _, r := range rootMediaEventsToFinalize {
-		children := CollectChildrenEvents(r.GetEventID(), mediaEvents)
+		children := CollectRenderableChildrenEvents(r.GetEventID(), mediaEvents)
 		sort.Sort(tables.ByRenderSequence(children))
 		assignedPubs, ok := mediaEventToPublisherMap[r.GetEventID()]
 		if !ok || len(assignedPubs) == 0 {
@@ -130,22 +130,8 @@ func (s *FinalRenderWorkflow) collectFinalRenderMedia(
 			log.Printf("correlationID: %s WARN watermark empty, setting default watermark: TrueVineAI", ledgerItem.LedgerID)
 			watermarkText = "TrueVineAI"
 		}
-		result := tables.MediaEvent{
-			LedgerID:           root.LedgerID,
-			Language:           root.Language,
-			Niche:              root.Niche,
-			MediaType:          tables.RENDER,
-			PromptInstruction:  "CREATING FINAL RENDER: " + p.PublisherProfileID,
-			DistributionFormat: root.DistributionFormat,
-			IsFinalRender:      true,
-			WatermarkText:      watermarkText,
-			ParentEventID:      root.EventID,
-		}
-		result.FinalRenderPublisherID = p.PublisherProfileID
-		result.PromptHash = tables.HashString(result.PromptInstruction)
-		result.EventID = result.GetEventID()
+		result := root.ToMetadataEventEntry(tables.FINAL_RENDER, p.PublisherProfileID, tables.RENDER)
 		result.FinalRenderSequences = s.createJsonOfRenderSequence(root, children)
-		result.ContentLookupKey = result.GetContentLookupKey()
 		resultCollection = append(resultCollection, result)
 	}
 

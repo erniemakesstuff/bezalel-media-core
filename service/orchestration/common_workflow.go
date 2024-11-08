@@ -18,7 +18,9 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvents []tables.MediaE
 	if existsInLedger {
 		return nil
 	}
+
 	// TODO: Check if media exists in PgVector for-reuse.
+	// TODO: ignore pgvector for metadata entries; call m.IsMetadata...
 	err = publishMediaGenerationSNS(mediaEvents)
 	if err != nil {
 		return err
@@ -28,11 +30,25 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvents []tables.MediaE
 }
 
 func publishMediaGenerationSNS(mediaEvents []tables.MediaEvent) error {
-	var err error
 	for _, m := range mediaEvents {
+		if m.NotUsedInGenerators() {
+			continue
+		}
+		alreadyGenerated, err := MediaExists(m.ContentLookupKey)
+		if err != nil {
+			return err
+		}
+
+		if alreadyGenerated {
+			continue
+		}
+
 		err = PublishMediaTopicSns(m)
+		if err != nil {
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 func ExistsInLedger(ledgerItem tables.Ledger, mediaEvents []tables.MediaEvent) (bool, error) {
@@ -84,7 +100,8 @@ func WaitOptimisticVerifyWroteLedger(expectedPublisherEventID string, ledgerId s
 
 func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	for _, m := range mediaEvents {
-		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId || m.GetEventID() == rootId {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId ||
+			m.GetEventID() == rootId || m.NotUsedInGenerators() {
 			continue
 		}
 
@@ -100,10 +117,10 @@ func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	return true
 }
 
-func CollectChildrenEvents(mediaEventRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
+func CollectRenderableChildrenEvents(mediaEventRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
 	result := []tables.MediaEvent{}
 	for _, m := range mediaEvents {
-		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRootId {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRootId || m.NotUsedInGenerators() {
 			continue
 		}
 		result = append(result, m)
@@ -146,6 +163,10 @@ func CreateMediaEventToPublisherMap(publishEvents []tables.PublishEvent, mediaEv
 	}
 
 	for _, m := range mediaEvents {
+		if m.NotUsedInGenerators() {
+			continue
+		}
+
 		p, ok := publisherIdMap[m.GetEventID()]
 		if !ok {
 			continue

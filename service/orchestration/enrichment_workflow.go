@@ -47,5 +47,8 @@ func spawnChildMediaEvents(ledgerItem tables.Ledger, parentMediaEvent tables.Med
 	// Output children media events w/ incrementing RenderSequence attribute set.
 	// Set PositionLayer instruction.
 	// Call HandleMediaGeneration
-	return nil
+	childEvents := []tables.MediaEvent{}
+	enrichedEntry := parentMediaEvent.ToMetadataEventEntry(tables.SCRIPT_ENRICHED, parentMediaEvent.RestrictToPublisherID, parentMediaEvent.MediaType)
+	childEvents = append(childEvents, enrichedEntry)
+	return HandleMediaGeneration(ledgerItem, childEvents)
 }

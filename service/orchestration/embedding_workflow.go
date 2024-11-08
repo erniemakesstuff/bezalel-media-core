@@ -15,5 +15,6 @@ func (s *EmbeddingWorkflow) Run(ledgerItem tables.Ledger, processId string) erro
 	// Check MediaEvents all ready.
 	// Embed them: call embedding api
 	// UPSERT into pgvector
+	// Ignore IsMetadataEvents.
 	return nil
 }
