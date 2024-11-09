@@ -202,8 +202,8 @@ func (m *MediaEvent) ToMetadataEventEntry(metaDescriptor MetaMediaDescriptor,
 	copy := *m
 	result := copy
 	result.MetaMediaDescriptor = metaDescriptor
-	result.PromptInstruction = string(metaDescriptor) + pubProfileId
-	result.SystemPromptInstruction = string(metaDescriptor) + pubProfileId
+	result.PromptInstruction = fmt.Sprintf("OriginalPromptHash: %s - MetaDescriptor: %s - OPT_PUB: %s", m.PromptHash, string(metaDescriptor), pubProfileId)
+	result.SystemPromptInstruction = fmt.Sprintf("OriginalPromptHash: %s - MetaDescriptor: %s - OPT_PUB: %s", m.PromptHash, string(metaDescriptor), pubProfileId)
 	result.RestrictToPublisherID = pubProfileId
 	result.MediaType = desiredMediaType
 	result.ParentEventID = m.EventID
