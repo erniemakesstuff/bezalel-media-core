@@ -74,7 +74,7 @@ func getMediaEventFromPrompt(prompt manifest.Prompt, ledgerItem tables.Ledger) (
 	enrichedPrompt = strings.Replace(enrichedPrompt, manifest.PROMPT_SCRIPT_VAR_LANGUAGE, en.Name(lang), -1)
 	result.PromptInstruction = enrichedPrompt
 	result.PromptHash = tables.HashString(result.PromptInstruction)
-	result.EventID = result.GetEventID()
-	result.ContentLookupKey = result.GetContentLookupKey()
+	result.SetEventID()
+	result.SetContentLookupKey()
 	return result, nil
 }

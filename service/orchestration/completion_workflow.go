@@ -77,10 +77,10 @@ func (s CompletionWorkflow) isFullySyndicated(ledgerItem tables.Ledger) (bool, e
 func (s CompletionWorkflow) isPublishedOnAllChannels(channelNames []string,
 	pubStateMap map[string]tables.PublishEvent, rootMedia tables.MediaEvent) bool {
 	for _, cn := range channelNames {
-		key := fmt.Sprintf("%s.%s.%s", cn, rootMedia.GetEventID(), tables.COMPLETE)
+		key := fmt.Sprintf("%s.%s.%s", cn, rootMedia.EventID, tables.COMPLETE)
 		_, ok := pubStateMap[key]
 		if !ok {
-			log.Printf("correlationID: %s missing syndication to %s of %s for eventId: %s", rootMedia.LedgerID, cn, channelNames, rootMedia.GetEventID())
+			log.Printf("correlationID: %s missing syndication to %s of %s for eventId: %s", rootMedia.LedgerID, cn, channelNames, rootMedia.EventID)
 			return false
 		}
 	}

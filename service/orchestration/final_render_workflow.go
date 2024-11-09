@@ -76,7 +76,7 @@ func (s *FinalRenderWorkflow) getRootMediaAllChildrenReady(ledgerItem tables.Led
 		assignedRootMediaIds[p.RootMediaEventID] = p.GetEventID()
 	}
 	for _, r := range mediaEvents {
-		if _, ok := assignedRootMediaIds[r.GetEventID()]; ok && AllChildrenRendered(r.GetEventID(), mediaEvents) {
+		if _, ok := assignedRootMediaIds[r.EventID]; ok && AllChildrenRendered(r.EventID, mediaEvents) {
 			rootMedias = append(rootMedias, r)
 		}
 	}
@@ -92,11 +92,11 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	}
 	mediaEventToPublisherMap := CreateMediaEventToPublisherMap(assignedPublisherProfiles, rootMediaEventsToFinalize)
 	for _, r := range rootMediaEventsToFinalize {
-		children := CollectRenderableChildrenEvents(r.GetEventID(), mediaEvents)
+		children := CollectRenderableChildrenEvents(r.EventID, mediaEvents)
 		sort.Sort(tables.ByRenderSequence(children))
-		assignedPubs, ok := mediaEventToPublisherMap[r.GetEventID()]
+		assignedPubs, ok := mediaEventToPublisherMap[r.EventID]
 		if !ok || len(assignedPubs) == 0 {
-			log.Printf("correlationID: %s WARN missing PubState for root media: %s", ledgerItem.LedgerID, r.GetEventID())
+			log.Printf("correlationID: %s WARN missing PubState for root media: %s", ledgerItem.LedgerID, r.EventID)
 			continue
 		}
 		finalMediaEvents := s.collectFinalRenderMedia(ledgerItem, r, children, assignedPubs)

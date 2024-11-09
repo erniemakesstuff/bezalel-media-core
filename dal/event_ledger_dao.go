@@ -265,12 +265,12 @@ func joinMediaEventSet(s1 []tables.MediaEvent, s2 []tables.MediaEvent) []tables.
 	result := []tables.MediaEvent{}
 	existing := stringset.New()
 	for _, e := range s1 {
-		existing.Add(e.GetEventID())
+		existing.Add(e.EventID)
 		result = append(result, e)
 	}
 
 	for _, e := range s2 {
-		if !existing.Contains(e.GetEventID()) {
+		if !existing.Contains(e.EventID) {
 			result = append(result, e)
 		}
 	}

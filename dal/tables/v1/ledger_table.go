@@ -161,17 +161,17 @@ func GetDistributionFormatFromString(format string) (DistributionFormat, error) 
 	return DIST_FORMAT_BLOG, fmt.Errorf("unable to find matching distribution format from string: %s", format)
 }
 
-func (m *MediaEvent) GetEventID() string {
+func (m *MediaEvent) SetEventID() {
 	// derivable concatenation <Language>.<MediaType>.<Niche>.<PromptInstructionHash>: E.g. EN.LongFormVideo.NewsReport....
 	// Enforce idempotency within the context of a ledger entry; no datastore collision.
-	return fmt.Sprintf("%s.%s.%s.%s", m.Language, m.MediaType, m.Niche, m.PromptHash)
+	m.EventID = fmt.Sprintf("%s.%s.%s.%s", m.Language, m.MediaType, m.Niche, m.PromptHash)
 }
 
-func (m *MediaEvent) GetContentLookupKey() string {
+func (m *MediaEvent) SetContentLookupKey() {
 	// Use guid because promptHash for static-scripts will collide.
 	// <media_Type>.<ledgerId>.<guid>
 	// LedgerId will be used to redrive ledgerItem from the s3 topic notifications
-	return fmt.Sprintf("%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String())
+	m.ContentLookupKey = fmt.Sprintf("%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String())
 }
 func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
 	return RenderMediaSequence{
@@ -206,10 +206,10 @@ func (m *MediaEvent) ToMetadataEventEntry(metaDescriptor MetaMediaDescriptor,
 	result.SystemPromptInstruction = string(metaDescriptor) + pubProfileId
 	result.RestrictToPublisherID = pubProfileId
 	result.MediaType = desiredMediaType
-	result.ParentEventID = m.GetEventID()
+	result.ParentEventID = m.EventID
 	result.PromptHash = HashString(result.PromptInstruction)
-	result.EventID = result.GetEventID()
-	result.ContentLookupKey = result.GetContentLookupKey()
+	result.SetEventID()
+	result.SetContentLookupKey()
 	return result
 }
 

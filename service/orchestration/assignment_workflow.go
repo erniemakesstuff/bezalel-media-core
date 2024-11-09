@@ -49,7 +49,7 @@ func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables
 	result := []tables.MediaEvent{}
 	for _, m := range mediaEvents {
 		isEnriched := s.isEnriched(m, mediaEvents)
-		if IsParentMediaEvent(m) && AllChildrenRendered(m.GetEventID(), mediaEvents) && isEnriched {
+		if IsParentMediaEvent(m) && AllChildrenRendered(m.EventID, mediaEvents) && isEnriched {
 			result = append(result, m)
 		}
 	}
@@ -58,7 +58,7 @@ func (s *AssignmentWorkflow) collectRootMediaReadyToPublish(mediaEvents []tables
 
 func (s *AssignmentWorkflow) isEnriched(root tables.MediaEvent, mediaEvents []tables.MediaEvent) bool {
 	for _, m := range mediaEvents {
-		if m.ParentEventID == root.GetEventID() && m.MetaMediaDescriptor == tables.SCRIPT_ENRICHED {
+		if m.ParentEventID == root.EventID && m.MetaMediaDescriptor == tables.SCRIPT_ENRICHED {
 			return true
 		}
 	}
@@ -90,18 +90,18 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 
 func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetChannelName string, publishEventMap map[string]tables.PublishEvent) bool {
 	// if unassigned, true
-	stateKeyAssigned := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.GetEventID(), tables.ASSIGNED)
+	stateKeyAssigned := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.EventID, tables.ASSIGNED)
 	if _, ok := publishEventMap[stateKeyAssigned]; !ok {
 		return true
 	}
 
-	stateKeyCompleted := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.GetEventID(), tables.COMPLETE)
+	stateKeyCompleted := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.EventID, tables.COMPLETE)
 	// if assigned, but already completed: cannot assign to distribution channel
 	if _, ok := publishEventMap[stateKeyCompleted]; ok {
 		return false
 	}
 
-	stateKeyExpired := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.GetEventID(), tables.EXPIRED)
+	stateKeyExpired := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.EventID, tables.EXPIRED)
 	// if assigned, but expired, true: ok to retry same distribution channel
 	if _, ok := publishEventMap[stateKeyExpired]; ok {
 		return true
@@ -150,6 +150,6 @@ func (s *AssignmentWorkflow) buildPublishEvent(ledgerId string, publisherAccount
 		PublishStatus:       tables.ASSIGNED,
 		PublisherProfileID:  publisherAccount.PublisherProfileID,
 		AccountID:           publisherAccount.AccountID,
-		RootMediaEventID:    mediaEvent.GetEventID(),
+		RootMediaEventID:    mediaEvent.EventID,
 	}
 }

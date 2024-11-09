@@ -59,10 +59,10 @@ func ExistsInLedger(ledgerItem tables.Ledger, mediaEvents []tables.MediaEvent) (
 	}
 	existingMediaEventsMap := make(map[string]bool)
 	for _, m := range existingMediaEvents {
-		existingMediaEventsMap[m.GetEventID()] = true
+		existingMediaEventsMap[m.EventID] = true
 	}
 	for _, m := range mediaEvents {
-		if _, ok := existingMediaEventsMap[m.GetEventID()]; !ok {
+		if _, ok := existingMediaEventsMap[m.EventID]; !ok {
 			return false, nil
 		}
 	}
@@ -101,7 +101,7 @@ func WaitOptimisticVerifyWroteLedger(expectedPublisherEventID string, ledgerId s
 func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	for _, m := range mediaEvents {
 		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId ||
-			m.GetEventID() == rootId || m.NotUsedInGenerators() {
+			m.EventID == rootId || m.NotUsedInGenerators() {
 			continue
 		}
 
@@ -167,11 +167,11 @@ func CreateMediaEventToPublisherMap(publishEvents []tables.PublishEvent, mediaEv
 			continue
 		}
 
-		p, ok := publisherIdMap[m.GetEventID()]
+		p, ok := publisherIdMap[m.EventID]
 		if !ok {
 			continue
 		}
-		result[m.GetEventID()] = append(result[m.GetEventID()], p...)
+		result[m.EventID] = append(result[m.EventID], p...)
 	}
 	return result
 }
