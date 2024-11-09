@@ -25,6 +25,8 @@ func CreateLedger(item tables.Ledger) error {
 	item.PublishEventsVersion = start_version
 	item.LedgerStatus = tables.NEW_LEDGER
 	item.LedgerCreatedAtEpochMilli = time.Now().UnixMilli()
+	const twoWeeks = 604800000
+	item.TTL = time.Now().UnixMilli() + twoWeeks
 
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
