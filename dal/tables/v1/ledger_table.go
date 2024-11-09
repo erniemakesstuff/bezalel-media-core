@@ -199,11 +199,14 @@ func (m *MediaEvent) GetRenderSequences() ([]RenderMediaSequence, error) {
 
 func (m *MediaEvent) ToMetadataEventEntry(metaDescriptor MetaMediaDescriptor,
 	pubProfileId string, desiredMediaType MediaType) MediaEvent {
-	result := *m
+	copy := *m
+	result := copy
 	result.MetaMediaDescriptor = metaDescriptor
 	result.PromptInstruction = string(metaDescriptor) + pubProfileId
+	result.SystemPromptInstruction = string(metaDescriptor) + pubProfileId
 	result.RestrictToPublisherID = pubProfileId
 	result.MediaType = desiredMediaType
+	result.ParentEventID = m.GetEventID()
 	result.PromptHash = HashString(result.PromptInstruction)
 	result.EventID = result.GetEventID()
 	result.ContentLookupKey = result.GetContentLookupKey()

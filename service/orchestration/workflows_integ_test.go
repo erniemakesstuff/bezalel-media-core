@@ -46,6 +46,11 @@ func setupTest() {
 		dynamo_configuration.Init()
 		manifest.GetManifestLoader()
 	})
+	err := dal.ForceAllLocksFree(PubProfile_EN_Medium_1.AccountID,
+		PubProfile_EN_Medium_1.PublisherProfileID)
+	if err != nil {
+		log.Fatalf("failed to release locks on cleanup: %s", err)
+	}
 	Test_Ledger_Blog.LedgerID = uuid.New().String() + "-INTEG-TEST"
 	dal.CreateLedger(Test_Ledger_Blog)
 }
