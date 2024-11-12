@@ -2,7 +2,6 @@ package publisherdrivers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -60,23 +59,7 @@ func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (man
 		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
 		return manifest.TinyBlogJsonSchema{}, err
 	}
-	return s.scriptPayloadToBlogJson(payload)
-}
-
-func (s TwitterDriver) scriptPayloadToBlogJson(payload string) (manifest.TinyBlogJsonSchema, error) {
-	result := manifest.TinyBlogJsonSchema{}
-	err := json.Unmarshal([]byte(payload), &result)
-	if err != nil {
-		log.Printf("error unmarshalling script text to blog schema object: %s", err)
-		log.Printf("error payload: <%s>", payload)
-		return result, err
-	}
-
-	if len(result.BlogText) == 0 {
-		return manifest.TinyBlogJsonSchema{}, fmt.Errorf("twitter empty payload received: %s", payload)
-	}
-
-	return result, err
+	return ScriptPayloadToTinyBlogJson(payload)
 }
 
 func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.AccountPublisher, tweetPayload TwitterPostContents) error {

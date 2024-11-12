@@ -6,16 +6,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
-	aws_configuration "github.com/bezalel-media-core/v2/configuration"
+	configs "github.com/bezalel-media-core/v2/configuration"
 )
 
-var s3_svc = s3.New(aws_configuration.GetAwsSession())
-
-const media_bucket_name = "truevine-media-storage" // os.Getenv("media_bucket")
+var s3_svc = s3.New(configs.GetAwsSession())
 
 func MediaExists(contentLookupKey string) (bool, error) {
 	_, err := s3_svc.HeadObject(&s3.HeadObjectInput{
-		Bucket: aws.String(media_bucket_name),
+		Bucket: aws.String(configs.GetEnvConfigs().S3MediaBucket),
 		Key:    aws.String(contentLookupKey),
 	})
 
@@ -34,7 +32,7 @@ func MediaExists(contentLookupKey string) (bool, error) {
 }
 
 func listObjs() {
-	resp, _ := s3_svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(media_bucket_name)})
+	resp, _ := s3_svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(configs.GetEnvConfigs().S3MediaBucket)})
 
 	for _, item := range resp.Contents {
 		log.Println("Name:         ", *item.Key)
@@ -44,6 +42,3 @@ func listObjs() {
 		log.Println("")
 	}
 }
-
-// Render.877bbde6-676f-4fbe-b2cb-570f5afb9472.1bc57e9c-aeb1-4016-a576-a7ef4c3a6895
-// Render.877bbde6-676f-4fbe-b2cb-570f5afb9472.26478a60-2daa-451c-bd6b-6de5da78bbfc

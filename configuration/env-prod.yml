@@ -4,6 +4,9 @@ AssignmentLockMilliTTL: 5400000
 PublishLockMilliTTL: 5400000
 AppendLedgerMaxRetries: 5
 AppendLedgerRetryDelaySec: 2
+
+S3MediaBucket: truevine-media-storage
+
 # SQS
 LedgerQueueName: state-callback-queue
 PollVisibilityTimeoutSec: 180

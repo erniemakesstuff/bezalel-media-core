@@ -11,6 +11,8 @@ import (
 )
 
 type EnvConfigVals struct {
+	S3MediaBucket string `yaml:"S3MediaBucket"`
+
 	DefaultPublisherWatermarkText string `yaml:"DefaultPublisherWatermarkText"`
 	AssignmentLockMilliTTL        int64  `yaml:"AssignmentLockMilliTTL"`
 	PublishLockMilliTTL           int64  `yaml:"PublishLockMilliTTL"`

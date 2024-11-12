@@ -20,6 +20,9 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvents []tables.MediaE
 	}
 
 	// TODO: Check if media exists in PgVector for-reuse.
+	// When exists in Pgvector; write-replace the contentLookup key!
+	// Mock this for MVP for static background and audio.
+
 	// TODO: ignore pgvector for metadata entries; call m.IsMetadata...
 	err = publishMediaGenerationSNS(mediaEvents)
 	if err != nil {
@@ -172,6 +175,17 @@ func CreateMediaEventToPublisherMap(publishEvents []tables.PublishEvent, mediaEv
 			continue
 		}
 		result[m.EventID] = append(result[m.EventID], p...)
+	}
+	return result
+}
+
+func CreateMediaMapByEventId(mediaEvents []tables.MediaEvent) map[string]tables.MediaEvent {
+	result := make(map[string]tables.MediaEvent)
+	if len(mediaEvents) == 0 {
+		return result
+	}
+	for _, m := range mediaEvents {
+		result[m.EventID] = m
 	}
 	return result
 }

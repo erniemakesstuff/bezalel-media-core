@@ -7,12 +7,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	aws_configuration "github.com/bezalel-media-core/v2/configuration"
+	configs "github.com/bezalel-media-core/v2/configuration"
 )
 
-var s3_downloader = s3manager.NewDownloader(aws_configuration.GetAwsSession())
-
-const media_bucket_name = "truevine-media-storage" // os.Getenv("media_bucket")
+var s3_downloader = s3manager.NewDownloader(configs.GetAwsSession())
 
 func LoadAsString(contentLookupKey string) (string, error) {
 	file, err := os.Create(contentLookupKey)
@@ -23,7 +21,7 @@ func LoadAsString(contentLookupKey string) (string, error) {
 
 	_, err = s3_downloader.Download(file,
 		&s3.GetObjectInput{
-			Bucket: aws.String(media_bucket_name),
+			Bucket: aws.String(configs.GetEnvConfigs().S3MediaBucket),
 			Key:    aws.String(contentLookupKey),
 		})
 	if err != nil {

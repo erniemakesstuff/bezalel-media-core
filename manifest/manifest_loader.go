@@ -25,6 +25,12 @@ const (
 	PROMPT_SCRIPT_VAR_TINY_BLOG_FORMAT = "$TINY_BLOG_JSON_FORMAT"
 )
 
+const (
+	DIST_FORMAT_INTEG_BLOG = "IntegBlog"
+	DIST_FORMAT_BLOG       = "Blog"
+	DIST_FORMAT_TINY_BLOG  = "TinyBlog"
+)
+
 type Prompt struct {
 	PromptCategoryKey string `yaml:"promptCategoryKey"` // Language.MediaType.Niche
 	SystemPromptText  string `yaml:"systemPromptText"`

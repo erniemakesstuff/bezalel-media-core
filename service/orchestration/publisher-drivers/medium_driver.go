@@ -1,7 +1,6 @@
 package publisherdrivers
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -60,29 +59,7 @@ func (s MediumDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (mani
 		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
 		return manifest.BlogJsonSchema{}, err
 	}
-	return s.scriptPayloadToBlogJson(payload)
-}
-
-func (s MediumDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJsonSchema, error) {
-	result := manifest.BlogJsonSchema{}
-	err := json.Unmarshal([]byte(payload), &result)
-	if err != nil {
-		log.Printf("error unmarshalling script text to blog schema object: %s", err)
-		log.Printf("error payload: <%s>", payload)
-		return result, err
-	}
-
-	if len(result.BlogHtml) == 0 {
-		// Try attempt substitute with "some" acceptable value.
-		// Occurs when LLM refuses to populate blogHtml, but populates blogText.
-		result.BlogHtml = result.BlogText
-	}
-
-	if len(result.BlogHtml) == 0 {
-		return manifest.BlogJsonSchema{}, fmt.Errorf("medium empty payload received: %s", payload)
-	}
-
-	return result, err
+	return ScriptPayloadToBlogJson(payload)
 }
 
 func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, blogPayload MediumBlogContents, account tables.AccountPublisher) error {

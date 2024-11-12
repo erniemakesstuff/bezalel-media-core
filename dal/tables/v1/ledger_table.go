@@ -74,10 +74,10 @@ func (ledgerItem *Ledger) GetExistingPublishEvents() ([]PublishEvent, error) {
 type MediaType string
 
 const (
-	MEDIA_TEXT  MediaType = "Text"
-	MEDIA_VIDEO MediaType = "Video"
-	IMAGE       MediaType = "Image"
-	RENDER      MediaType = "Render" // Multi-media; compilation; replacements.
+	MEDIA_TEXT   MediaType = "Text"
+	MEDIA_VIDEO  MediaType = "Video"
+	MEDIA_IMAGE  MediaType = "Image"
+	MEDIA_RENDER MediaType = "Render" // Multi-media; compilation; replacements.
 )
 
 // DistributionFormat are only set for the Parent/Root MediaEvent.
@@ -95,6 +95,7 @@ const (
 type PositionLayer string
 
 const (
+	// For videos.
 	FULLSCREEN       PositionLayer = "Fullscreen" // Occupies whole render space.
 	BACKGROUND       PositionLayer = "Background" // Occupies whole render space.
 	SPLIT_SCR_TOP    PositionLayer = "SplitScreenTop"
@@ -104,6 +105,11 @@ const (
 
 	AVATAR         PositionLayer = "Avatar"        // screen position for the talking head/body.
 	AVATAR_OVERLAY PositionLayer = "AvatarOverlay" // apply user specified avatar as higher priority.
+
+	// For static / text final media.
+	IMAGE_TOP        = "ImageOnTop"
+	IMAGE_BOTTOM     = "ImageOnBottom"
+	IMAGE_ATTACHMENT = "ImageAttachment" // Attach wherever.
 )
 
 type RenderMediaSequence struct {
@@ -174,6 +180,7 @@ func (m *MediaEvent) SetContentLookupKey() {
 	// LedgerId will be used to redrive ledgerItem from the s3 topic notifications
 	m.ContentLookupKey = fmt.Sprintf("%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String())
 }
+
 func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
 	return RenderMediaSequence{
 		EventID:             m.EventID,
@@ -206,6 +213,19 @@ func (m *MediaEvent) ToMetadataEventEntry(metaDescriptor MetaMediaDescriptor,
 	result.PromptInstruction = fmt.Sprintf("OriginalPromptHash: %s - MetaDescriptor: %s - OPT_PUB: %s", m.PromptHash, string(metaDescriptor), pubProfileId)
 	result.SystemPromptInstruction = fmt.Sprintf("OriginalPromptHash: %s - MetaDescriptor: %s - OPT_PUB: %s", m.PromptHash, string(metaDescriptor), pubProfileId)
 	result.RestrictToPublisherID = pubProfileId
+	result.MediaType = desiredMediaType
+	result.ParentEventID = m.EventID
+	result.PromptHash = HashString(result.PromptInstruction)
+	result.SetEventID()
+	result.SetContentLookupKey()
+	return result
+}
+
+func (m *MediaEvent) ToChildMediaEntry(promptText string, promptSystemInstruction string, desiredMediaType MediaType) MediaEvent {
+	copy := *m
+	result := copy
+	result.PromptInstruction = promptText
+	result.SystemPromptInstruction = promptSystemInstruction
 	result.MediaType = desiredMediaType
 	result.ParentEventID = m.EventID
 	result.PromptHash = HashString(result.PromptInstruction)
