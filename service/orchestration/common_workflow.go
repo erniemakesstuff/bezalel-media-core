@@ -22,6 +22,7 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvents []tables.MediaE
 	// TODO: Check if media exists in PgVector for-reuse.
 	// When exists in Pgvector; write-replace the contentLookup key!
 	// Mock this for MVP for static background and audio.
+	// If media does not exist; invalidate pgvector entry.
 
 	// TODO: ignore pgvector for metadata entries; call m.IsMetadata...
 	err = publishMediaGenerationSNS(mediaEvents)

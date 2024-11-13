@@ -77,7 +77,10 @@ const (
 	MEDIA_TEXT   MediaType = "Text"
 	MEDIA_VIDEO  MediaType = "Video"
 	MEDIA_IMAGE  MediaType = "Image"
-	MEDIA_RENDER MediaType = "Render" // Multi-media; compilation; replacements.
+	MEDIA_SFX    MediaType = "Sfx"    // Sound effects
+	MEDIA_VOCAL  MediaType = "Vocal"  // Narration
+	MEDIA_MUSIC  MediaType = "Music"  // Songs; other music.
+	MEDIA_RENDER MediaType = "Render" // Multi-media; compilation; replacements. Thumbnail generation.
 )
 
 // DistributionFormat are only set for the Parent/Root MediaEvent.
@@ -107,9 +110,10 @@ const (
 	AVATAR_OVERLAY PositionLayer = "AvatarOverlay" // apply user specified avatar as higher priority.
 
 	// For static / text final media.
-	IMAGE_TOP        = "ImageOnTop"
-	IMAGE_BOTTOM     = "ImageOnBottom"
-	IMAGE_ATTACHMENT = "ImageAttachment" // Attach wherever.
+	IMAGE_TOP        PositionLayer = "ImageOnTop"
+	IMAGE_BOTTOM     PositionLayer = "ImageOnBottom"
+	IMAGE_ATTACHMENT PositionLayer = "ImageAttachment" // Attach wherever.
+	IMAGE_THUMBNAIL  PositionLayer = "Thumbnail"       // For video final renders.
 )
 
 type RenderMediaSequence struct {
