@@ -27,7 +27,11 @@ func GetBlogJsonSchema() string {
 		BlogText:    "Your output blog content as plaintext must be in the blogText field.",
 		BlogHtml:    "Your output blog content as HTML must be in the blogHtml field.",
 		ImageDescriptionTexts: []string{"At least one, and at most two descriptions of images that charachterize the blog text.",
-			"One image description per entry in this json string array."},
+			"One image description per entry in this json string array.",
+			"Describe the images using excruciating details for calling an image generator.",
+			`Include any details of the texture, lighting, text, objects, scenery,  placement arrangement, clothing, 
+			skin color, tone, and anything else to accurately describe the image.`,
+		},
 	}
 
 	b, err := json.MarshalIndent(sampleShot, "", "  ")
@@ -44,7 +48,11 @@ func GetTinyBlogJson() string {
 		BlogText:    "Your output blog content as plaintext must be in the blogText field.",
 		// TODO: Set this to at-least 0 https://trello.com/c/ie8Eh4n3
 		ImageDescriptionTexts: []string{"At least one, and at most two descriptions of images that charachterize the blog text.",
-			"One image description per entry in this json string array."},
+			"One image description per entry in this json string array.",
+			"Describe the images using excruciating details for calling an image generator.",
+			`Include any details of the texture, lighting, text, objects, scenery,  placement arrangement, clothing, 
+			skin color, tone, and anything else to accurately describe the image.`,
+		},
 	}
 
 	b, err := json.MarshalIndent(sampleShot, "", "  ")
