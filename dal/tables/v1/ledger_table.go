@@ -76,7 +76,7 @@ type MediaType string
 const (
 	MEDIA_TEXT   MediaType = "Text"
 	MEDIA_VIDEO  MediaType = "Video"
-	MEDIA_IMAGE  MediaType = "Image"
+	MEDIA_IMAGE  MediaType = "Image"  // Png and jpeg. Ensure append suffix contentlookupkey when manipulating files.
 	MEDIA_SFX    MediaType = "Sfx"    // Sound effects
 	MEDIA_VOCAL  MediaType = "Vocal"  // Narration
 	MEDIA_MUSIC  MediaType = "Music"  // Songs; other music.
@@ -127,8 +127,8 @@ type RenderMediaSequence struct {
 type MetaMediaDescriptor string
 
 const (
-	FINAL_RENDER    = "FinalRender"       // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
-	SCRIPT_ENRICHED = "ScriptWasEnriched" // metadata to indicate script data was enriched.
+	FINAL_RENDER    MetaMediaDescriptor = "FinalRender"       // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
+	SCRIPT_ENRICHED MetaMediaDescriptor = "ScriptWasEnriched" // metadata to indicate script data was enriched.
 )
 
 type MediaEvent struct {
@@ -240,7 +240,7 @@ func (m *MediaEvent) ToChildMediaEntry(promptText string, promptSystemInstructio
 
 // Don't publish metadata entries that are used solely core core-service instruction.
 // Nothing to render; generate.
-func (m *MediaEvent) NotUsedInGenerators() bool {
+func (m *MediaEvent) IsMetaPurposeOnly() bool {
 	return m.MetaMediaDescriptor == SCRIPT_ENRICHED
 }
 

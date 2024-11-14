@@ -132,7 +132,7 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 			continue
 		}
 
-		childrenMediaEvents := CollectRenderableChildrenEvents(p.RootMediaEventID, mediaEvents)
+		childrenMediaEvents := CollectNonMetaChildMedia(p.RootMediaEventID, mediaEvents)
 		if len(childrenMediaEvents) == 0 {
 			continue
 		}

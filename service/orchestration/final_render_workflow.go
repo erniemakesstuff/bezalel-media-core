@@ -92,7 +92,7 @@ func (s *FinalRenderWorkflow) spawnFinalRenderMediaEvent(ledgerItem tables.Ledge
 	}
 	mediaEventToPublisherMap := CreateMediaEventToPublisherMap(assignedPublisherProfiles, rootMediaEventsToFinalize)
 	for _, r := range rootMediaEventsToFinalize {
-		children := CollectRenderableChildrenEvents(r.EventID, mediaEvents)
+		children := CollectChildMediaEligibleForFinalRender(r.EventID, mediaEvents)
 		sort.Sort(tables.ByRenderSequence(children))
 		assignedPubs, ok := mediaEventToPublisherMap[r.EventID]
 		if !ok || len(assignedPubs) == 0 {
@@ -128,7 +128,7 @@ func (s *FinalRenderWorkflow) collectFinalRenderMedia(
 		}
 		if watermarkText == "" {
 			log.Printf("correlationID: %s WARN watermark empty, setting default watermark: TrueVineAI", ledgerItem.LedgerID)
-			watermarkText = "TrueVineAI"
+			watermarkText = "TrueVineMedia"
 		}
 		result := root.ToMetadataEventEntry(tables.FINAL_RENDER, p.PublisherProfileID, tables.MEDIA_RENDER)
 		result.FinalRenderSequences = s.createJsonOfRenderSequence(root, children)

@@ -52,7 +52,7 @@ func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 }
 
 func spawnChildMediaEvents(ledgerItem tables.Ledger, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) error {
-	childEvents, err := enrichByDistFormat(ledgerItem, parentMediaEvent, existingMediaEvents)
+	childEvents, err := buildEventsByDistFormat(parentMediaEvent, existingMediaEvents)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func spawnChildMediaEvents(ledgerItem tables.Ledger, parentMediaEvent tables.Med
 	return HandleMediaGeneration(ledgerItem, childEvents)
 }
 
-func enrichByDistFormat(ledgerItem tables.Ledger, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
+func buildEventsByDistFormat(parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
 	distForm := parentMediaEvent.DistributionFormat
 	jsonPayload, err := drivers.LoadAsString(parentMediaEvent.ContentLookupKey)
 	if err != nil {

@@ -35,7 +35,7 @@ func HandleMediaGeneration(ledgerItem tables.Ledger, mediaEvents []tables.MediaE
 
 func publishMediaGenerationSNS(mediaEvents []tables.MediaEvent) error {
 	for _, m := range mediaEvents {
-		if m.NotUsedInGenerators() {
+		if m.IsMetaPurposeOnly() {
 			continue
 		}
 		alreadyGenerated, err := MediaExists(m.ContentLookupKey)
@@ -105,7 +105,7 @@ func WaitOptimisticVerifyWroteLedger(expectedPublisherEventID string, ledgerId s
 func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	for _, m := range mediaEvents {
 		if len(m.ParentEventID) == 0 || m.ParentEventID != rootId ||
-			m.EventID == rootId || m.NotUsedInGenerators() {
+			m.EventID == rootId || m.IsMetaPurposeOnly() {
 			continue
 		}
 
@@ -121,12 +121,25 @@ func AllChildrenRendered(rootId string, mediaEvents []tables.MediaEvent) bool {
 	return true
 }
 
-func CollectRenderableChildrenEvents(mediaEventRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
+func CollectNonMetaChildMedia(mediaEventRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
 	result := []tables.MediaEvent{}
 	for _, m := range mediaEvents {
-		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRootId || m.NotUsedInGenerators() {
+		if len(m.ParentEventID) == 0 || m.ParentEventID != mediaEventRootId || m.IsMetaPurposeOnly() {
 			continue
 		}
+		result = append(result, m)
+	}
+	return result
+}
+
+func CollectChildMediaEligibleForFinalRender(mediaEventRootId string, mediaEvents []tables.MediaEvent) []tables.MediaEvent {
+	result := []tables.MediaEvent{}
+	for _, m := range CollectNonMetaChildMedia(mediaEventRootId, mediaEvents) {
+		if m.MetaMediaDescriptor == tables.FINAL_RENDER {
+			// Existing final render events are inelligible for another final render.
+			continue
+		}
+
 		result = append(result, m)
 	}
 	return result
@@ -167,7 +180,7 @@ func CreateMediaEventToPublisherMap(publishEvents []tables.PublishEvent, mediaEv
 	}
 
 	for _, m := range mediaEvents {
-		if m.NotUsedInGenerators() {
+		if m.IsMetaPurposeOnly() {
 			continue
 		}
 
