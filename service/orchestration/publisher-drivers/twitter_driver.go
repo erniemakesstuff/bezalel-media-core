@@ -2,10 +2,14 @@ package publisherdrivers
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
+	"github.com/ChimeraCoder/anaconda"
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	manifest "github.com/bezalel-media-core/v2/manifest"
@@ -18,6 +22,7 @@ type TwitterDriver struct{}
 
 type TwitterPostContents struct {
 	TweetTextBody string
+	Images        []string
 }
 
 func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
@@ -49,7 +54,20 @@ func (s TwitterDriver) loadMediaContents(mediaEvent tables.MediaEvent) (TwitterP
 		return result, err
 	}
 
+	renderSequences := []tables.RenderMediaSequence{}
+	err = json.Unmarshal([]byte(mediaEvent.FinalRenderSequences), &renderSequences)
+	if err != nil {
+		log.Printf("correlationID: %s error deserializing renderSequences for twitter: %s", mediaEvent.LedgerID, err)
+		return result, err
+	}
+
 	result.TweetTextBody = scriptPayload.BlogText
+	result.Images = []string{}
+	for _, r := range renderSequences {
+		if r.MediaType == tables.MEDIA_IMAGE {
+			result.Images = append(result.Images, r.ContentLookupKey)
+		}
+	}
 	return result, err
 }
 
@@ -63,6 +81,11 @@ func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (man
 }
 
 func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.AccountPublisher, tweetPayload TwitterPostContents) error {
+	mediaIds, err := s.uploadImages(account, tweetPayload)
+	if err != nil {
+		log.Printf("correlationID: %s error uploading twitter images: %s", ledgerId, err)
+	}
+
 	// TODO: Move PublisherAPISecretID to be a global-service config.
 	// Retain the AccountPublisher fields; necessary.
 	// https://trello.com/c/ol3Lvvop
@@ -78,8 +101,15 @@ func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.Accoun
 	if err != nil {
 		log.Printf("correlationID: %s error creating twitter client: %s", ledgerId, err)
 	}
+
 	p := &types.CreateInput{
 		Text: gotwi.String(tweetPayload.TweetTextBody),
+	}
+
+	if len(mediaIds) != 0 {
+		p.Media = &types.CreateInputMedia{
+			MediaIDs: mediaIds,
+		}
 	}
 
 	res, err := managetweet.Create(context.Background(), c, p)
@@ -98,4 +128,30 @@ func (s TwitterDriver) setAnyBadRequestCode(err error) error {
 		return fmt.Errorf("%s: Twitter profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
 	}
 	return err
+}
+
+// https://developer.x.com/en/docs/tutorials/uploading-media
+// Returns mediaIds.
+func (s TwitterDriver) uploadImages(account tables.AccountPublisher, tweetPayload TwitterPostContents) ([]string, error) {
+	mediaIds := []string{}
+	api := anaconda.NewTwitterApiWithCredentials(account.UserAccessToken, account.UserAccessTokenSecret,
+		account.PublisherAPISecretID, account.PublisherAPISecretKey)
+
+	for _, imageS3Url := range tweetPayload.Images {
+		imageBytes, err := LoadAsBytes(imageS3Url)
+		if err != nil {
+			return mediaIds, err
+		}
+		base64String := base64.StdEncoding.EncodeToString(imageBytes)
+		uploadResp, err := api.UploadMedia(base64String)
+		if err != nil {
+			return mediaIds, err
+		}
+		mediaIds = append(mediaIds, uploadResp.MediaIDString)
+
+		// Avoid rate limiting.
+		time.Sleep(5 * time.Second)
+	}
+
+	return mediaIds, nil
 }
