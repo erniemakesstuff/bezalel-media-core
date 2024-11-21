@@ -104,6 +104,7 @@ func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountP
 	if err != nil {
 		log.Printf("correlationID: %s error creating Reddit client: %s", ledgerId, err)
 	}
+
 	for _, r := range redditPayloads {
 		post, _, err := client.Post.SubmitText(context.Background(), reddit.SubmitTextRequest{
 			Subreddit: r.Subreddit,

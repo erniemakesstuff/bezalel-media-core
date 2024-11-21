@@ -180,9 +180,27 @@ func (m *MediaEvent) SetEventID() {
 
 func (m *MediaEvent) SetContentLookupKey() {
 	// Use guid because promptHash for static-scripts will collide.
-	// <media_Type>.<ledgerId>.<guid>
+	// <media_Type>.<ledgerId>.<guid>.<media_file_extention>
 	// LedgerId will be used to redrive ledgerItem from the s3 topic notifications
-	m.ContentLookupKey = fmt.Sprintf("%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String())
+	m.ContentLookupKey = fmt.Sprintf("%s.%s.%s.%s", m.MediaType, m.LedgerID, uuid.New().String(), m.getFileExtension())
+}
+
+func (m *MediaEvent) getFileExtension() string {
+	switch {
+	case MEDIA_IMAGE == m.MediaType:
+		return "png"
+	case MEDIA_TEXT == m.MediaType:
+		return "json"
+	case MEDIA_RENDER == m.MediaType:
+		return "render" // not a real file extension; metadata. Should resolve either .json, .mp4, .mp3 etc by the Publisher.
+	case MEDIA_VIDEO == m.MediaType:
+		return "mp4"
+	case MEDIA_MUSIC == m.MediaType || MEDIA_SFX == m.MediaType || MEDIA_VOCAL == m.MediaType:
+		return "mp3"
+	}
+
+	log.Fatal("no matching file extension for media type: " + string(m.MediaType))
+	return "ERR"
 }
 
 func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
