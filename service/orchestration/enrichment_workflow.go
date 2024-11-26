@@ -3,7 +3,9 @@ package orchestration
 import (
 	"fmt"
 	"log"
+	"strings"
 
+	"github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"github.com/bezalel-media-core/v2/manifest"
 	drivers "github.com/bezalel-media-core/v2/service/orchestration/publisher-drivers"
@@ -39,6 +41,17 @@ func (s *EnrichmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 
 		if !exists {
 			continue
+		}
+
+		textPayload, err := drivers.LoadAsString(parentMedia.ContentLookupKey)
+		if err != nil {
+			log.Printf("correlationID: %s failed to load media as string from enricher: %s", ledgerItem.LedgerID, err)
+			return err
+		}
+
+		if strings.Contains(textPayload, "EDITOR_FORBIDDEN") {
+			log.Printf("correlationID: %s detected forbidden media, marking workflow as finished.", ledgerItem.LedgerID)
+			return dal.SetLedgerStatus(ledgerItem, tables.FINISHED_LEDGER)
 		}
 
 		err = spawnChildMediaEvents(ledgerItem, parentMedia, mediaEvents)

@@ -74,7 +74,7 @@ func runTasks(clusterName *string, desiredTasks *int64, taskDefinition *string, 
 		},
 		Cluster:        clusterName,
 		Count:          aws.Int64(tasksToSpinUp),
-		TaskDefinition: taskDefinition,
+		TaskDefinition: taskDefinition, // TODO ARN, revision wildcard *; latest active is used.
 		ReferenceId:    &referenceId,
 		StartedBy:      &startedBy,
 		NetworkConfiguration: &ecs.NetworkConfiguration{
