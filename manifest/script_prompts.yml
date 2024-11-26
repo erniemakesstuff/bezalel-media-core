@@ -84,3 +84,13 @@ scriptPrompts:
     Ensure that your response is valid JSON.
     ###
     $RAW_TEXT
+- promptCategoryKey: "ShortVideo.Drama"
+  systemPromptText: |
+    TODO
+    $TINY_BLOG_JSON_FORMAT
+  promptText: |
+    TODO
+    You will write using the $LANGUAGE language, and that your Twitter post is plaintext.
+    Ensure that your response is valid JSON.
+    ###
+    $RAW_TEXT

@@ -9,3 +9,6 @@ distributionFormats:
   - format: "TinyBlog"
     channels:
       - channelName: "Twitter"
+  - format: "ShortVideo"
+    channels:
+      - channelName: "YouTube"

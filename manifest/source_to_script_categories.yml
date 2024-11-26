@@ -20,3 +20,6 @@ sources:
     scriptCategories:
       - categoryKey: "Blog.Personal"
       - categoryKey: "TinyBlog.Personal"
+  - sourceName: "v1/source/forum"
+    scriptCategories:
+      - categoryKey: "ShortVideo.Drama"
