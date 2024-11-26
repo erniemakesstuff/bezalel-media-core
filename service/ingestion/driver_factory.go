@@ -20,6 +20,9 @@ func GetDriver(source string, payloadIO io.ReadCloser) (Driver, error) {
 	case source == "v1/source/blog" || source == "WorkflowIntegTest":
 		val := drivers.BlogPromptDriver{PayloadIO: payloadIO, Source: source}
 		return val, nil
+	case source == "v1/source/forum":
+		val := drivers.ForumDriver{PayloadIO: payloadIO, Source: source}
+		return val, nil
 	}
 	return nil, errors.New("no matching source-to-driver found")
 }

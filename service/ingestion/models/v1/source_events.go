@@ -10,3 +10,10 @@ type Blog_Request struct {
 	TargetLanguage string `json:"targetLanguage"`
 	Text           string `json:"text"`
 }
+
+type Forum_Dump_Request struct {
+	Source         string `json:"source"`
+	TargetLanguage string `json:"targetLanguage"`
+	ForumMainPost  string `json:"forumMainPost"`
+	Comments       string `json:"comments"`
+}

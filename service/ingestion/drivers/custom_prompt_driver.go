@@ -1,15 +1,12 @@
 package drivers
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"log"
 
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	models_v1 "github.com/bezalel-media-core/v2/service/ingestion/models/v1"
-	"github.com/google/uuid"
 )
 
 type CustomPromptDriver struct {
@@ -23,15 +20,7 @@ func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 		log.Printf("error decoding raw event payload: %s", err)
 	}
 
-	ledger := tables.Ledger{
-		LedgerID:                   uuid.New().String(),
-		LedgerStatus:               tables.NEW_LEDGER,
-		TriggerEventPayload:        rawEvent.PromptText,
-		TriggerEventSource:         d.Source,
-		TriggerEventContentHash:    d.getMD5Hash(rawEvent.PromptText), // Set, but prompts aren't deduped.
-		TriggerEventTargetLanguage: "EN",
-	}
-	return ledger, err
+	return newLedgerFromText("EN", rawEvent.PromptText, d.Source), err
 }
 
 func (d CustomPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Custom_Prompt_Request, error) {
@@ -42,9 +31,4 @@ func (d CustomPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Custom_Pr
 		return payload, err
 	}
 	return payload, err
-}
-
-func (d CustomPromptDriver) getMD5Hash(text string) string {
-	hash := md5.Sum([]byte(text))
-	return hex.EncodeToString(hash[:])
 }
