@@ -86,11 +86,14 @@ scriptPrompts:
     $RAW_TEXT
 - promptCategoryKey: "ShortVideo.Drama"
   systemPromptText: |
-    TODO
-    $TINY_BLOG_JSON_FORMAT
+    Abridge the contents of the forum article to fit into a 50 second script when reading aloud
+    at a relaxed pace. The results of your abridgement should be placed into the json:mainPost field.
+    Select one or two comments that are the most noteworthy, entertaining, or dramatic.
+    Abridge the comments and insert into the json:comments field.
+    Your output should be valid json:
+    $SHORT_VIDEO_JSON_FORMAT
   promptText: |
-    TODO
-    You will write using the $LANGUAGE language, and that your Twitter post is plaintext.
+    You will write your script using the $LANGUAGE language.
     Ensure that your response is valid JSON.
     ###
     $RAW_TEXT

@@ -114,13 +114,18 @@ const (
 	IMAGE_BOTTOM     PositionLayer = "ImageOnBottom"
 	IMAGE_ATTACHMENT PositionLayer = "ImageAttachment" // Attach wherever.
 	IMAGE_THUMBNAIL  PositionLayer = "Thumbnail"       // For video final renders.
+
+	// Hidden; other metadata; audio.
+	HIDDEN           PositionLayer = "Hidden"
+	BACKGROUND_MUSIC PositionLayer = "BackgroundMusic"
+	NARRATOR         PositionLayer = "Narrator"
 )
 
 type RenderMediaSequence struct {
 	EventID             string
 	MediaType           MediaType
 	VisualPositionLayer PositionLayer
-	RenderSequence      int
+	RenderSequence      int // Grouped by PositionLayer.
 	ContentLookupKey    string
 }
 
@@ -145,7 +150,7 @@ type MediaEvent struct {
 	ParentEventID           string             // null for root. Will be set if part of a script ID.
 
 	// Set on enrichment parsing JSON callback from script process. Script prompt drives template json.
-	VisualPositionLayer PositionLayer // For determining position of video/image media in the final rendering.
+	PositionLayer PositionLayer // For determining position of video/image media in the final rendering.
 	// Determines order of media during final render. Multiple pieces of media can have same render sequence if concurrent [0, N]
 	RenderSequence int
 
@@ -207,7 +212,7 @@ func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
 	return RenderMediaSequence{
 		EventID:             m.EventID,
 		MediaType:           m.MediaType, // Should not be Render-type! >:(
-		VisualPositionLayer: m.VisualPositionLayer,
+		VisualPositionLayer: m.PositionLayer,
 		RenderSequence:      m.RenderSequence,
 		ContentLookupKey:    m.ContentLookupKey,
 	}

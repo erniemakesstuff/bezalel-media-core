@@ -53,13 +53,13 @@ func (s MediumDriver) loadMediaContents(mediaEvent tables.MediaEvent) (MediumBlo
 	return result, err
 }
 
-func (s MediumDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.BlogJsonSchema, error) {
+func (s MediumDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.BlogSchema, error) {
 	payload, err := LoadAsString(rootFinalRender.ContentLookupKey)
 	if err != nil {
 		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
-		return manifest.BlogJsonSchema{}, err
+		return manifest.BlogSchema{}, err
 	}
-	return ScriptPayloadToBlogJson(payload)
+	return ScriptPayloadToBlogSchema(payload)
 }
 
 func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, blogPayload MediumBlogContents, account tables.AccountPublisher) error {

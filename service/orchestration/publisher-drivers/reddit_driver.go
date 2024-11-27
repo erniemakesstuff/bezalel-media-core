@@ -66,17 +66,17 @@ func (s RedditDriver) loadMediaContents(mediaEvent tables.MediaEvent, pubAccount
 	return result, err
 }
 
-func (s RedditDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.BlogJsonSchema, error) {
+func (s RedditDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.BlogSchema, error) {
 	payload, err := LoadAsString(rootFinalRender.ContentLookupKey)
 	if err != nil {
 		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
-		return manifest.BlogJsonSchema{}, err
+		return manifest.BlogSchema{}, err
 	}
 	return s.scriptPayloadToBlogJson(payload)
 }
 
-func (s RedditDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJsonSchema, error) {
-	result := manifest.BlogJsonSchema{}
+func (s RedditDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogSchema, error) {
+	result := manifest.BlogSchema{}
 	err := json.Unmarshal([]byte(payload), &result)
 	if err != nil {
 		log.Printf("error unmarshalling script text to blog schema object: %s", err)
@@ -85,7 +85,7 @@ func (s RedditDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogJson
 	}
 
 	if len(result.BlogText) == 0 {
-		return manifest.BlogJsonSchema{}, fmt.Errorf("reddit empty payload received: %s", payload)
+		return manifest.BlogSchema{}, fmt.Errorf("reddit empty payload received: %s", payload)
 	}
 
 	return result, err

@@ -10,8 +10,8 @@ import (
 
 const BAD_REQUEST_PROFILE_CODE = "BadRequestProfileCode"
 
-func ScriptPayloadToBlogJson(payload string) (manifest.BlogJsonSchema, error) {
-	result := manifest.BlogJsonSchema{}
+func ScriptPayloadToBlogSchema(payload string) (manifest.BlogSchema, error) {
+	result := manifest.BlogSchema{}
 	err := json.Unmarshal([]byte(payload), &result)
 	if err != nil {
 		log.Printf("error unmarshalling script text to blog schema object: %s", err)
@@ -26,14 +26,14 @@ func ScriptPayloadToBlogJson(payload string) (manifest.BlogJsonSchema, error) {
 	}
 
 	if len(result.BlogHtml) == 0 {
-		return manifest.BlogJsonSchema{}, fmt.Errorf("medium empty payload received: %s", payload)
+		return manifest.BlogSchema{}, fmt.Errorf("empty blogHtml payload received: %s", payload)
 	}
 
 	return result, err
 }
 
-func ScriptPayloadToTinyBlogJson(payload string) (manifest.TinyBlogJsonSchema, error) {
-	result := manifest.TinyBlogJsonSchema{}
+func ScriptPayloadToTinyBlogSchema(payload string) (manifest.TinyBlogSchema, error) {
+	result := manifest.TinyBlogSchema{}
 	err := json.Unmarshal([]byte(payload), &result)
 	if err != nil {
 		log.Printf("error unmarshalling script text to blog schema object: %s", err)
@@ -42,7 +42,23 @@ func ScriptPayloadToTinyBlogJson(payload string) (manifest.TinyBlogJsonSchema, e
 	}
 
 	if len(result.BlogText) == 0 {
-		return manifest.TinyBlogJsonSchema{}, fmt.Errorf("twitter empty payload received: %s", payload)
+		return manifest.TinyBlogSchema{}, fmt.Errorf("empty blog text payload received: %s", payload)
+	}
+
+	return result, err
+}
+
+func ScriptPayloadToShortVideoSchema(payload string) (manifest.ShortVideoSchema, error) {
+	result := manifest.ShortVideoSchema{}
+	err := json.Unmarshal([]byte(payload), &result)
+	if err != nil {
+		log.Printf("error unmarshalling script text to blog schema object: %s", err)
+		log.Printf("error payload: <%s>", payload)
+		return result, err
+	}
+
+	if len(result.VideoTitle) == 0 {
+		return manifest.ShortVideoSchema{}, fmt.Errorf("empty video title received: %s", payload)
 	}
 
 	return result, err

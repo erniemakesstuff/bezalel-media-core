@@ -86,6 +86,8 @@ func buildEventsByDistFormat(parentMediaEvent tables.MediaEvent, existingMediaEv
 		return enrichBlog(jsonPayload, parentMediaEvent, existingMediaEvents)
 	} else if manifest.DIST_FORMAT_TINY_BLOG == distForm {
 		return enrichTinyBlog(jsonPayload, parentMediaEvent, existingMediaEvents)
+	} else if manifest.DIST_FORMAT_SHORT_VIDEO == distForm {
+		return enrichShortVideo(jsonPayload, parentMediaEvent, existingMediaEvents)
 	}
 	return []tables.MediaEvent{}, fmt.Errorf("no matching enrichment process for distributionFormat: %s", distForm)
 }
@@ -93,7 +95,7 @@ func buildEventsByDistFormat(parentMediaEvent tables.MediaEvent, existingMediaEv
 func enrichBlog(jsonPayload string, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
 	events := []tables.MediaEvent{}
 
-	schemaResult, err := drivers.ScriptPayloadToBlogJson(jsonPayload)
+	schemaResult, err := drivers.ScriptPayloadToBlogSchema(jsonPayload)
 	if err != nil {
 		return events, err
 	}
@@ -103,7 +105,7 @@ func enrichBlog(jsonPayload string, parentMediaEvent tables.MediaEvent, existing
 
 func enrichTinyBlog(jsonPayload string, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
 	events := []tables.MediaEvent{}
-	schemaResult, err := drivers.ScriptPayloadToTinyBlogJson(jsonPayload)
+	schemaResult, err := drivers.ScriptPayloadToTinyBlogSchema(jsonPayload)
 	if err != nil {
 		return events, err
 	}
@@ -111,19 +113,12 @@ func enrichTinyBlog(jsonPayload string, parentMediaEvent tables.MediaEvent, exis
 	return createBlogChildEventsFromImageDescriptions(schemaResult.ImageDescriptionTexts, parentMediaEvent, existingMediaEvents), nil
 }
 
-func createBlogChildEventsFromImageDescriptions(imageDescriptions []string, parentMediaEvent tables.MediaEvent,
-	existingMediaEvents []tables.MediaEvent) []tables.MediaEvent {
-	idMap := CreateMediaMapByEventId(existingMediaEvents)
+func enrichShortVideo(jsonPayload string, parentMediaEvent tables.MediaEvent, existingMediaEvents []tables.MediaEvent) ([]tables.MediaEvent, error) {
 	events := []tables.MediaEvent{}
-	const systemInstruction = "Generate an image from the text prompt."
-	for idx, imgD := range imageDescriptions {
-		e := parentMediaEvent.ToChildMediaEntry(imgD, systemInstruction, tables.MEDIA_IMAGE)
-		e.RenderSequence = idx
-		e.VisualPositionLayer = tables.IMAGE_ATTACHMENT
-		_, ok := idMap[e.EventID]
-		if !ok {
-			events = append(events, e)
-		}
+	schemaResult, err := drivers.ScriptPayloadToShortVideoSchema(jsonPayload)
+	if err != nil {
+		return events, err
 	}
-	return events
+
+	return createShortVideoChildEvents(schemaResult, parentMediaEvent, existingMediaEvents), err
 }

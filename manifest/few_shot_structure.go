@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-type BlogJsonSchema struct {
+type BlogSchema struct {
 	Instruction           string   `json:"instruction"`
 	BlogTitle             string   `json:"blogTitle"`
 	BlogText              string   `json:"blogText"`
@@ -13,15 +13,22 @@ type BlogJsonSchema struct {
 	ImageDescriptionTexts []string `json:"imageDescriptionTexts"`
 }
 
-type TinyBlogJsonSchema struct {
+type TinyBlogSchema struct {
 	Instruction           string   `json:"instruction"`
 	BlogTitle             string   `json:"blogTitle"`
 	BlogText              string   `json:"blogText"`
 	ImageDescriptionTexts []string `json:"imageDescriptionTexts"`
 }
 
+type ShortVideoSchema struct {
+	VideoTitle       string   `json:"videoTitle"`
+	VideoDescription string   `json:"videoDescription"`
+	MainPost         string   `json:"mainPost"`
+	Comments         []string `json:"comments"`
+}
+
 func GetBlogJsonSchema() string {
-	sampleShot := BlogJsonSchema{
+	sampleShot := BlogSchema{
 		Instruction: "The instructions you received must be in the instruction field.",
 		BlogTitle:   "Your output blog title must be in the blogTitle field.",
 		BlogText:    "Your output blog content as plaintext must be in the blogText field.",
@@ -42,7 +49,7 @@ func GetBlogJsonSchema() string {
 }
 
 func GetTinyBlogJson() string {
-	sampleShot := TinyBlogJsonSchema{
+	sampleShot := TinyBlogSchema{
 		Instruction: "The instructions you received must be in the instruction field.",
 		BlogTitle:   "Your output blog title must be in the blogTitle field.",
 		BlogText:    "Your output blog content as plaintext must be in the blogText field.",
@@ -53,6 +60,25 @@ func GetTinyBlogJson() string {
 			"Describe the images using excruciating details for calling an image generator.",
 			`Include any details of the texture, lighting, text, objects, scenery,  placement arrangement, clothing, 
 			skin color, tone, and anything else to accurately describe the image.`,
+		},
+	}
+
+	b, err := json.MarshalIndent(sampleShot, "", "  ")
+	if err != nil {
+		log.Fatalf("error marshalling schema sample: %s", err)
+	}
+	return string(b)
+}
+
+func GetShortVideoJson() string {
+	sampleShot := ShortVideoSchema{
+		VideoTitle: "Your clickbait video title goes here. You must suffix with #shorts.",
+		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.
+		You must include #shorts hashtag in the description.`,
+		MainPost: "Main post content, summary, or abridged text goes here.",
+		Comments: []string{
+			"Comments from the post go here, summarized, or abridged.",
+			"One comment per list entry.",
 		},
 	}
 

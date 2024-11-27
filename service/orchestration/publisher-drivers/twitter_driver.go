@@ -71,13 +71,13 @@ func (s TwitterDriver) loadMediaContents(mediaEvent tables.MediaEvent) (TwitterP
 	return result, err
 }
 
-func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.TinyBlogJsonSchema, error) {
+func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (manifest.TinyBlogSchema, error) {
 	payload, err := LoadAsString(rootFinalRender.ContentLookupKey)
 	if err != nil {
 		log.Printf("correlationID: %s error loading script content as string: %s", rootFinalRender.LedgerID, err)
-		return manifest.TinyBlogJsonSchema{}, err
+		return manifest.TinyBlogSchema{}, err
 	}
-	return ScriptPayloadToTinyBlogJson(payload)
+	return ScriptPayloadToTinyBlogSchema(payload)
 }
 
 func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.AccountPublisher, tweetPayload TwitterPostContents) error {
