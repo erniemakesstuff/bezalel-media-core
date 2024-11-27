@@ -29,10 +29,22 @@ func createShortVideoChildEvents(schema manifest.ShortVideoSchema, parentMediaEv
 	existingMediaEvents []tables.MediaEvent) []tables.MediaEvent {
 	events := []tables.MediaEvent{}
 	idMap := CreateMediaMapByEventId(existingMediaEvents)
+	// Thumbnail
+	// Thumbnail instruction isn't used while we're using lexica. However, will be used when we start generatig our own images in-house.
+	thumbnailInstruct := `Generate a video thumbnail image according to the given prompt.
+		Add the following text to the image using vibrant colors likely to attract a viewers attention: ` + schema.VideoTitle
+	thumbnail := parentMediaEvent.ToChildMediaEntry(schema.ThumbnailImageDescription, thumbnailInstruct, tables.MEDIA_IMAGE)
+	thumbnail.RenderSequence = 0
+	thumbnail.PositionLayer = tables.FULLSCREEN
+	_, ok := idMap[thumbnail.EventID]
+	if !ok {
+		events = append(events, thumbnail)
+	}
+
 	// Static brainrot videos; append 5 rand. Will be cut and trimmed in final rendering.
 	const staticPrompt = "Static content; not used in generation."
 	const maxBrainrotBackgroundVideo = 5
-	for i := 0; i < maxBrainrotBackgroundVideo; i++ {
+	for i := 1; i <= maxBrainrotBackgroundVideo; i++ {
 		vidBg := parentMediaEvent.ToChildMediaEntry(staticPrompt, staticPrompt, tables.MEDIA_VIDEO)
 		vidBg.RenderSequence = i
 		vidBg.PositionLayer = tables.FULLSCREEN
@@ -54,7 +66,7 @@ func createShortVideoChildEvents(schema manifest.ShortVideoSchema, parentMediaEv
 	const maxStaticMusic = 8 // exclusive
 	randIntVal := rand.Intn(maxStaticMusic)
 	musicBg.ContentLookupKey = fmt.Sprintf("m%d.mp3", randIntVal)
-	_, ok := idMap[musicBg.EventID]
+	_, ok = idMap[musicBg.EventID]
 	if !ok {
 		events = append(events, musicBg)
 	}

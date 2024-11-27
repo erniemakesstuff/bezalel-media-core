@@ -21,10 +21,11 @@ type TinyBlogSchema struct {
 }
 
 type ShortVideoSchema struct {
-	VideoTitle       string   `json:"videoTitle"`
-	VideoDescription string   `json:"videoDescription"`
-	MainPost         string   `json:"mainPost"`
-	Comments         []string `json:"comments"`
+	VideoTitle                string   `json:"videoTitle"`
+	VideoDescription          string   `json:"videoDescription"`
+	ThumbnailImageDescription string   `json:"thumbnailImageDescription"`
+	MainPost                  string   `json:"mainPost"`
+	Comments                  []string `json:"comments"`
 }
 
 func GetBlogJsonSchema() string {
@@ -72,13 +73,18 @@ func GetTinyBlogJson() string {
 
 func GetShortVideoJson() string {
 	sampleShot := ShortVideoSchema{
-		VideoTitle: "Your clickbait video title goes here. You must suffix with #shorts.",
+		VideoTitle: `Your clickbait video title goes here. Suffix your title with hashtag #shorts.
+		Your title is pithy.
+		Your title should evoke curiosity by asking a question, interest, and evoke strong emotions such as anger, fear, shock, surprise, or joy.`,
 		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.
 		You must include #shorts hashtag in the description.`,
-		MainPost: "Main post content, summary, or abridged text goes here.",
+		ThumbnailImageDescription: "Describe an image likely to attract a viewer to click on your video, and that is related to the videoTitle and videoDescription.",
+		MainPost: `Main post content, summary, or abridged text goes here.
+		If the post is longer than one paragraph long, then abridge the contents to be less than one paragraph; summarizing to capture the main dramatic details.`,
 		Comments: []string{
 			"Comments from the post go here, summarized, or abridged.",
 			"One comment per list entry.",
+			"Select comments that are no more than two sentences long.",
 		},
 	}
 
