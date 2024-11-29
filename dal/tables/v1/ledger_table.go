@@ -93,6 +93,7 @@ const (
 	DIST_FORMAT_BLOG       DistributionFormat = "Blog"
 	DIST_FORMAT_BLOG_TINY  DistributionFormat = "TinyBlog"
 	DIST_FORMAT_LVIDEO     DistributionFormat = "LongformVideo"
+	DIST_FORMAT_SVIDEO     DistributionFormat = "ShortVideo"
 )
 
 type PositionLayer string
@@ -173,7 +174,10 @@ func GetDistributionFormatFromString(format string) (DistributionFormat, error) 
 		return DIST_FORMAT_BLOG_TINY, nil
 	case strings.EqualFold(format, string(DIST_FORMAT_LVIDEO)):
 		return DIST_FORMAT_LVIDEO, nil
+	case strings.EqualFold(format, string(DIST_FORMAT_SVIDEO)):
+		return DIST_FORMAT_SVIDEO, nil
 	}
+
 	return DIST_FORMAT_BLOG, fmt.Errorf("unable to find matching distribution format from string: %s", format)
 }
 
