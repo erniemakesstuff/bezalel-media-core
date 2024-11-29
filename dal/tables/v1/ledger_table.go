@@ -123,11 +123,11 @@ const (
 )
 
 type RenderMediaSequence struct {
-	EventID             string
-	MediaType           MediaType
-	VisualPositionLayer PositionLayer
-	RenderSequence      int // Grouped by PositionLayer.
-	ContentLookupKey    string
+	EventID          string
+	MediaType        MediaType
+	PositionLayer    PositionLayer
+	RenderSequence   int // Grouped by PositionLayer.
+	ContentLookupKey string
 }
 
 type MetaMediaDescriptor string
@@ -214,11 +214,11 @@ func (m *MediaEvent) getFileExtension() string {
 
 func (m *MediaEvent) ToRenderSequence() RenderMediaSequence {
 	return RenderMediaSequence{
-		EventID:             m.EventID,
-		MediaType:           m.MediaType, // Should not be Render-type! >:(
-		VisualPositionLayer: m.PositionLayer,
-		RenderSequence:      m.RenderSequence,
-		ContentLookupKey:    m.ContentLookupKey,
+		EventID:          m.EventID,
+		MediaType:        m.MediaType, // Should not be Render-type! >:(
+		PositionLayer:    m.PositionLayer,
+		RenderSequence:   m.RenderSequence,
+		ContentLookupKey: m.ContentLookupKey,
 	}
 }
 

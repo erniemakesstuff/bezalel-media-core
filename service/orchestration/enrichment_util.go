@@ -72,7 +72,7 @@ func createShortVideoChildEvents(schema manifest.ShortVideoSchema, parentMediaEv
 	}
 
 	// Narration
-	const narrationPrompt = "Read the text."
+	const narrationPrompt = "Read the text in a male voice."
 	narrationContent := []string{schema.MainPost}
 	narrationContent = append(narrationContent, schema.Comments...)
 	for i := 0; i < len(narrationContent); i++ {
