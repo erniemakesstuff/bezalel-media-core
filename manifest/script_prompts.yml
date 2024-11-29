@@ -88,6 +88,17 @@ scriptPrompts:
 - promptCategoryKey: "ShortVideo.Drama"
   systemPromptText: |
     Abridge the contents of the forum article to fit into a 50 second script when reading aloud.
+    Your script should be written from the perspective of the original forum post.
+      Example:
+      ---Good Output Example---
+      Expected text: My new wife wants to remodel my daughter's room ==> My wife is pushing me to remodel my daughter's room.
+      Explanation: This is a satisfactory abridgement because it maintain's the perspective of the original post by using "my"
+      in the first-person.
+      ---Bad Output Example---
+      Bad output text:  My new wife wants to remodel my daughter's room ==> His wife is pushing the husband to remodel his daughter's room.
+      Explanation: This output is unsatisfactory and should be avoided because the perspective of the original forum post was changed from
+      first-person to thrid-person.
+      
     Ensure that your content is brand safe and advertiser friendly.
     at a relaxed pace. The results of your abridgement should be placed into the json:mainPost field.
     Select one or two comments that are the most noteworthy, entertaining, or dramatic.
