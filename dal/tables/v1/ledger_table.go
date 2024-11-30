@@ -100,13 +100,14 @@ type PositionLayer string
 
 const (
 	// For videos.
-	FULLSCREEN       PositionLayer = "Fullscreen" // Occupies whole render space.
-	BACKGROUND       PositionLayer = "Background" // Occupies whole render space.
+	FULLSCREEN       PositionLayer = "Fullscreen" // Occupies whole render space; also used for setting backgrounds.
 	SPLIT_SCR_TOP    PositionLayer = "SplitScreenTop"
 	SPLIT_SCR_BOTTOM PositionLayer = "SplitScreenBottom"
 	SPLIT_SCR_LEFT   PositionLayer = "SplitScreenLeft"
 	SPLIT_SCR_RIGHT  PositionLayer = "SplitScreenRight"
+	SPLIT_SCR_CENTER PositionLayer = "SplitScreenCenter" // "cut out" in center of screen position.
 
+	// Not specifying "where"; defering placement to render templates.
 	AVATAR         PositionLayer = "Avatar"        // screen position for the talking head/body.
 	AVATAR_OVERLAY PositionLayer = "AvatarOverlay" // apply user specified avatar as higher priority.
 
@@ -115,10 +116,12 @@ const (
 	IMAGE_BOTTOM     PositionLayer = "ImageOnBottom"
 	IMAGE_CENTER     PositionLayer = "ImageCenter"
 	IMAGE_ATTACHMENT PositionLayer = "ImageAttachment" // Attach wherever.
-	IMAGE_THUMBNAIL  PositionLayer = "Thumbnail"       // For video final renders.
+	IMAGE_THUMBNAIL  PositionLayer = "Thumbnail"       // For video final renders; fullscreen.
+
 	// Audio
 	BACKGROUND_MUSIC PositionLayer = "BackgroundMusic"
 	NARRATOR         PositionLayer = "Narrator"
+	SOUND            PositionLayer = "Sound" // Catch-all for other background audio such as sfx.
 	// Hidden; other metadata
 	HIDDEN PositionLayer = "Hidden"
 	SCRIPT PositionLayer = "HiddenScript"
@@ -128,8 +131,31 @@ type RenderMediaSequence struct {
 	EventID          string
 	MediaType        MediaType
 	PositionLayer    PositionLayer
-	RenderSequence   int // Grouped by PositionLayer.
 	ContentLookupKey string
+	// Grouped by PositionLayer.
+	// RenderSequences are strictly increasing within a PositionLayer
+	// RenderSequences may collid across PositionLayers, this alows for overlaying sounds, effects, of imagery.
+	// E.g.
+	// Narrator layer: 0, 1, 2 ==> narration sounds should play sequentially in the defined order.
+	// BackgroundMusic: 1 ==> background music SHOULD START at 1.
+	// When compositing, at the second narration sound, the background music plays concurrently.
+	//
+	// RenderSequences only determine sequencing only within their audio or visual layers.
+	// However, background music is treated as it's own "sub-layer" within audio layer.
+	// This is to allow background music to play in the background.
+	// VisualLayer, Fullscreen: 0, 1, ..., 4
+	// Sfx: 5
+	// BackgroundMusic: 4
+	// Background music will play at the beginning of the video, despite having sequence number 4
+	// Sfx will play at the beggining because background music is treated as a sub-layer.
+	//
+	// Image: 1
+	// Video: 1
+	// Both image and video will play concurrently.
+	//
+	// A prescriptive model that trades flexibility for generally desireable outcomes: minimizing "dead air"
+	// in a hyper-active, hyper-attentive media landscape.
+	RenderSequence int
 }
 
 type MetaMediaDescriptor string
