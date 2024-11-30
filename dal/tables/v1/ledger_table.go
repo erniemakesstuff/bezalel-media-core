@@ -92,7 +92,7 @@ const (
 	DIST_FORMAT_INTEG_BLOG DistributionFormat = "IntegBlog"
 	DIST_FORMAT_BLOG       DistributionFormat = "Blog"
 	DIST_FORMAT_BLOG_TINY  DistributionFormat = "TinyBlog"
-	DIST_FORMAT_LVIDEO     DistributionFormat = "LongformVideo"
+	DIST_FORMAT_LVIDEO     DistributionFormat = "LongVideo"
 	DIST_FORMAT_SVIDEO     DistributionFormat = "ShortVideo"
 )
 
@@ -113,6 +113,7 @@ const (
 	// For static / text final media.
 	IMAGE_TOP        PositionLayer = "ImageOnTop"
 	IMAGE_BOTTOM     PositionLayer = "ImageOnBottom"
+	IMAGE_CENTER     PositionLayer = "ImageCenter"
 	IMAGE_ATTACHMENT PositionLayer = "ImageAttachment" // Attach wherever.
 	IMAGE_THUMBNAIL  PositionLayer = "Thumbnail"       // For video final renders.
 
