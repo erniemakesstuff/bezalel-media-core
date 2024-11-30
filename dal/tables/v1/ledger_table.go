@@ -116,11 +116,12 @@ const (
 	IMAGE_CENTER     PositionLayer = "ImageCenter"
 	IMAGE_ATTACHMENT PositionLayer = "ImageAttachment" // Attach wherever.
 	IMAGE_THUMBNAIL  PositionLayer = "Thumbnail"       // For video final renders.
-
-	// Hidden; other metadata; audio.
-	HIDDEN           PositionLayer = "Hidden"
+	// Audio
 	BACKGROUND_MUSIC PositionLayer = "BackgroundMusic"
 	NARRATOR         PositionLayer = "Narrator"
+	// Hidden; other metadata
+	HIDDEN PositionLayer = "Hidden"
+	SCRIPT PositionLayer = "HiddenScript"
 )
 
 type RenderMediaSequence struct {

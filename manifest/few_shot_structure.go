@@ -21,7 +21,7 @@ type TinyBlogSchema struct {
 }
 
 type ShortVideoSchema struct {
-	VideoTitle                string   `json:"videoTitle"`
+	VideoTitle                string   `json:"videoTitle"` // json key should be consistent between Short and Long videos.
 	VideoDescription          string   `json:"videoDescription"`
 	ThumbnailImageDescription string   `json:"thumbnailImageDescription"`
 	MainPost                  string   `json:"mainPost"`
