@@ -35,7 +35,7 @@ func createShortVideoChildEvents(schema manifest.ShortVideoSchema, parentMediaEv
 		Add the following text to the image using vibrant colors likely to attract a viewers attention: ` + schema.VideoTitle
 	thumbnail := parentMediaEvent.ToChildMediaEntry(schema.ThumbnailImageDescription, thumbnailInstruct, tables.MEDIA_IMAGE)
 	thumbnail.RenderSequence = 0
-	thumbnail.PositionLayer = tables.FULLSCREEN
+	thumbnail.PositionLayer = tables.IMAGE_THUMBNAIL
 	_, ok := idMap[thumbnail.EventID]
 	if !ok {
 		events = append(events, thumbnail)
