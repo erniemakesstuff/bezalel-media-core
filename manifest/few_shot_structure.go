@@ -22,6 +22,7 @@ type TinyBlogSchema struct {
 
 type ShortVideoSchema struct {
 	VideoTitle                string   `json:"videoTitle"` // json key should be consistent between Short and Long videos.
+	VideoThumbnailText        string   `json:"videoThumbnailText"`
 	VideoDescription          string   `json:"videoDescription"`
 	ThumbnailImageDescription string   `json:"thumbnailImageDescription"`
 	MainPost                  string   `json:"mainPost"`
@@ -76,6 +77,17 @@ func GetShortVideoJson() string {
 		VideoTitle: `Your clickbait video title goes here. Suffix your title with hashtag #shorts.
 		Your title is pithy.
 		Your title should evoke curiosity by asking a question, interest, and evoke strong emotions such as anger, fear, shock, surprise, or joy.`,
+		VideoThumbnailText: `A highly condensed version of your videoTitle that is punchy and likely to solicit intrigue.
+		Example:
+		---Good Thumbnail Text 1---
+		VideoTitle: My new wife wants to kick my daughter out of her room.
+		VideoThumbnailText: Crazy Wife!
+		Reasoning: The thumbnail text is short, punchy, captures the theme of the videoTitle.
+		---Good Thumbnail Text 2---
+		VideoTitle: The job market is the worst it's been since the 2008 crisis.
+		VideoThumbnailText: NO HOPE LOSER
+		Reasoning: The thumbnail text elicits intrigue by the phrase "no hope" and elicits an emotional response by adding "LOSER."
+		`,
 		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.
 		You must include #shorts hashtag in the description.`,
 		ThumbnailImageDescription: "Describe an image likely to attract a viewer to click on your video, and that is related to the videoTitle and videoDescription.",
