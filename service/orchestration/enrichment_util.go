@@ -49,7 +49,7 @@ func createShortVideoChildEvents(schema manifest.ShortVideoSchema, parentMediaEv
 		vidBg.RenderSequence = i
 		vidBg.PositionLayer = tables.FULLSCREEN
 		// Upload to more to s3, then update here :)
-		const maxStaticBrainrotBackground = 44 // exclusive
+		const maxStaticBrainrotBackground = 69 // exclusive
 		randIntVal := rand.Intn(maxStaticBrainrotBackground)
 		vidBg.ContentLookupKey = fmt.Sprintf("b%d.mp4", randIntVal)
 		_, ok := idMap[vidBg.EventID]
