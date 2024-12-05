@@ -34,6 +34,10 @@ Stopping running containers; prunning images.
 Ensure to prune old images to save space!
 https://docs.docker.com/engine/manage-resources/pruning/
 
+## Bake oauth credentials file onto image
+Oauth2.0 Client IDs, Bezalel Media Core, GCP.
+https://console.cloud.google.com/apis/credentials?highlightClient=27520167098-caa5afv1ebct69mk88sphor3sib1kv2k.apps.googleusercontent.com&inv=1&invt=AbjRTA&project=three-doors-422720
+
 
 ## Data Triggers
 ### Scheduled Crons

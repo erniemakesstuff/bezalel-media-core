@@ -12,11 +12,20 @@ import (
 )
 
 const route_health = "/health"
+
+// Oauth2 Flows
+const route_youtube_oauth_start = "/v1/authcode/youtube" // start endpoint for enabling oauth code flow.
+const route_youtube_oauth_callback = "/v1/authcode/youtube/callback"
+
+// Custom ingestion sources
 const route_source_prompt = "/v1/source/prompt"
 const route_source_blog = "/v1/source/blog"
 const route_source_forum = "/v1/source/forum"
 
 func main() {
+	// Register Oauth callbacks
+	http.HandleFunc(route_youtube_oauth_callback, handlers.AuthorizationCodeFlowCallbackfunc)
+	// Register ingestion handlers
 	http.HandleFunc(route_health, handlers.HandlerHealthCheck)
 	http.HandleFunc(route_source_prompt, handlers.HandlerCustomPrompt)
 	http.HandleFunc(route_source_blog, handlers.HandlerCustomPrompt)
