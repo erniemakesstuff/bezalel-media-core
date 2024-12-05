@@ -24,6 +24,7 @@ type ShortVideoSchema struct {
 	VideoTitle                string   `json:"videoTitle"` // json key should be consistent between Short and Long videos.
 	VideoThumbnailText        string   `json:"videoThumbnailText"`
 	VideoDescription          string   `json:"videoDescription"`
+	VideoTags                 []string `json:"videoTags"`
 	ThumbnailImageDescription string   `json:"thumbnailImageDescription"`
 	MainPost                  string   `json:"mainPost"`
 	Comments                  []string `json:"comments"`
@@ -88,8 +89,11 @@ func GetShortVideoJson() string {
 		VideoThumbnailText: NO HOPE LOSER
 		Reasoning: The thumbnail text elicits intrigue by the phrase "no hope" and elicits an emotional response by adding "LOSER."
 		`,
+		VideoTags: []string{"Add search engine optimized keywords in json:videoTags array.", "You should generate at least 30 tags, and at most 35 tags.",
+			"Your tags are two to three words each, with one tag per entry in json:videoTags array.", "Your tags bias toward long-tail keywords, specifics, and their synonyms."},
 		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.
-		You must include #shorts hashtag in the description.`,
+		You must include #shorts hashtag in the description.
+		Include at least three relevant hashtags in your video description.`,
 		ThumbnailImageDescription: "Describe an image likely to attract a viewer to click on your video, and that is related to the videoTitle and videoDescription.",
 		MainPost: `Main post content, summary, or abridged text goes here.
 		If the post is longer than one paragraph long, then abridge the contents to be less than one paragraph; summarizing to capture the main dramatic details.`,
