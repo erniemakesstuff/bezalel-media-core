@@ -24,7 +24,8 @@ const route_source_forum = "/v1/source/forum"
 
 func main() {
 	// Register Oauth callbacks
-	http.HandleFunc(route_youtube_oauth_callback, handlers.AuthorizationCodeFlowCallbackfunc)
+	http.HandleFunc(route_youtube_oauth_start, handlers.HandlerOauthCodeFlowStart)
+	http.HandleFunc(route_youtube_oauth_callback, handlers.HandlerOauthCodeCallback)
 	// Register ingestion handlers
 	http.HandleFunc(route_health, handlers.HandlerHealthCheck)
 	http.HandleFunc(route_source_prompt, handlers.HandlerCustomPrompt)
