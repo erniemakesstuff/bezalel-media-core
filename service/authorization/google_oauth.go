@@ -68,7 +68,7 @@ func GetClient(bearerToken string, refreshToken string, expiresInSec int64) (*ht
 func getGoogleConfig() (*oauth2.Config, error) {
 	wd, _ := os.Getwd()
 	log.Printf("GoogleConfig CUR DIR: " + wd)
-	credsBytes, err := os.ReadFile("creds_google_oauth.json")
+	credsBytes, err := os.ReadFile("creds_google_oauth.json") // TODO: Move this to env config
 	if err != nil {
 		log.Fatalf("Unable to load credentials file %v", err)
 	}

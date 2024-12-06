@@ -48,6 +48,13 @@ func StoreOauthCredentials(accountId string, publisherProfileId string, bearerTo
 		return err
 	}
 
+	if expiresInSec == 0 {
+		// Google HTTP request client complains if expiry is zero.
+		const fiftyYearsInSeconds int64 = 1578000000
+		expiresInSec = time.Now().Unix() + fiftyYearsInSeconds
+	}
+	log.Printf("Stored access token: %s", bearerToken)
+
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"AccountID": {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -51,11 +52,11 @@ func (s YouTubeDriver) Publish(pubCommand PublishCommand) error {
 }
 
 func (s YouTubeDriver) loadVideoDetails(pubc PublishCommand) (YouTubeContents, error) {
-	if pubc.RootPublishEvent.DistributionChannel == "ShortVideo" {
+	if pubc.FinalRenderMedia.DistributionFormat == "ShortVideo" {
 		return s.getShortFormContents(pubc)
 	}
 	// TODO: Longform content
-	return YouTubeContents{}, errors.New("no matching distribution channel within YouTube driver")
+	return YouTubeContents{}, errors.New("no matching distribution format within YouTube driver")
 }
 
 func (s YouTubeDriver) getShortFormContents(pubc PublishCommand) (YouTubeContents, error) {
@@ -103,7 +104,7 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 			Description: contents.VideoDescription,
 			Tags:        contents.Tags,
 		},
-		Status: &youtube.VideoStatus{PrivacyStatus: "public"},
+		Status: &youtube.VideoStatus{PrivacyStatus: "public", MadeForKids: false},
 	}
 
 	call := svc.Videos.Insert([]string{"snippet", "status"}, upload)
@@ -116,7 +117,7 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 	response, err := call.Media(file).Do()
 	if err != nil {
 		log.Printf("correlationID: %s error uploading YouTube video: %s", ledgerId, err)
-		return err
+		return s.setAnyBadRequestCode(err)
 	}
 	file.Close()
 	videoId := response.Id
@@ -126,7 +127,7 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		log.Printf("correlationID: %s error downloading thumbnail image: %s", ledgerId, err)
 		return err
 	}
-	thumbnailFile, err := os.Open(contents.VideoContentLookupKey)
+	thumbnailFile, err := os.Open(contents.VideoThumbnailContentLookupKey)
 	if err != nil {
 		log.Printf("correlationID: %s error opening thumbnail file: %s", ledgerId, err)
 		return err
@@ -135,8 +136,8 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 	thumbnailCall := svc.Thumbnails.Set(videoId)
 	_, err = thumbnailCall.Media(thumbnailFile).Do()
 	if err != nil {
-		log.Printf("correlationID: %s error uploading YouTube thumbnail: %s", ledgerId, err)
-		return err
+		log.Printf("correlationID: %s WARN error uploading YouTube thumbnail: %s", ledgerId, err)
+		err = nil // ignore; non-critical path.
 	}
 	thumbnailFile.Close()
 
@@ -150,7 +151,7 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		log.Printf("correlationID: %s error removing thumbnail file: %s", ledgerId, err)
 		return err
 	}
-	return err
+	return s.setAnyBadRequestCode(err)
 }
 
 func (s YouTubeDriver) getDescriptiveFilename(videoTitle string) string {
@@ -186,4 +187,15 @@ func (s YouTubeDriver) getThumbnailLookupKey(ledgerId string, finalRenderSequenc
 		}
 	}
 	return "", errors.New("image thumbnail not found in YouTube driver")
+}
+
+func (s YouTubeDriver) setAnyBadRequestCode(err error) error {
+	isCredentialError := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=403") ||
+		strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=401") ||
+		strings.Contains(fmt.Sprintf("%s", err), "Error 403") ||
+		strings.Contains(fmt.Sprintf("%s", err), "Error 401")
+	if isCredentialError {
+		return fmt.Errorf("%s: YouTube profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
+	}
+	return err
 }
