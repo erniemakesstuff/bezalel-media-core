@@ -27,6 +27,10 @@ type YouTubeContents struct {
 	VideoThumbnailContentLookupKey string
 }
 
+/*
+*
+* YouTube Profiles need to be phone verified in order to enable Thumbnail uploads!
+ */
 func (s YouTubeDriver) Publish(pubCommand PublishCommand) error {
 	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
@@ -114,43 +118,48 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		return err
 	}
 
-	response, err := call.Media(file).Do()
+	_, err = call.Media(file).Do()
 	if err != nil {
 		log.Printf("correlationID: %s error uploading YouTube video: %s", ledgerId, err)
 		return s.setAnyBadRequestCode(err)
 	}
 	file.Close()
-	videoId := response.Id
+	/*
+		Decision to bypass custom thumbnails by default since it won't be used for the majority of our accounts:
+		https://trello.com/c/4mAAlR7B#comment-6753642fccb3f1faac6b8c53
+		videoId := response.Id
 
-	err = DownloadFile(contents.VideoThumbnailContentLookupKey)
-	if err != nil {
-		log.Printf("correlationID: %s error downloading thumbnail image: %s", ledgerId, err)
-		return err
-	}
-	thumbnailFile, err := os.Open(contents.VideoThumbnailContentLookupKey)
-	if err != nil {
-		log.Printf("correlationID: %s error opening thumbnail file: %s", ledgerId, err)
-		return err
-	}
+		err = DownloadFile(contents.VideoThumbnailContentLookupKey)
+		if err != nil {
+			log.Printf("correlationID: %s error downloading thumbnail image: %s", ledgerId, err)
+			return err
+		}
+		thumbnailFile, err := os.Open(contents.VideoThumbnailContentLookupKey)
+		if err != nil {
+			log.Printf("correlationID: %s error opening thumbnail file: %s", ledgerId, err)
+			return err
+		}
 
-	thumbnailCall := svc.Thumbnails.Set(videoId)
-	_, err = thumbnailCall.Media(thumbnailFile).Do()
-	if err != nil {
-		log.Printf("correlationID: %s WARN error uploading YouTube thumbnail: %s", ledgerId, err)
-		err = nil // ignore; non-critical path.
-	}
-	thumbnailFile.Close()
 
+		thumbnailCall := svc.Thumbnails.Set(videoId)
+		_, err = thumbnailCall.Media(thumbnailFile).Do()
+		if err != nil {
+			log.Printf("correlationID: %s WARN error uploading YouTube thumbnail: %s", ledgerId, err)
+			err = nil // ignore; non-critical path.
+		}
+		thumbnailFile.Close()
+		err = os.Remove(contents.VideoThumbnailContentLookupKey)
+		if err != nil {
+			log.Printf("correlationID: %s WARN error removing thumbnail file: %s", ledgerId, err)
+			err = nil // non-critical path
+		}
+	*/
 	err = os.Remove(videoFilename)
 	if err != nil {
 		log.Printf("correlationID: %s WARN error removing video file: %s", ledgerId, err)
 		err = nil // non-critical path.
 	}
-	err = os.Remove(contents.VideoThumbnailContentLookupKey)
-	if err != nil {
-		log.Printf("correlationID: %s WARN error removing thumbnail file: %s", ledgerId, err)
-		err = nil // non-critical path
-	}
+
 	return s.setAnyBadRequestCode(err)
 }
 

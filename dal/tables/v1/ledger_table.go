@@ -108,8 +108,9 @@ const (
 	SPLIT_SCR_CENTER PositionLayer = "SplitScreenCenter" // "cut out" in center of screen position.
 
 	// Not specifying "where"; defering placement to render templates.
-	AVATAR         PositionLayer = "Avatar"        // screen position for the talking head/body.
-	AVATAR_OVERLAY PositionLayer = "AvatarOverlay" // apply user specified avatar as higher priority.
+	AVATAR           PositionLayer = "Avatar"          // screen position for the talking head/body.
+	AVATAR_OVERLAY   PositionLayer = "AvatarOverlay"   // apply user specified avatar as higher priority.
+	AVATAR_THUMBNAIL PositionLayer = "AvatarThumbnail" // used for "shock" expressive facial image overlaid on thumbnail image.
 
 	// For static / text final media.
 	IMAGE_TOP        PositionLayer = "ImageOnTop"
