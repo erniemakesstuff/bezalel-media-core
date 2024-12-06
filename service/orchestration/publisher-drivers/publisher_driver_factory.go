@@ -24,6 +24,8 @@ func GetDriver(dsitributionChannelName string) (PublisherDriver, error) {
 		return TwitterDriver{}, nil
 	case dsitributionChannelName == "Reddit":
 		return RedditDriver{}, nil
+	case dsitributionChannelName == "YouTube":
+		return YouTubeDriver{}, nil
 	}
 	return nil, errors.New("no matching source-to-driver found")
 }

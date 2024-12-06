@@ -31,7 +31,7 @@ func (s *PublishWorkFlow) Run(ledgerItem tables.Ledger, processId string) error 
 }
 
 func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledgerId string, processId string) error {
-	_, err := drivers.GetDriver(pubCommand.RootPublishEvent.DistributionChannel)
+	driver, err := drivers.GetDriver(pubCommand.RootPublishEvent.DistributionChannel)
 	if err != nil {
 		log.Printf("correlationID: %s error fetching driver: %s", ledgerId, err)
 		return err
@@ -61,7 +61,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 		dal.ReleasePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
 	}
-	/* TODO: Uncomment after local prompt testing.
+
 	err = driver.Publish(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
@@ -70,7 +70,6 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 		dal.ReleasePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
 	}
-	*/
 
 	completionEventRecord := pubCommand.RootPublishEvent
 	completionEventRecord.PublishStatus = tables.COMPLETE

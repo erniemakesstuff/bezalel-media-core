@@ -296,7 +296,7 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 	return result
 }
 
-func IncrementHeartbeat(ledgerEntry tables.Ledger) {
+func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
 	const maxHeartbeat = 100
 	if ledgerEntry.HeartbeatCount >= maxHeartbeat {
 		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerEntry.LedgerID)
@@ -324,4 +324,5 @@ func IncrementHeartbeat(ledgerEntry tables.Ledger) {
 	if err != nil {
 		log.Printf("correlationID: %s WARN error incrementing heartbeat: %s", ledgerEntry.LedgerID, err)
 	}
+	return err
 }

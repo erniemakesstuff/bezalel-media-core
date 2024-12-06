@@ -94,7 +94,8 @@ func GetShortVideoJson() string {
 		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.
 		You must include #shorts hashtag in the description.
 		Include at least three relevant hashtags in your video description.`,
-		ThumbnailImageDescription: "Describe an image likely to attract a viewer to click on your video, and that is related to the videoTitle and videoDescription.",
+		ThumbnailImageDescription: `Describe an image likely to attract a viewer to click on your video, 
+		and that is related to the videoTitle and videoDescription.`,
 		MainPost: `Main post content, summary, or abridged text goes here.
 		If the post is longer than one paragraph long, then abridge the contents to be less than one paragraph; summarizing to capture the main dramatic details.`,
 		Comments: []string{
