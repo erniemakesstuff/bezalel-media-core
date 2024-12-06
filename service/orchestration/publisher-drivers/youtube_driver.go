@@ -141,15 +141,15 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 	}
 	thumbnailFile.Close()
 
-	os.Remove(videoFilename)
+	err = os.Remove(videoFilename)
 	if err != nil {
-		log.Printf("correlationID: %s error removing video file: %s", ledgerId, err)
-		return err
+		log.Printf("correlationID: %s WARN error removing video file: %s", ledgerId, err)
+		err = nil // non-critical path.
 	}
-	os.Remove(contents.VideoThumbnailContentLookupKey)
+	err = os.Remove(contents.VideoThumbnailContentLookupKey)
 	if err != nil {
-		log.Printf("correlationID: %s error removing thumbnail file: %s", ledgerId, err)
-		return err
+		log.Printf("correlationID: %s WARN error removing thumbnail file: %s", ledgerId, err)
+		err = nil // non-critical path
 	}
 	return s.setAnyBadRequestCode(err)
 }
