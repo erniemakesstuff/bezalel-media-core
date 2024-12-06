@@ -51,7 +51,7 @@ func (s YouTubeDriver) Publish(pubCommand PublishCommand) error {
 }
 
 func (s YouTubeDriver) loadVideoDetails(pubc PublishCommand) (YouTubeContents, error) {
-	if pubc.RootPublishEvent.DistributionChannel == "ShortForm" {
+	if pubc.RootPublishEvent.DistributionChannel == "ShortVideo" {
 		return s.getShortFormContents(pubc)
 	}
 	// TODO: Longform content
@@ -170,7 +170,7 @@ func (s YouTubeDriver) getDescriptiveFilename(videoTitle string) string {
 	w12 := strings.ReplaceAll(w11, ">", "_")
 	w13 := strings.ReplaceAll(w12, "*", "_")
 	final := strings.TrimSpace(w13)
-	return final
+	return final + ".mp4"
 }
 
 func (s YouTubeDriver) getThumbnailLookupKey(ledgerId string, finalRenderSequences string) (string, error) {
