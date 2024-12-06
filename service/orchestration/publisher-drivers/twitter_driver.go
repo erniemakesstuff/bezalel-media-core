@@ -31,7 +31,7 @@ func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
 		log.Printf("correlationID: %s error loading publisher account for Twitter driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
-	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
+	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMedia)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for tinyblog: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err

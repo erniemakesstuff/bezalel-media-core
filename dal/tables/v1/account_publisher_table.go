@@ -9,6 +9,7 @@ const (
 	Channel_Twitter          ChannelName = "Twitter" // aka X
 	Channel_Reddit           ChannelName = "Reddit"
 	Channel_Facebook         ChannelName = "Facebook"
+	Channel_YouTube          ChannelName = "YouTube"
 )
 
 type SubscriptionStatus string
@@ -42,8 +43,12 @@ type AccountPublisher struct {
 	PublisherAPISecretKey string // TODO: Refactor this out to be enterprise global.
 	UserAccessToken       string // For impersonating the user.
 	UserAccessTokenSecret string
-	PublisherLanguage     string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
-	PublisherNiche        string // Drama, news, ...
+	OauthBearerToken      string
+	OauthRefreshToken     string
+	OauthExpiresInSec     int64
+
+	PublisherLanguage string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+	PublisherNiche    string // Drama, news, ...
 
 	// Profile customization
 	OverrideTemplateIDs string // TODO: prompt personalization; custom avatars.

@@ -139,16 +139,29 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 
 		if AllChildrenRendered(p.RootMediaEventID, childrenMediaEvents) {
 			finalRenderEvent := s.getFinalRenderEvent(p.RootMediaEventID, p.PublisherProfileID, childrenMediaEvents)
+			scriptMediaEvent := s.getMediaEventById(ledgerItem.LedgerID, finalRenderEvent.ParentEventID, mediaEvents)
 			if len(finalRenderEvent.EventID) == 0 {
 				log.Printf("correlationID: %s WARN no finalRenderRoot present for publish, pubEvent: %s",
 					ledgerItem.LedgerID, p.GetEventID())
 				continue
 			}
-			publishCommand := s.toPublishCommand(p, finalRenderEvent)
+			publishCommand := s.toPublishCommand(p, finalRenderEvent, scriptMediaEvent)
 			result = append(result, publishCommand)
 		}
 	}
 	return result, err
+}
+
+func (s *PublishWorkFlow) getMediaEventById(ledgerId string, id string, mediaEvents []tables.MediaEvent) tables.MediaEvent {
+	tmp := tables.MediaEvent{}
+	for _, m := range mediaEvents {
+		if m.EventID == id {
+			return m
+		}
+	}
+	log.Printf("correlationID: %s WARN no mediaEvent found by Id in mediaEvents: %s",
+		ledgerId, id)
+	return tmp
 }
 
 func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publishStates map[string]tables.PublishEvent) (bool, error) {
@@ -205,10 +218,11 @@ func (s *PublishWorkFlow) getFinalRenderEvent(mediaRootId string, publisherProfi
 }
 
 func (s *PublishWorkFlow) toPublishCommand(publishEvent tables.PublishEvent,
-	finalRenderMedia tables.MediaEvent) drivers.PublishCommand {
+	finalRenderMedia tables.MediaEvent, originalScriptMedia tables.MediaEvent) drivers.PublishCommand {
 	result := drivers.PublishCommand{
-		RootPublishEvent:     publishEvent,
-		FinalRenderMediaRoot: finalRenderMedia,
+		RootPublishEvent: publishEvent,
+		FinalRenderMedia: finalRenderMedia,
+		ScriptMedia:      originalScriptMedia,
 	}
 	return result
 }

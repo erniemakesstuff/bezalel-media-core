@@ -41,6 +41,47 @@ func GetPublisherWatermarkInfo(accountId string, publisherProfileId string) (str
 	return env.GetEnvConfigs().DefaultPublisherWatermarkText, nil
 }
 
+func StoreOauthCredentials(accountId string, publisherProfileId string, bearerToken string, refreshToken string, expiresInSec int64) error {
+	_, err := GetPublisherAccount(accountId, publisherProfileId)
+	if err != nil {
+		log.Printf("cannot store oauth credentials: %s", err)
+		return err
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"AccountID": {
+				S: aws.String(accountId),
+			},
+			"PublisherProfileID": {
+				S: aws.String(publisherProfileId),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":v0": {
+				N: aws.String(strconv.FormatInt(expiresInSec, 10)),
+			},
+			":v1": {
+				S: aws.String(bearerToken),
+			},
+			":v2": {
+				S: aws.String(refreshToken),
+			},
+		},
+		TableName:        aws.String(dynamo_configuration.TABLE_ACCOUNTS),
+		ReturnValues:     aws.String("NONE"),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v0, %s = :v1, %s = :v2", "OauthExpiresInSec", "OauthBearerToken", "OauthRefreshToken")),
+	}
+
+	_, err = svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("error calling updateItem to store oauth credentials: %s", err)
+		return err
+	}
+
+	return nil
+}
+
 func GetPublisherAccount(accountId string, publisherProfileId string) (tables.AccountPublisher, error) {
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(dynamo_configuration.TABLE_ACCOUNTS),

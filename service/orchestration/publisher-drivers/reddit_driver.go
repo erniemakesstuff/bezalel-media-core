@@ -27,7 +27,7 @@ func (s RedditDriver) Publish(pubCommand PublishCommand) error {
 		log.Printf("correlationID: %s error loading publisher account for Reddit driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
-	blogPayloads, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot, acc)
+	blogPayloads, err := s.loadMediaContents(pubCommand.FinalRenderMedia, acc)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err

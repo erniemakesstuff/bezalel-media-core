@@ -25,7 +25,7 @@ func (s MediumDriver) Publish(pubCommand PublishCommand) error {
 		return err
 	}
 
-	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMediaRoot)
+	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMedia)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err

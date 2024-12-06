@@ -18,17 +18,7 @@ func LoadAsString(contentLookupKey string) (string, error) {
 }
 
 func LoadAsBytes(contentLookupKey string) ([]byte, error) {
-	file, err := os.Create(contentLookupKey)
-	if err != nil {
-		log.Printf("%s error creating temp file: %s", contentLookupKey, err)
-		return []byte{}, err
-	}
-
-	_, err = s3_downloader.Download(file,
-		&s3.GetObjectInput{
-			Bucket: aws.String(configs.GetEnvConfigs().S3MediaBucket),
-			Key:    aws.String(contentLookupKey),
-		})
+	err := DownloadFile(contentLookupKey)
 	if err != nil {
 		log.Printf("error checking %s media existence within LoadAsString: %s", contentLookupKey, err)
 		os.Remove(contentLookupKey)
@@ -47,4 +37,19 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func DownloadFile(contentLookupKey string) error {
+	file, err := os.Create(contentLookupKey)
+	if err != nil {
+		log.Printf("%s error creating temp file: %s", contentLookupKey, err)
+		return err
+	}
+
+	_, err = s3_downloader.Download(file,
+		&s3.GetObjectInput{
+			Bucket: aws.String(configs.GetEnvConfigs().S3MediaBucket),
+			Key:    aws.String(contentLookupKey),
+		})
+	return err
 }

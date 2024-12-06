@@ -69,6 +69,7 @@ func HandlerOauthCodeFlowStart(w http.ResponseWriter, r *http.Request) {
 
 func HandlerOauthCodeCallback(w http.ResponseWriter, r *http.Request) {
 	// TODO: Change this to a post endpoint
+	// OauthCallback
 	code := r.FormValue("code")
 	state := r.FormValue("state")
 	data, err := base64.StdEncoding.DecodeString(state)
@@ -79,6 +80,13 @@ func HandlerOauthCodeCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	var payload requestModels.AuthorizationCodeState
 	json.Unmarshal(data, &payload)
+
+	err = authorization.StoreAuthorizationCode(code, payload.AccountId, payload.PublisherProfileId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	fmt.Fprintf(w, "Received code: %v\r\nYou can now safely close this browser window. Other payload: %s", code, payload.AccountId+":"+payload.PublisherProfileId)
