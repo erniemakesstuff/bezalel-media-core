@@ -16,6 +16,8 @@ import (
 )
 
 func CreatePublisherAccount(item tables.AccountPublisher) error {
+	item.AssignmentLockTTL = 0       // setting to zero for sorting logic query
+	item.LastPublishAtEpochMilli = 0 // setting to zero to ensure record added to GSI for active-profile query
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
 		log.Printf("got error marshalling ledger item: %s", err)
@@ -42,10 +44,14 @@ func GetPublisherWatermarkInfo(accountId string, publisherProfileId string) (str
 }
 
 func StoreOauthCredentials(accountId string, publisherProfileId string, bearerToken string, refreshToken string, expiresInSec int64) error {
-	_, err := GetPublisherAccount(accountId, publisherProfileId)
+	acc, err := GetPublisherAccount(accountId, publisherProfileId)
 	if err != nil {
 		log.Printf("cannot store oauth credentials: %s", err)
 		return err
+	}
+
+	if len(acc.AccountID) == 0 {
+		return fmt.Errorf("cannot store oauth credentials, no existing profile accountId: %s , profileId: %s", accountId, publisherProfileId)
 	}
 
 	if expiresInSec == 0 {

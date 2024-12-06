@@ -26,8 +26,7 @@ func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 
 	if !isSyndicated {
 		log.Printf("correlationID: %s ledger is not fully syndicated; cannot complete", ledgerItem.LedgerID)
-		go dal.IncrementHeartbeat(ledgerItem)
-		return nil
+		return dal.IncrementHeartbeat(ledgerItem)
 	}
 
 	err = s.expireLocks(ledgerItem)

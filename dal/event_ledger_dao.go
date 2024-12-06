@@ -300,10 +300,11 @@ func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
 	const maxHeartbeat = 100
 	if ledgerEntry.HeartbeatCount >= maxHeartbeat {
 		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerEntry.LedgerID)
+		return nil
 	}
 	// Prevent system spam messages onto diff queue.
 	time.Sleep(time.Duration(ledgerEntry.HeartbeatCount) * time.Minute)
-
+	log.Printf("correlationID: %s incrementing heartbeat", ledgerEntry.LedgerID)
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"LedgerID": {
