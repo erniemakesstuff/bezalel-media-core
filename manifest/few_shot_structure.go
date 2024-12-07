@@ -104,7 +104,7 @@ func GetShortVideoJson() string {
 			"Comments from the post go here, summarized, or abridged.",
 			"One comment per list entry.",
 			"Select comments that are no more than three sentences long.",
-			"All entries combined in json:comments should only require less than 15 seconds to read aloud.",
+			"All entries combined in json:comments should only require at most 15 seconds to read aloud.",
 		},
 	}
 

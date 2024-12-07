@@ -2,10 +2,12 @@ package authorization
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	dal "github.com/bezalel-media-core/v2/dal"
 	"golang.org/x/net/context"
@@ -50,17 +52,24 @@ For more information about the client_secrets.json file format, please visit:
 https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 `
 
-func GetClient(bearerToken string, refreshToken string, expiresInSec int64) (*http.Client, error) {
+func GetClient(bearerToken string, refreshToken string, expiresAtMilliSec int64, tokenType string) (*http.Client, error) {
 	ctx := context.Background()
 	config, err := getGoogleConfig()
 	if err != nil {
 		log.Printf("failed to load google config: %s", err)
 		return nil, err
 	}
+	expiresInSec := (expiresAtMilliSec - time.Now().UnixMilli()) / 1000
+	if expiresInSec < 0 {
+		expiresInSec = 0
+	}
+
 	token := oauth2.Token{
 		AccessToken:  bearerToken,
 		RefreshToken: refreshToken,
+		Expiry:       time.UnixMilli(expiresAtMilliSec),
 		ExpiresIn:    expiresInSec,
+		TokenType:    tokenType,
 	}
 	return config.Client(ctx, &token), err
 }
@@ -89,7 +98,18 @@ func exchangeToken(code string) (*oauth2.Token, error) {
 	if err != nil {
 		log.Fatalf("Unable to retrieve token %v", err)
 	}
+
 	return tok, nil
+}
+
+func saveToken(file string, token *oauth2.Token) {
+	fmt.Printf("Saving credential file to: %s\n", file)
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		log.Fatalf("Unable to cache oauth token: %v", err)
+	}
+	defer f.Close()
+	json.NewEncoder(f).Encode(token)
 }
 
 // StartOauthCodeFlow uses Config to request a Token.
@@ -102,6 +122,10 @@ func StartOauthCodeFlow(accountId string, publisherProfileId string) (string, er
 	statePayload := fmt.Sprintf("{\"accountId\": \"%s\", \"publisherProfileId\": \"%s\"}", accountId, publisherProfileId)
 	encodedState := base64.StdEncoding.EncodeToString([]byte(statePayload))
 	authUrl := config.AuthCodeURL(encodedState, oauth2.AccessTypeOffline)
+	// For users that are already authorized, no refresh token is vended.
+	// By appending consent, user is treated as a "first-time" authorization,
+	// and a refresh token is vended.
+	authUrl += "&prompt=consent"
 	if err != nil {
 		log.Fatalf("Unable to generate authorization URL in web server: %v", err)
 	}
@@ -114,6 +138,7 @@ func StoreAuthorizationCode(authCode string, accountId string, publisherProfileI
 		log.Printf("error exchanging token to store authorization code: %s", err)
 		return err
 	}
-	err = dal.StoreOauthCredentials(accountId, publisherProfileId, token.AccessToken, token.RefreshToken, token.ExpiresIn)
+
+	err = dal.StoreOauthCredentials(accountId, publisherProfileId, token.AccessToken, token.RefreshToken, token.Expiry.UnixMilli(), token.TokenType)
 	return err
 }

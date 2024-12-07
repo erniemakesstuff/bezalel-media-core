@@ -43,9 +43,10 @@ type AccountPublisher struct {
 	PublisherAPISecretKey string // TODO: Refactor this out to be enterprise global.
 	UserAccessToken       string // For impersonating the user.
 	UserAccessTokenSecret string
-	OauthBearerToken      string
+	OauthToken            string
 	OauthRefreshToken     string
-	OauthExpiresInSec     int64
+	OauthTokenType        string
+	OauthExpiryMilliSec   int64
 
 	PublisherLanguage string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
 	PublisherNiche    string // Drama, news, ...

@@ -41,7 +41,7 @@ func GetPublisherWatermarkInfo(accountId string, publisherProfileId string) (str
 	return env.GetEnvConfigs().DefaultPublisherWatermarkText, nil
 }
 
-func StoreOauthCredentials(accountId string, publisherProfileId string, bearerToken string, refreshToken string, expiresInSec int64) error {
+func StoreOauthCredentials(accountId string, publisherProfileId string, bearerToken string, refreshToken string, expiryMilliSec int64, tokenType string) error {
 	acc, err := GetPublisherAccount(accountId, publisherProfileId)
 	if err != nil {
 		log.Printf("cannot store oauth credentials: %s", err)
@@ -51,14 +51,6 @@ func StoreOauthCredentials(accountId string, publisherProfileId string, bearerTo
 	if len(acc.AccountID) == 0 {
 		return fmt.Errorf("cannot store oauth credentials, no existing profile accountId: %s , profileId: %s", accountId, publisherProfileId)
 	}
-
-	if expiresInSec == 0 {
-		// Google HTTP request client complains if expiry is zero.
-		const fiftyYearsInSeconds int64 = 1578000000
-		expiresInSec = time.Now().Unix() + fiftyYearsInSeconds
-	}
-	log.Printf("Stored access token: %s", bearerToken)
-
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"AccountID": {
@@ -70,7 +62,7 @@ func StoreOauthCredentials(accountId string, publisherProfileId string, bearerTo
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":v0": {
-				N: aws.String(strconv.FormatInt(expiresInSec, 10)),
+				N: aws.String(strconv.FormatInt(expiryMilliSec, 10)),
 			},
 			":v1": {
 				S: aws.String(bearerToken),
@@ -78,10 +70,13 @@ func StoreOauthCredentials(accountId string, publisherProfileId string, bearerTo
 			":v2": {
 				S: aws.String(refreshToken),
 			},
+			":v3": {
+				S: aws.String(tokenType),
+			},
 		},
 		TableName:        aws.String(dynamo_configuration.TABLE_ACCOUNTS),
 		ReturnValues:     aws.String("NONE"),
-		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v0, %s = :v1, %s = :v2", "OauthExpiresInSec", "OauthBearerToken", "OauthRefreshToken")),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v0, %s = :v1, %s = :v2, %s = :v3", "OauthExpiryMilliSec", "OauthToken", "OauthRefreshToken", "OauthTokenType")),
 	}
 
 	_, err = svc.UpdateItem(input)

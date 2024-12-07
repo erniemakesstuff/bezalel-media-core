@@ -37,7 +37,7 @@ func (s YouTubeDriver) Publish(pubCommand PublishCommand) error {
 		log.Printf("correlationID: %s error loading publisher account for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
 	}
-	client, err := auth.GetClient(acc.OauthBearerToken, acc.OauthRefreshToken, acc.OauthExpiresInSec)
+	client, err := auth.GetClient(acc.OauthToken, acc.OauthRefreshToken, acc.OauthExpiryMilliSec, acc.OauthTokenType)
 	if err != nil {
 		log.Printf("correlationID: %s error creating http client for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return err
@@ -123,10 +123,11 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		log.Printf("correlationID: %s error uploading YouTube video: %s", ledgerId, err)
 		return s.setAnyBadRequestCode(err)
 	}
-	file.Close()
+	defer file.Close()
+	defer os.Remove(videoFilename)
 	/*
-		Decision to bypass custom thumbnails by default since it won't be used for the majority of our accounts:
-		https://trello.com/c/4mAAlR7B#comment-6753642fccb3f1faac6b8c53
+		//Decision to bypass custom thumbnails by default since it won't be used for the majority of our accounts:
+		//	https://trello.com/c/4mAAlR7B#comment-6753642fccb3f1faac6b8c53
 		videoId := response.Id
 
 		err = DownloadFile(contents.VideoThumbnailContentLookupKey)
@@ -147,18 +148,9 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 			log.Printf("correlationID: %s WARN error uploading YouTube thumbnail: %s", ledgerId, err)
 			err = nil // ignore; non-critical path.
 		}
-		thumbnailFile.Close()
-		err = os.Remove(contents.VideoThumbnailContentLookupKey)
-		if err != nil {
-			log.Printf("correlationID: %s WARN error removing thumbnail file: %s", ledgerId, err)
-			err = nil // non-critical path
-		}
+		defer thumbnailFile.Close()
+		defer os.Remove(contents.VideoThumbnailContentLookupKey)
 	*/
-	err = os.Remove(videoFilename)
-	if err != nil {
-		log.Printf("correlationID: %s WARN error removing video file: %s", ledgerId, err)
-		err = nil // non-critical path.
-	}
 
 	return s.setAnyBadRequestCode(err)
 }
