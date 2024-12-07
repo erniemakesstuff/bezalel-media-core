@@ -98,12 +98,13 @@ func GetShortVideoJson() string {
 		ThumbnailImageDescription: `Describe an image likely to attract a viewer to click on your video, 
 		and that is related to the videoTitle and videoDescription.`,
 		MainPost: `Main post content, summary, or abridged text goes here.
-		If the post is longer than two paragraphs long, then abridge the contents to be less than one paragraph; summarizing to capture the main dramatic details.
-		Your mainPost text length should require at most 45 seconds to read.`,
+		If the post is longer than one paragraph long, then abridge the contents to be less than one paragraph; summarizing to capture the main dramatic details.
+		All text in json:mainPost should be at most 45 seconds long when read aloud.`,
 		Comments: []string{
 			"Comments from the post go here, summarized, or abridged.",
 			"One comment per list entry.",
 			"Select comments that are no more than three sentences long.",
+			"All entries combined in json:comments should only require less than 15 seconds to read aloud.",
 		},
 	}
 

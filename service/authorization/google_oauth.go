@@ -66,8 +66,6 @@ func GetClient(bearerToken string, refreshToken string, expiresInSec int64) (*ht
 }
 
 func getGoogleConfig() (*oauth2.Config, error) {
-	wd, _ := os.Getwd()
-	log.Printf("GoogleConfig CUR DIR: " + wd)
 	credsBytes, err := os.ReadFile("creds_google_oauth.json") // TODO: Move this to env config
 	if err != nil {
 		log.Fatalf("Unable to load credentials file %v", err)
@@ -76,7 +74,7 @@ func getGoogleConfig() (*oauth2.Config, error) {
 	if err != nil {
 		log.Fatalf("Unable to load config from json file %v", err)
 	}
-	domain := "http://localhost:8080"
+	domain := "http://localhost:8080" // TODO: Move this to env config
 	config.RedirectURL = domain + "/v1/authcode/youtube/callback"
 	return config, err
 }
