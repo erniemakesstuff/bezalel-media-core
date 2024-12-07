@@ -145,7 +145,7 @@ func (s *FinalRenderWorkflow) createJsonOfRenderSequence(scriptRoot tables.Media
 	// TODO: Replace final text body with image/video urls as needed during the final-render consumption process
 	// as needed.
 	scriptRootMetadata := scriptRoot.ToRenderSequence()
-	scriptRootMetadata.PositionLayer = tables.HIDDEN
+	scriptRootMetadata.PositionLayer = tables.SCRIPT
 	scriptRootMetadata.RenderSequence = -1
 	renderSequences := []tables.RenderMediaSequence{scriptRootMetadata}
 	for _, m := range childrenEvents {
