@@ -2,7 +2,6 @@ package orchestration
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"sort"
 
@@ -23,6 +22,7 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 		return err
 	}
 	if len(assignedPublishEvents) == 0 {
+		log.Printf("correlationID: %s no assigned publish events", ledgerItem.LedgerID)
 		return nil
 	}
 
@@ -31,9 +31,10 @@ func (s *FinalRenderWorkflow) Run(ledgerItem tables.Ledger, processId string) er
 		return err
 	}
 	if len(rootMediasReadyForPublish) == 0 {
+		log.Printf("correlationID: %s no root media ready for publish", ledgerItem.LedgerID)
 		return nil
 	}
-
+	log.Printf("correlationID: %s spawning final render", ledgerItem.LedgerID)
 	err = s.spawnFinalRenderMediaEvent(ledgerItem, rootMediasReadyForPublish, assignedPublishEvents)
 	return err
 }
@@ -56,8 +57,8 @@ func (s *FinalRenderWorkflow) getPublishEventsWhereAssigned(ledgerItem tables.Le
 	return assignedPublishEvents, nil
 }
 func (s *FinalRenderWorkflow) isAssignedWithoutRender(event tables.PublishEvent, publisherEventMap map[string]tables.PublishEvent) bool {
-	keyStringAssigned := fmt.Sprintf("%s.%s.%s", event.DistributionChannel, event.PublisherProfileID, tables.ASSIGNED)
-	keyStringRendering := fmt.Sprintf("%s.%s.%s", event.DistributionChannel, event.PublisherProfileID, tables.RENDERING)
+	keyStringAssigned := event.GetEventIDByState(tables.ASSIGNED)
+	keyStringRendering := event.GetEventIDByState(tables.RENDERING)
 	_, isAssigned := publisherEventMap[keyStringAssigned]
 	_, isRendering := publisherEventMap[keyStringRendering]
 	return isAssigned && !isRendering

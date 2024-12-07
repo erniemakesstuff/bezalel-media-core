@@ -16,8 +16,6 @@ import (
 )
 
 func CreatePublisherAccount(item tables.AccountPublisher) error {
-	item.AssignmentLockTTL = 0       // setting to zero for sorting logic query
-	item.LastPublishAtEpochMilli = 0 // setting to zero to ensure record added to GSI for active-profile query
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
 		log.Printf("got error marshalling ledger item: %s", err)
@@ -297,7 +295,7 @@ func AssignPublisherProfile(processId string, distributionChannelName string, pu
 
 	err = takeAssignmentLock(resultItem.AccountID, resultItem.PublisherProfileID, processId)
 	if err != nil {
-		log.Printf("error assigning publisher profile: %s", err)
+		log.Printf("error assigning publisher profile accountId: %s , profileId: %s , err: %s", resultItem.AccountID, resultItem.PublisherProfileID, err)
 		return resultItem, err
 	}
 	return resultItem, nil
@@ -411,6 +409,7 @@ func canTakeAssignmentLock(processId string, account tables.AccountPublisher) bo
 	if account.AssignmentLockID == processId {
 		return true
 	}
+
 	if account.AssignmentLockID == "" {
 		return true
 	}

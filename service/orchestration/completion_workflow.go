@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -76,7 +75,7 @@ func (s CompletionWorkflow) isFullySyndicated(ledgerItem tables.Ledger) (bool, e
 func (s CompletionWorkflow) isPublishedOnAllChannels(channelNames []string,
 	pubStateMap map[string]tables.PublishEvent, rootMedia tables.MediaEvent) bool {
 	for _, cn := range channelNames {
-		key := fmt.Sprintf("%s.%s.%s", cn, rootMedia.EventID, tables.COMPLETE)
+		key := tables.RootMediaKey(cn, rootMedia.EventID, tables.COMPLETE)
 		_, ok := pubStateMap[key]
 		if !ok {
 			log.Printf("correlationID: %s missing syndication to %s of %s for eventId: %s", rootMedia.LedgerID, cn, channelNames, rootMedia.EventID)
@@ -108,9 +107,9 @@ func (s CompletionWorkflow) expireLocks(ledgerItem tables.Ledger) error {
 }
 
 func (s CompletionWorkflow) isUnmarkedExpired(pubEvent tables.PublishEvent, pubStateMap map[string]tables.PublishEvent) bool {
-	keyAssigned := fmt.Sprintf("%s.%s.%s", pubEvent.DistributionChannel, pubEvent.PublisherProfileID, tables.ASSIGNED)
-	keyTerminalCom := fmt.Sprintf("%s.%s.%s", pubEvent.DistributionChannel, pubEvent.PublisherProfileID, tables.COMPLETE)
-	keyTerminalExp := fmt.Sprintf("%s.%s.%s", pubEvent.DistributionChannel, pubEvent.PublisherProfileID, tables.EXPIRED)
+	keyAssigned := pubEvent.GetEventIDByState(tables.ASSIGNED)
+	keyTerminalCom := pubEvent.GetEventIDByState(tables.COMPLETE)
+	keyTerminalExp := pubEvent.GetEventIDByState(tables.EXPIRED)
 	_, isAssigned := pubStateMap[keyAssigned]
 	_, isComplete := pubStateMap[keyTerminalCom]
 	_, isExpired := pubStateMap[keyTerminalExp]

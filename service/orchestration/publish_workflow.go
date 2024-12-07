@@ -119,7 +119,7 @@ func (s *PublishWorkFlow) collectPublishCommands(ledgerItem tables.Ledger) ([]dr
 		return []drivers.PublishCommand{}, err
 	}
 
-	publishStateToPubMap := PubStateByRootMedia(publishEvents)
+	publishStateToPubMap := PubStateByPubEventID(publishEvents)
 	result := []drivers.PublishCommand{}
 	for _, p := range publishEvents {
 		shouldCreatePublishEvent, err := s.isRenderWithoutPublish(p, publishStateToPubMap)
@@ -168,8 +168,7 @@ func (s *PublishWorkFlow) isRenderWithoutPublish(root tables.PublishEvent, publi
 		return false, nil
 	}
 
-	existingPublishingEvent, ok := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
-		root.RootMediaEventID, tables.PUBLISHING)]
+	existingPublishingEvent, ok := publishStates[root.GetEventIDByState(tables.PUBLISHING)]
 	if ok && existingPublishingEvent.ExpiresAtTTL < time.Now().UnixMilli() {
 		// Expired, allow append new publish event.
 		return true, nil
@@ -198,10 +197,8 @@ func (s *PublishWorkFlow) isRenderAlreadyCompleted(root tables.PublishEvent, pub
 		return false
 	}
 
-	_, isComplete := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
-		root.RootMediaEventID, tables.COMPLETE)]
-	_, isExpired := publishStates[fmt.Sprintf("%s.%s.%s", root.DistributionChannel,
-		root.RootMediaEventID, tables.EXPIRED)]
+	_, isComplete := publishStates[root.GetEventIDByState(tables.COMPLETE)]
+	_, isExpired := publishStates[root.GetEventIDByState(tables.EXPIRED)]
 	return isComplete || isExpired
 }
 

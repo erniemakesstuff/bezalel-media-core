@@ -335,11 +335,26 @@ type PublishEvent struct {
 }
 
 func (m *PublishEvent) GetEventID() string {
-	// concat <distId>.<publisher_profile_id>.<publish_status>
-	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.PublisherProfileID, m.PublishStatus)
+	// concat <distId>.<account_id>.<publisher_profile_id>.<publish_status>
+	return fmt.Sprintf("%s.%s.%s.%s", m.DistributionChannel, m.AccountID, m.PublisherProfileID, m.PublishStatus)
+}
+
+func (m *PublishEvent) GetEventIDByState(state PublishStatus) string {
+	// concat <distId>.<account_id>.<publisher_profile_id>.<publish_status>
+	return fmt.Sprintf("%s.%s.%s.%s", m.DistributionChannel, m.AccountID, m.PublisherProfileID, state)
 }
 
 func (m *PublishEvent) GetRootMediaAssignmentKey() string {
 	// concat <distId>.<RootMediaEventID>.<publish_status>
 	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.RootMediaEventID, m.PublishStatus)
+}
+
+func (m *PublishEvent) GetRootMediaAssignmentKeyByState(state PublishStatus) string {
+	// concat <distId>.<RootMediaEventID>.<publish_status>
+	return fmt.Sprintf("%s.%s.%s", m.DistributionChannel, m.RootMediaEventID, state)
+}
+
+func RootMediaKey(channel string, mediaEventId string, state PublishStatus) string {
+	// concat <distId>.<RootMediaEventID>.<publish_status>
+	return fmt.Sprintf("%s.%s.%s", channel, mediaEventId, state)
 }

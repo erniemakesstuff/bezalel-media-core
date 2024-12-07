@@ -1,7 +1,6 @@
 package orchestration
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -67,7 +66,8 @@ func (s *AssignmentWorkflow) isEnriched(root tables.MediaEvent, mediaEvents []ta
 
 func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsReadyToAssign []tables.MediaEvent,
 	publishEvents []tables.PublishEvent, processId string) error {
-	publishEventMap := PubStateByRootMedia(publishEvents)
+	rootMediaStateToPublishEventMap := PubStateByRootMedia(publishEvents)
+	publishEventIdToPublishEventMap := PubStateByPubEventID(publishEvents)
 	for _, m := range mediaEventsReadyToAssign {
 		targetChannelNames := manifest.GetManifestLoader().ChannelNamesFromFormat(string(m.DistributionFormat))
 		if len(targetChannelNames) == 0 {
@@ -76,7 +76,7 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 		}
 
 		for _, name := range targetChannelNames {
-			if s.isAssignable(m, name, publishEventMap) {
+			if s.isAssignable(m, name, rootMediaStateToPublishEventMap, publishEventIdToPublishEventMap, publishEvents) {
 				err := s.assignMediaToPublisher(ledgerItem, m, name, processId)
 				if err != nil {
 					log.Printf("correlationID: %s unable to assign media to publisher: %s", ledgerItem.LedgerID, err)
@@ -88,24 +88,41 @@ func (s *AssignmentWorkflow) assignMedia(ledgerItem tables.Ledger, mediaEventsRe
 	return nil
 }
 
-func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetChannelName string, publishEventMap map[string]tables.PublishEvent) bool {
-	// if unassigned, true
-	stateKeyAssigned := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.EventID, tables.ASSIGNED)
-	if _, ok := publishEventMap[stateKeyAssigned]; !ok {
+func (s *AssignmentWorkflow) isAssignable(mediaEvent tables.MediaEvent, targetChannelName string,
+	rootStateToPublishEventMap map[string]tables.PublishEvent, publishEventIdToPublishEventMap map[string]tables.PublishEvent,
+	publishEvents []tables.PublishEvent) bool {
+	// if unassigned
+	stateKeyAssigned := tables.RootMediaKey(targetChannelName, mediaEvent.EventID, tables.ASSIGNED)
+	if _, ok := rootStateToPublishEventMap[stateKeyAssigned]; !ok {
 		return true
 	}
 
-	stateKeyCompleted := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.EventID, tables.COMPLETE)
+	stateKeyCompleted := tables.RootMediaKey(targetChannelName, mediaEvent.EventID, tables.COMPLETE)
 	// if assigned, but already completed: cannot assign to distribution channel
-	if _, ok := publishEventMap[stateKeyCompleted]; ok {
+	if _, ok := rootStateToPublishEventMap[stateKeyCompleted]; ok {
 		return false
 	}
 
-	stateKeyExpired := fmt.Sprintf("%s.%s.%s", targetChannelName, mediaEvent.EventID, tables.EXPIRED)
-	// if assigned, but expired, true: ok to retry same distribution channel
-	if _, ok := publishEventMap[stateKeyExpired]; ok {
+	// check if no open-assignments
+	for _, p := range publishEvents {
+		if p.PublishStatus != tables.ASSIGNED || p.RootMediaEventID != mediaEvent.EventID {
+			continue
+		}
+		pubStateExpired := p.GetEventIDByState(tables.EXPIRED)
+		pubStateComplete := p.GetEventIDByState(tables.COMPLETE)
+		_, hasExpiry := publishEventIdToPublishEventMap[pubStateExpired]
+		_, hasComplete := publishEventIdToPublishEventMap[pubStateComplete]
+		if !hasExpiry && !hasComplete {
+			return false
+		}
+	}
+
+	stateKeyExpired := tables.RootMediaKey(targetChannelName, mediaEvent.EventID, tables.EXPIRED)
+	// if no open assignments, and not complete, check if expired recorded
+	if _, ok := rootStateToPublishEventMap[stateKeyExpired]; ok {
 		return true
 	}
+
 	return false
 }
 
