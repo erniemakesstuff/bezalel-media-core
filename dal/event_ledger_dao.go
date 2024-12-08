@@ -297,14 +297,20 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 }
 
 func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
-	const maxHeartbeat = 9999 // TODO: change to 100
+	const maxHeartbeat = 100      // Summation of N; ~1hr.
+	const maxWaitSec = int64(100) // visibility timeout. Ack the message after emitting a heartbeat.
 	if ledgerEntry.HeartbeatCount >= maxHeartbeat {
 		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerEntry.LedgerID)
 		return nil
 	}
 	// Prevent system spam messages onto diff queue.
 	// TODO: Change to time.Minute
-	time.Sleep(time.Duration(ledgerEntry.HeartbeatCount) * time.Second)
+	waitSec := maxWaitSec
+	if ledgerEntry.HeartbeatCount < maxWaitSec {
+		waitSec = ledgerEntry.HeartbeatCount
+	}
+
+	time.Sleep(time.Duration(waitSec) * time.Second)
 	log.Printf("correlationID: %s incrementing heartbeat", ledgerEntry.LedgerID)
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
