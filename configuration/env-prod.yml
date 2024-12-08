@@ -10,7 +10,8 @@ S3MediaBucket: truevine-media-storage
 # SQS
 LedgerQueueName: state-callback-queue
 PollVisibilityTimeoutSec: 180
+PollWaitSec: 60
 PollPeriodMilli: 1500
-MaxMessagesPerPoll: 1
+MaxMessagesPerPoll: 10
 MaxConsumers: 1
 SNSMediaTopic: arn:aws:sns:us-west-2:971422718801:media-topic

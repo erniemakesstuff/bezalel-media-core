@@ -23,6 +23,7 @@ type EnvConfigVals struct {
 	MediaRenderQueueName          string `yaml:"MediaRenderQueueName"` // TODO
 
 	PollVisibilityTimeoutSec int64  `yaml:"PollVisibilityTimeoutSec"`
+	PollWaitSec              int64  `yaml:"PollWaitSec"`
 	PollPeriodMilli          int64  `yaml:"PollPeriodMilli"`
 	MaxMessagesPerPoll       int64  `yaml:"MaxMessagesPerPoll"`
 	MaxConsumers             int    `yaml:"MaxConsumers"`

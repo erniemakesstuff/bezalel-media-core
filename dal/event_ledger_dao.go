@@ -297,8 +297,9 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 }
 
 func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
-	const maxHeartbeat = 100      // Summation of N; ~1hr.
-	const maxWaitSec = int64(100) // visibility timeout. Ack the message after emitting a heartbeat.
+	const maxHeartbeat = 400 // TODO: Need a different heartbeat strategy that doesn't occupy a worker.
+	// TODO: replace this w/ distributed system daemon ~scale process
+	const maxWaitSec = int64(160) // visibility timeout. Ack the message after emitting a heartbeat.
 	if ledgerEntry.HeartbeatCount >= maxHeartbeat {
 		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerEntry.LedgerID)
 		return nil

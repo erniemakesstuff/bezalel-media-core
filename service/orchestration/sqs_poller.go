@@ -71,6 +71,7 @@ func consumeMessages(queueURL *string) error {
 		QueueUrl:            queueURL,
 		MaxNumberOfMessages: aws.Int64(config.GetEnvConfigs().MaxMessagesPerPoll), // Max size 10
 		VisibilityTimeout:   aws.Int64(config.GetEnvConfigs().PollVisibilityTimeoutSec),
+		WaitTimeSeconds:     aws.Int64(config.GetEnvConfigs().PollWaitSec),
 	})
 	if err != nil {
 		return err
