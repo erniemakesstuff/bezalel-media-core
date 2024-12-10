@@ -13,23 +13,21 @@ import (
 )
 
 type HeartbeatEntry struct {
-	TimeBucket     string
-	LedgerID       string
-	HeartbeatCount int64
-	TTL            int64 // epoch seconds
+	TimeBucket string
+	LedgerID   string
+	TTL        int64 // epoch seconds
 }
 
-func CreateFutureHeartbeat(ledgerId string, heartbeatCount int64) error {
+func CreateFutureHeartbeat(ledgerId string) error {
 	const twentyFourHours = 86400
 	ttl := time.Now().Unix() + twentyFourHours
 
 	futureTime := time.Now().Add(time.Duration(15) * time.Minute)
 	timeBucket := GetTimeBucketKey(futureTime)
 	entry := HeartbeatEntry{
-		TimeBucket:     timeBucket,
-		LedgerID:       ledgerId,
-		HeartbeatCount: heartbeatCount,
-		TTL:            ttl,
+		TimeBucket: timeBucket,
+		LedgerID:   ledgerId,
+		TTL:        ttl,
 	}
 
 	av, err := dynamodbattribute.MarshalMap(entry)

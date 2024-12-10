@@ -32,6 +32,7 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 		log.Printf("%s error reading temp file: %s", contentLookupKey, err)
 		return []byte{}, err
 	}
+
 	err = os.Remove(contentLookupKey)
 	if err != nil {
 		log.Printf("%s error cleaning-up file: %s", contentLookupKey, err)

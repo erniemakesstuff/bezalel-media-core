@@ -114,7 +114,7 @@ func executeRelevantWorkflow(message *sqs.Message) error {
 		log.Printf("correlationID: %s, malformed ledger for payload: %+v", ledgerItem.LedgerID, message)
 		return fmt.Errorf("correlationID: %s, malformed ledger for payload: %+v", ledgerItem.LedgerID, message)
 	}
-	log.Printf("correlationID: %s starting workflow", ledgerItem.LedgerID)
+	log.Printf("correlationID: %s received message %s", ledgerItem.LedgerID, *message.MessageId)
 	return RunWorkflows(ledgerItem)
 }
 

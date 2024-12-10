@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dal "github.com/bezalel-media-core/v2/dal"
+	v1 "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"github.com/google/uuid"
 )
 
@@ -35,7 +36,16 @@ func processHeartbeats() {
 		return
 	}
 	for _, h := range heartbeatEntries {
-		err = dal.IncrementHeartbeat(h.LedgerID, h.HeartbeatCount)
+		ledger, err := dal.GetLedger(h.LedgerID)
+		if err != nil {
+			log.Printf("correlationID: %s error retrieving ledger for heartbeat: %s", h.LedgerID, err)
+		}
+
+		if ledger.LedgerStatus == v1.FINISHED_LEDGER {
+			continue
+		}
+
+		err = dal.IncrementHeartbeat(h.LedgerID, ledger.HeartbeatCount)
 		if err != nil {
 			log.Printf("correlationID: %s error incrementing heartbeat: %s", h.LedgerID, err)
 		}
