@@ -22,18 +22,13 @@ func (s *AssignmentWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 		log.Printf("correlationID: %s error extracting media events from ledger item: %s", ledgerItem.LedgerID, err)
 		return err
 	}
-	if len(mediaEvents) == 0 {
-		log.Printf("correlationID: %s no media events found", ledgerItem.LedgerID)
-	}
 
 	publishEvents, err := ledgerItem.GetExistingPublishEvents()
 	if err != nil {
 		log.Printf("correlationID: %s error extracting publish events from ledger item: %s", ledgerItem.LedgerID, err)
 		return err
 	}
-	if len(publishEvents) == 0 {
-		log.Printf("correlationID: %s no publish events found", ledgerItem.LedgerID)
-	}
+
 	mediaEventsReadyToAssign, err := s.collectRootMediaReadyToPublish(mediaEvents)
 	if err != nil {
 		log.Printf("correlationID: %s error collecting media events to assign, item: %s", ledgerItem.LedgerID, err)

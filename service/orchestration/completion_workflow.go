@@ -24,7 +24,7 @@ func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 	}
 
 	if !isSyndicated {
-		log.Printf("correlationID: %s ledger is not fully syndicated; cannot complete", ledgerItem.LedgerID)
+		log.Printf("correlationID: %s ledger is not fully syndicated - cannot complete", ledgerItem.LedgerID)
 		return dal.CreateFutureHeartbeat(ledgerItem.LedgerID, ledgerItem.HeartbeatCount)
 	}
 

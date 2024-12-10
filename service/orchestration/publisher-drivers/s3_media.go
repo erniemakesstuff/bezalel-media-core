@@ -3,6 +3,7 @@ package publisherdrivers
 import (
 	"log"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -24,7 +25,8 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 		os.Remove(contentLookupKey)
 		return []byte{}, err
 	}
-
+	// Seeing a race condition between downloading, and reading...
+	time.Sleep(time.Duration(5) * time.Second)
 	b, err := os.ReadFile(contentLookupKey)
 	if err != nil {
 		log.Printf("%s error reading temp file: %s", contentLookupKey, err)

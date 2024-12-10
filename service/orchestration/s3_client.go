@@ -20,7 +20,6 @@ func MediaExists(contentLookupKey string) (bool, error) {
 	if aerr, ok := err.(awserr.Error); ok {
 		if aerr.Code() == "NotFound" {
 			// Eventually consistent.
-			log.Printf("lookupkey missing from media bucket: %s", contentLookupKey)
 			return false, nil
 		}
 	}
