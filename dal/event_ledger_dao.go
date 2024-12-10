@@ -25,8 +25,8 @@ func CreateLedger(item tables.Ledger) error {
 	item.PublishEventsVersion = start_version
 	item.LedgerStatus = tables.NEW_LEDGER
 	item.LedgerCreatedAtEpochMilli = time.Now().UnixMilli()
-	const twoWeeks = 604800000
-	item.TTL = time.Now().UnixMilli() + twoWeeks
+	const twoWeeks = 1210000
+	item.TTL = time.Now().Unix() + twoWeeks
 
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
@@ -296,27 +296,16 @@ func joinPublishEventSet(s1 []tables.PublishEvent, s2 []tables.PublishEvent) []t
 	return result
 }
 
-func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
-	const maxHeartbeat = 400 // TODO: Need a different heartbeat strategy that doesn't occupy a worker.
-	// TODO: replace this w/ distributed system daemon ~scale process
-	const maxWaitSec = int64(160) // visibility timeout. Ack the message after emitting a heartbeat.
-	if ledgerEntry.HeartbeatCount >= maxHeartbeat {
-		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerEntry.LedgerID)
+func IncrementHeartbeat(ledgerId string, curHeartbeatCount int64) error {
+	const maxHeartbeat = 200
+	if curHeartbeatCount >= maxHeartbeat {
+		log.Printf("correlationID: %s max heartbeat exceeded retuning nil noop", ledgerId)
 		return nil
 	}
-	// Prevent system spam messages onto diff queue.
-	// TODO: Change to time.Minute
-	waitSec := maxWaitSec
-	if ledgerEntry.HeartbeatCount < maxWaitSec {
-		waitSec = ledgerEntry.HeartbeatCount
-	}
-
-	time.Sleep(time.Duration(waitSec) * time.Second)
-	log.Printf("correlationID: %s incrementing heartbeat", ledgerEntry.LedgerID)
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"LedgerID": {
-				S: aws.String(ledgerEntry.LedgerID),
+				S: aws.String(ledgerId),
 			},
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
@@ -331,7 +320,7 @@ func IncrementHeartbeat(ledgerEntry tables.Ledger) error {
 
 	_, err := svc.UpdateItem(input)
 	if err != nil {
-		log.Printf("correlationID: %s WARN error incrementing heartbeat: %s", ledgerEntry.LedgerID, err)
+		log.Printf("correlationID: %s WARN error incrementing heartbeat: %s", ledgerId, err)
 	}
 	return err
 }

@@ -13,7 +13,8 @@ const TABLE_ACCOUNTS = "Accounts"
 const TABLE_EVENT_LEDGER = "EventLedger"
 const TABLE_OVERRIDE_TEMPLATES = "OverrideTemplates"
 const TABLE_DEDUPE_EVENTS = "DedupeEvents"
-const TABLE_FARM_SCALER_LOCK = "FarmScalerLock"
+const SYSTEM_DAEMON = "SystemDaemon"
+const TABLE_HEARTBEAT = "Heartbeat"
 
 // Although status is derivable from ledger data, needed for index-lookup replayability.
 const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex"   // {Status, StartedAtEpochMilli}
@@ -29,9 +30,11 @@ func Init() {
 	createEventLedgerTables(svc)
 	createOverrideTemplates(svc)
 	createEventDedupeTable(svc)
-	createFarmScalerLock(svc)
+	createSystemDaemon(svc)
+	createHeartbeat(svc)
 	setTTL(svc, TABLE_DEDUPE_EVENTS)
 	setTTL(svc, TABLE_EVENT_LEDGER)
+	setTTL(svc, TABLE_HEARTBEAT)
 }
 
 // Creates Accounts Table + PublisherProfile details.
@@ -210,8 +213,8 @@ func createEventDedupeTable(svc *dynamodb.DynamoDB) {
 	createTable(svc, input, tableName)
 }
 
-func createFarmScalerLock(svc *dynamodb.DynamoDB) {
-	tableName := TABLE_FARM_SCALER_LOCK
+func createSystemDaemon(svc *dynamodb.DynamoDB) {
+	tableName := SYSTEM_DAEMON
 	input := &dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
@@ -223,6 +226,36 @@ func createFarmScalerLock(svc *dynamodb.DynamoDB) {
 			{
 				AttributeName: aws.String("SystemID"),
 				KeyType:       aws.String("HASH"),
+			},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		TableName:   aws.String(tableName),
+	}
+	createTable(svc, input, tableName)
+}
+
+func createHeartbeat(svc *dynamodb.DynamoDB) {
+	tableName := TABLE_HEARTBEAT
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				// <DAY>.<5min increments>
+				AttributeName: aws.String("TimeBucket"),
+				AttributeType: aws.String("S"),
+			},
+			{
+				AttributeName: aws.String("LedgerID"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("TimeBucket"),
+				KeyType:       aws.String("HASH"),
+			},
+			{
+				AttributeName: aws.String("LedgerID"),
+				KeyType:       aws.String("RANGE"),
 			},
 		},
 		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),

@@ -296,7 +296,7 @@ func AssignPublisherProfile(processId string, distributionChannelName string, pu
 	return resultItem, nil
 }
 
-func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK string,
+func queryActivePublisherProfile(distributionChannelName string, lastPageKeyPK string,
 	lastPageKeySK string, publisherLanguage string, publisherNiche string) (tables.AccountPublisher, string, string, error) {
 	const maxRecordsPerQuery = 200
 	queryInput := &dynamodb.QueryInput{
@@ -328,10 +328,10 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 		AND PublisherLanguage = :l AND PublisherNiche = :i AND IsStaleProfile = :b`),
 		Limit: aws.Int64(maxRecordsPerQuery),
 	}
-	if lastPagekeyPK != "" {
+	if lastPageKeyPK != "" {
 		queryInput.SetExclusiveStartKey(map[string]*dynamodb.AttributeValue{
 			"ChannelName": {
-				S: aws.String(lastPagekeyPK),
+				S: aws.String(lastPageKeyPK),
 			},
 			"LastPublishAtEpochMilli": {
 				N: aws.String(lastPageKeySK),
@@ -364,7 +364,7 @@ func queryActivePublisherProfile(distributionChannelName string, lastPagekeyPK s
 		log.Printf("error unmarshalling accountPublisher item: %s", err)
 		return resultItem, "", "", err
 	}
-	return resultItem, "", "", nil
+	return resultItem, pagePk, pageSk, nil
 }
 
 func takeAssignmentLock(accountId string, publisherProfileId string, processId string) error {

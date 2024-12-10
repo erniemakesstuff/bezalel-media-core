@@ -13,39 +13,41 @@ import (
 	"log"
 )
 
-type FarmScalerLockEntry struct {
-	SystemID        string
-	ProcessID       string
-	ExpiryTimeMilli int64
-	Version         int64
+type DaemonLockEntry struct {
+	SystemID             string
+	ProcessID            string
+	ExpiryTimeEpochMilli int64
+	Version              int64
 }
 
 const SYSTEM_RENDER_FARM = "RenderFarmScaler"
+const SYSTEM_HEARTBEAT_MONITOR = "HeartbeatMonitor"
 
-func InitRenderFarmEntry() error {
-	existingLock, err := GetLockEntry(SYSTEM_RENDER_FARM)
+func InitDaemonEntry(systemId string) error {
+	existingLock, err := GetLockEntry(systemId)
 	if err != nil {
 		log.Printf("error checking initial render farm lock entry: %s", err)
 		return err
 	}
 
 	if len(existingLock.SystemID) != 0 {
-		log.Printf("render farm lock entry already exists")
+		// No need to reinitialize. happy path.
+		log.Printf("daemon lock entry already exists for system %s", systemId)
 		return nil
 	}
 
-	entry := FarmScalerLockEntry{
-		SystemID:        SYSTEM_RENDER_FARM,
-		ProcessID:       "",
-		ExpiryTimeMilli: 0,
-		Version:         0,
+	entry := DaemonLockEntry{
+		SystemID:             systemId,
+		ProcessID:            "",
+		ExpiryTimeEpochMilli: 0,
+		Version:              0,
 	}
 	av, err := dynamodbattribute.MarshalMap(entry)
 	if err != nil {
 		log.Printf("got error marshalling farm lock entry: %s", err)
 		return err
 	}
-	tableName := dynamo_configuration.TABLE_FARM_SCALER_LOCK
+	tableName := dynamo_configuration.SYSTEM_DAEMON
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,
@@ -60,9 +62,9 @@ func InitRenderFarmEntry() error {
 	return err
 }
 
-func GetLockEntry(systemId string) (FarmScalerLockEntry, error) {
+func GetLockEntry(systemId string) (DaemonLockEntry, error) {
 	result, err := svc.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(dynamo_configuration.TABLE_FARM_SCALER_LOCK),
+		TableName: aws.String(dynamo_configuration.SYSTEM_DAEMON),
 		Key: map[string]*dynamodb.AttributeValue{
 			"SystemID": {
 				S: aws.String(systemId),
@@ -70,22 +72,22 @@ func GetLockEntry(systemId string) (FarmScalerLockEntry, error) {
 		},
 	})
 
-	resultItem := FarmScalerLockEntry{}
+	resultItem := DaemonLockEntry{}
 	if err != nil {
-		log.Printf("got error calling GetItem farm lock entry: %s", err)
+		log.Printf("got error calling GetItem daemon lock entry: %s", err)
 		return resultItem, err
 	}
 
 	err = dynamodbattribute.UnmarshalMap(result.Item, &resultItem)
 	if err != nil {
-		log.Printf("error unmarshalling farm lock entry: %s", err)
+		log.Printf("error unmarshalling daemon lock entry: %s", err)
 		return resultItem, err
 	}
 
 	return resultItem, err
 }
 
-func TakeSystemLockOwnership(systemId string, processId string) (bool, error) {
+func TakeSystemLockOwnership(systemId string, processId string, expiryTimeMilli int64) (bool, error) {
 	existingValue, err := GetLockEntry(systemId)
 	if err != nil {
 		log.Printf("failed to get existing lock entry: %s", err)
@@ -100,8 +102,7 @@ func TakeSystemLockOwnership(systemId string, processId string) (bool, error) {
 	// Check to see that no one updated before us.
 	oldVersionNumber := existingValue.Version
 	newVersionNumber := oldVersionNumber + 1
-	const tenMinutesMilli = 600_000
-	expiryTime := time.Now().UnixMilli() + tenMinutesMilli
+	expiryTime := time.Now().UnixMilli() + expiryTimeMilli
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"SystemID": {
@@ -122,7 +123,7 @@ func TakeSystemLockOwnership(systemId string, processId string) (bool, error) {
 				N: aws.String(strconv.FormatInt(expiryTime, 10)),
 			},
 		},
-		TableName:           aws.String(dynamo_configuration.TABLE_FARM_SCALER_LOCK),
+		TableName:           aws.String(dynamo_configuration.SYSTEM_DAEMON),
 		ReturnValues:        aws.String("NONE"),
 		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v, %s = :e", "ProcessID", "Version", "ExpiryTimeMilli")),
 		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "Version")),
@@ -136,9 +137,9 @@ func TakeSystemLockOwnership(systemId string, processId string) (bool, error) {
 	return true, err
 }
 
-func canTakeLock(lockEntry FarmScalerLockEntry, processId string) bool {
+func canTakeLock(lockEntry DaemonLockEntry, processId string) bool {
 	now := time.Now().UnixMilli()
-	if lockEntry.ExpiryTimeMilli < now {
+	if lockEntry.ExpiryTimeEpochMilli < now {
 		return true
 	}
 	return lockEntry.ProcessID == processId

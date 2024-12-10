@@ -13,14 +13,14 @@ import (
 
 type HashEntry struct {
 	EventHash string
-	TTL       int64
+	TTL       int64 // epoch seconds
 }
 
 func CreateHashEntry(rawContentHash string) error {
-	const threeDaysTTL = 259200000
+	const threeDaysTTL = 259200
 	entry := HashEntry{
 		EventHash: rawContentHash,
-		TTL:       time.Now().UnixMilli() + threeDaysTTL,
+		TTL:       time.Now().Unix() + threeDaysTTL,
 	}
 	av, err := dynamodbattribute.MarshalMap(entry)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 )
 
 func StartWatching() {
-	err := dal.InitRenderFarmEntry()
+	err := dal.InitDaemonEntry(dal.SYSTEM_RENDER_FARM)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -22,20 +22,22 @@ func processWatch(processId string) {
 	for { // infinite
 		// Check every 10 min if can take process lock
 		// if no, wait 10min
-		waitForOwnership(processId, dal.SYSTEM_RENDER_FARM)
+		const tenMinutesMilli = 600_000
+		waitForOwnership(processId, dal.SYSTEM_RENDER_FARM, tenMinutesMilli)
 
 		// if yes, update status, scaling, and increment expiry every 5 min
 		scaleCoreService()
 		scaleMediaTextConsumer()
 		scaleMediaRenderConsumer()
-		dal.TakeSystemLockOwnership(dal.SYSTEM_RENDER_FARM, processId)
+
+		dal.TakeSystemLockOwnership(dal.SYSTEM_RENDER_FARM, processId, tenMinutesMilli)
 		time.Sleep(time.Duration(5) * time.Minute)
 	}
 }
 
-func waitForOwnership(processId string, system string) {
+func waitForOwnership(processId string, system string, expiryTimeMilli int64) {
 	for {
-		hasOwnership, err := dal.TakeSystemLockOwnership(system, processId)
+		hasOwnership, err := dal.TakeSystemLockOwnership(system, processId, expiryTimeMilli)
 		if err != nil {
 			log.Printf("error verifying lock ownership for system %s: %s", system, err)
 		}

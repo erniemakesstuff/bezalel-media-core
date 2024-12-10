@@ -9,6 +9,7 @@ import (
 	handlers "github.com/bezalel-media-core/v2/handlers"
 	manifest "github.com/bezalel-media-core/v2/manifest"
 	pubsub "github.com/bezalel-media-core/v2/service/orchestration"
+	heartbeatDaemon "github.com/bezalel-media-core/v2/service/system/heartbeat"
 )
 
 const route_health = "/health"
@@ -36,6 +37,7 @@ func main() {
 	dynamo_configuration.Init()
 	manifest.GetManifestLoader()
 	go pubsub.PollForLedgerUpdates()
+	go heartbeatDaemon.StartHeartbeatWatch()
 	//go scaler.StartWatching() TODO Set this when ECS provisioned.
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

@@ -36,7 +36,7 @@ type Ledger struct {
 	MediaEventsVersion         int64
 	PublishEventsVersion       int64
 	HeartbeatCount             int64
-	TTL                        int64
+	TTL                        int64 // epoch seconds
 }
 type Event interface {
 	GetEventID() string
