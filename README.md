@@ -82,3 +82,16 @@ Medium - requires IntegrationToken: https://medium.com/me/settings/security
 Onboarding Reddit account: https://github.com/reddit-archive/reddit/wiki/OAuth2-Quick-Start-Example#first-steps (Create as script-app)
 
 
+
+# Dev Machines
+`ssh -i dev-ssh.pem ec2-user@35.88.242.180`
+On machine:
+Install Docker
+sudo yum update -y
+sudo yum -y install docker
+Start Docker
+sudo service docker start
+Access Docker commands in ec2-user user
+sudo usermod -a -G docker ec2-user
+sudo chmod 666 /var/run/docker.sock
+docker version

@@ -26,7 +26,8 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 		return []byte{}, err
 	}
 	// Seeing a race condition between downloading, and reading...
-	time.Sleep(time.Duration(5) * time.Second)
+	time.Sleep(time.Duration(15) * time.Second)
+
 	b, err := os.ReadFile(contentLookupKey)
 	if err != nil {
 		log.Printf("%s error reading temp file: %s", contentLookupKey, err)

@@ -123,8 +123,8 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		log.Printf("correlationID: %s error uploading YouTube video: %s", ledgerId, err)
 		return s.setAnyBadRequestCode(err)
 	}
-	defer file.Close()
-	defer os.Remove(videoFilename)
+	file.Close()
+	os.Remove(videoFilename)
 	/*
 		//Decision to bypass custom thumbnails by default since it won't be used for the majority of our accounts:
 		//	https://trello.com/c/4mAAlR7B#comment-6753642fccb3f1faac6b8c53
