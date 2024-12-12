@@ -90,7 +90,7 @@ func (s YouTubeDriver) getShortFormContents(pubc PublishCommand) (YouTubeContent
 }
 
 func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, contents YouTubeContents) error {
-	err := DownloadFile(contents.VideoContentLookupKey)
+	err := TryDownloadWithRetry(contents.VideoContentLookupKey, 0)
 	if err != nil {
 		log.Printf("correlationID: %s error deserializing shortform script contents: %s", ledgerId, err)
 		return err
@@ -130,7 +130,7 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		//	https://trello.com/c/4mAAlR7B#comment-6753642fccb3f1faac6b8c53
 		videoId := response.Id
 
-		err = DownloadFile(contents.VideoThumbnailContentLookupKey)
+		err = TryDownloadWithRetry(contents.VideoThumbnailContentLookupKey, 0)
 		if err != nil {
 			log.Printf("correlationID: %s error downloading thumbnail image: %s", ledgerId, err)
 			return err
@@ -194,6 +194,7 @@ func (s YouTubeDriver) setAnyBadRequestCode(err error) error {
 	isCredentialError := strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=403") ||
 		strings.Contains(fmt.Sprintf("%s", err), "httpStatusCode=401") ||
 		strings.Contains(fmt.Sprintf("%s", err), "Error 403") ||
+		strings.Contains(fmt.Sprintf("%s", err), "Error 401") ||
 		strings.Contains(fmt.Sprintf("%s", err), "Error 401")
 	if isCredentialError {
 		return fmt.Errorf("%s: YouTube profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)

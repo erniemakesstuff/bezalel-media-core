@@ -1,9 +1,9 @@
 package publisherdrivers
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -19,14 +19,11 @@ func LoadAsString(contentLookupKey string) (string, error) {
 }
 
 func LoadAsBytes(contentLookupKey string) ([]byte, error) {
-	err := DownloadFile(contentLookupKey)
+	err := tryDownloadWithRetry(contentLookupKey, 0)
 	if err != nil {
-		log.Printf("error checking %s media existence within LoadAsString: %s", contentLookupKey, err)
-		os.Remove(contentLookupKey)
+		log.Printf("%s error downloading file: %s", contentLookupKey, err)
 		return []byte{}, err
 	}
-	// Seeing a race condition between downloading, and reading...
-	time.Sleep(time.Duration(15) * time.Second)
 
 	b, err := os.ReadFile(contentLookupKey)
 	if err != nil {
@@ -41,6 +38,25 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func tryDownloadWithRetry(contentLookupKey string, retry int) error {
+	const maxRetry = 3
+	if retry > maxRetry {
+		return fmt.Errorf("max download retries exceeded for file: %s", contentLookupKey)
+	}
+	err := DownloadFile(contentLookupKey)
+	if err != nil {
+		log.Printf("error checking %s media existence within LoadAsString: %s", contentLookupKey, err)
+		os.Remove(contentLookupKey)
+		return err
+	}
+	// Seeing a race condition between downloading, and reading...
+	if _, err = os.Stat(contentLookupKey); err != nil {
+		log.Printf("error checking %s file doesn't exist after download, retrying: %s", contentLookupKey, err)
+		return tryDownloadWithRetry(contentLookupKey, retry+1)
+	}
+	return err
 }
 
 func DownloadFile(contentLookupKey string) error {
