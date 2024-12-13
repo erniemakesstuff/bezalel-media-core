@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -51,11 +52,15 @@ func TryDownloadWithRetry(contentLookupKey string, retry int) error {
 		os.Remove(contentLookupKey)
 		return err
 	}
+
 	// Seeing a race condition between downloading, and reading...
 	if _, err = os.Stat(contentLookupKey); err != nil {
 		log.Printf("error checking %s file doesn't exist after download, retrying: %s", contentLookupKey, err)
-		return TryDownloadWithRetry(contentLookupKey, retry+1)
+		newRetry := retry + 1
+		time.Sleep(time.Duration(newRetry) * time.Second)
+		return TryDownloadWithRetry(contentLookupKey, newRetry)
 	}
+
 	return err
 }
 

@@ -55,14 +55,14 @@ func GetTinyBlogJson() string {
 	sampleShot := TinyBlogSchema{
 		Instruction: "The instructions you received must be in the instruction field.",
 		BlogTitle:   "Your output blog title must be in the blogTitle field.",
-		BlogText:    "Your output blog content as plaintext must be in the blogText field.",
-		// TODO: Set this to at-least 0 https://trello.com/c/ie8Eh4n3
+		BlogText:    "Your output blog content as plaintext must be in the blogText field. This field must contain at most 280 characters.",
 		ImageDescriptionTexts: []string{"Descriptions of images that charachterize the blog text go here.",
 			"One image description per entry in this json string array.",
-			"You are allowed 0, 1, or 2 description entries.", "The array may be empty.",
+			"You are allowed 0, 1, or 2 description entries.",
 			"Describe the images using excruciating details for calling an image generator.",
 			`Include any details of the texture, lighting, text, objects, scenery,  placement arrangement, clothing, 
 			skin color, tone, and anything else to accurately describe the image.`,
+			"The array may be empty.",
 		},
 	}
 
