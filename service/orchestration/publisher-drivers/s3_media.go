@@ -19,7 +19,7 @@ func LoadAsString(contentLookupKey string) (string, error) {
 }
 
 func LoadAsBytes(contentLookupKey string) ([]byte, error) {
-	err := tryDownloadWithRetry(contentLookupKey, 0)
+	err := TryDownloadWithRetry(contentLookupKey, 0)
 	if err != nil {
 		log.Printf("%s error downloading file: %s", contentLookupKey, err)
 		return []byte{}, err
@@ -40,7 +40,7 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 	return b, nil
 }
 
-func tryDownloadWithRetry(contentLookupKey string, retry int) error {
+func TryDownloadWithRetry(contentLookupKey string, retry int) error {
 	const maxRetry = 3
 	if retry > maxRetry {
 		return fmt.Errorf("max download retries exceeded for file: %s", contentLookupKey)
@@ -54,7 +54,7 @@ func tryDownloadWithRetry(contentLookupKey string, retry int) error {
 	// Seeing a race condition between downloading, and reading...
 	if _, err = os.Stat(contentLookupKey); err != nil {
 		log.Printf("error checking %s file doesn't exist after download, retrying: %s", contentLookupKey, err)
-		return tryDownloadWithRetry(contentLookupKey, retry+1)
+		return TryDownloadWithRetry(contentLookupKey, retry+1)
 	}
 	return err
 }
