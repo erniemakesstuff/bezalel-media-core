@@ -14,8 +14,7 @@ func ScriptPayloadToBlogSchema(payload string) (manifest.BlogSchema, error) {
 	result := manifest.BlogSchema{}
 	err := json.Unmarshal([]byte(payload), &result)
 	if err != nil {
-		log.Printf("error unmarshalling script text to blog schema object: %s", err)
-		log.Printf("error payload: <%s>", payload)
+		log.Printf("error payload <%s> unmarshalling script text to blog schema object: %s", payload, err)
 		return result, err
 	}
 

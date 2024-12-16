@@ -125,8 +125,8 @@ func (s *FinalRenderWorkflow) collectFinalRenderMedia(
 			log.Printf("correlationID: %s WARN failed retrieve watermark text: %s", ledgerItem.LedgerID, err)
 		}
 		if watermarkText == "" {
-			log.Printf("correlationID: %s WARN watermark empty, setting default watermark: TrueVineMedia", ledgerItem.LedgerID)
-			watermarkText = "TrueVineMedia"
+			log.Printf("correlationID: %s WARN watermark empty, setting default watermark: Kherem.com", ledgerItem.LedgerID)
+			watermarkText = "Kherem.com"
 		}
 		result := root.ToMetadataEventEntry(tables.FINAL_RENDER, p.PublisherProfileID, tables.MEDIA_RENDER)
 		result.WatermarkText = watermarkText

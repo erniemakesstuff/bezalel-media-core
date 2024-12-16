@@ -117,6 +117,7 @@ func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.Accoun
 		return s.setAnyBadRequestCode(err)
 	}
 
+	// You can access tweet by x.com/anyuser/status/<TweetId>
 	log.Printf("correlationID: %s tweeted: %s", ledgerId, gotwi.StringValue(res.Data.ID))
 	return err
 }
