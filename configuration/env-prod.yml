@@ -1,5 +1,5 @@
 # Publishing
-DefaultPublisherWatermarkText: TrueVineMedia
+DefaultPublisherWatermarkText: Kherem.com
 AssignmentLockMilliTTL: 5400000
 PublishLockMilliTTL: 5400000
 AppendLedgerMaxRetries: 5
@@ -15,3 +15,11 @@ PollPeriodMilli: 1500
 MaxMessagesPerPoll: 10
 MaxConsumers: 1
 SNSMediaTopic: arn:aws:sns:us-west-2:971422718801:media-topic
+
+
+# Rate Limits
+MaxRequestYouTubeMinute: 1
+MaxRequestsInstagramMinute: 1
+MaxRequestsTwitterMinute: 1
+MaxRequestsMediumMinute: 1
+MaxRequestsRedditMinute: 1

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"github.com/bezalel-media-core/v2/manifest"
@@ -116,6 +117,10 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 	if err != nil {
 		log.Printf("correlationID: %s error opening video file: %s", ledgerId, err)
 		return "", err
+	}
+
+	if !dal.IsCallable(dal.RATE_API_YOUTUBE_UPLOAD, env.GetEnvConfigs().MaxRequestYouTubeMinute) {
+		return "", fmt.Errorf("rate limit breached: %s", dal.RATE_API_YOUTUBE_UPLOAD)
 	}
 
 	uploadVideoResp, err := call.Media(file).Do()

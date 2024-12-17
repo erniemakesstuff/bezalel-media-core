@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ChimeraCoder/anaconda"
+	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	manifest "github.com/bezalel-media-core/v2/manifest"
@@ -112,6 +113,9 @@ func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.Accoun
 		}
 	}
 
+	if !dal.IsCallable(dal.RATE_API_TWITTER_POST, env.GetEnvConfigs().MaxRequestsTwitterMinute) {
+		return "", fmt.Errorf("rate limit breached: %s", dal.RATE_API_TWITTER_POST)
+	}
 	res, err := managetweet.Create(context.Background(), c, p)
 	if err != nil {
 		return "", s.setAnyBadRequestCode(err)

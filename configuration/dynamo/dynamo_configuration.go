@@ -15,6 +15,7 @@ const TABLE_OVERRIDE_TEMPLATES = "OverrideTemplates"
 const TABLE_DEDUPE_EVENTS = "DedupeEvents"
 const SYSTEM_DAEMON = "SystemDaemon"
 const TABLE_HEARTBEAT = "Heartbeat"
+const TABLE_RATE_LIMIT = "RateLimit"
 
 // Although status is derivable from ledger data, needed for index-lookup replayability.
 const EVENT_LEDGER_STATE_GSI_NAME = "LedgerStatusIndex"   // {Status, StartedAtEpochMilli}
@@ -32,9 +33,11 @@ func Init() {
 	createEventDedupeTable(svc)
 	createSystemDaemon(svc)
 	createHeartbeat(svc)
+	createRateLimit(svc)
 	setTTL(svc, TABLE_DEDUPE_EVENTS)
 	setTTL(svc, TABLE_EVENT_LEDGER)
 	setTTL(svc, TABLE_HEARTBEAT)
+	setTTL(svc, TABLE_RATE_LIMIT)
 }
 
 // Creates Accounts Table + PublisherProfile details.
@@ -256,6 +259,28 @@ func createHeartbeat(svc *dynamodb.DynamoDB) {
 			{
 				AttributeName: aws.String("LedgerID"),
 				KeyType:       aws.String("RANGE"),
+			},
+		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
+		TableName:   aws.String(tableName),
+	}
+	createTable(svc, input, tableName)
+}
+
+func createRateLimit(svc *dynamodb.DynamoDB) {
+	tableName := TABLE_RATE_LIMIT
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				// <DAY>.<5min increments>
+				AttributeName: aws.String("TimeKey"),
+				AttributeType: aws.String("S"),
+			},
+		},
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("TimeKey"),
+				KeyType:       aws.String("HASH"),
 			},
 		},
 		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),

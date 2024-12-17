@@ -35,6 +35,12 @@ type EnvConfigVals struct {
 	ECSMediaConsumerTextTaskName   string `yaml:"ECSMediaConsumerTextTaskName"`   // TODO
 	ECSMediaConsumerRenderTaskName string `yaml:"ECSMediaConsumerRenderTaskName"` // TODO
 	ConsumerTaskPerMessages        int    `yaml:"ConsumerTaskPerMessages"`        // TODO
+
+	MaxRequestYouTubeMinute    int64 `yaml:"MaxRequestYouTubeMinute"`
+	MaxRequestsInstagramMinute int64 `yaml:"MaxRequestsInstagramMinute"`
+	MaxRequestsTwitterMinute   int64 `yaml:"MaxRequestsTwitterMinute"`
+	MaxRequestsMediumMinute    int64 `yaml:"MaxRequestsMediumMinute"`
+	MaxRequestsRedditMinute    int64 `yaml:"MaxRequestsRedditMinute"`
 }
 
 var configSync sync.Once

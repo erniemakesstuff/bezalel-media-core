@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	manifest "github.com/bezalel-media-core/v2/manifest"
@@ -74,6 +75,10 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 	if err != nil {
 		log.Printf("correlationID: %s error retrieving user context: %s", ledgerId, err)
 		return "", s.setAnyBadRequestCode(err)
+	}
+
+	if !dal.IsCallable(dal.RATE_API_MEDIUM_POST, env.GetEnvConfigs().MaxRequestsMediumMinute) {
+		return "", fmt.Errorf("rate limit breached: %s", dal.RATE_API_MEDIUM_POST)
 	}
 
 	p, err := m2.CreatePost(medium.CreatePostOptions{

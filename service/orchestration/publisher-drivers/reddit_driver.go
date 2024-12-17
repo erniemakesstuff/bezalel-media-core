@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
+	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
 	tables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	manifest "github.com/bezalel-media-core/v2/manifest"
@@ -105,6 +107,12 @@ func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountP
 		log.Printf("correlationID: %s error creating Reddit client: %s", ledgerId, err)
 	}
 	postIds := []string{}
+	// May want to call inside of below loop.
+	// However, treating the multiple uploads as "one" request.
+	// If Reddit rate limits, then we end-up in a partial success state anyway. Same problem.
+	if !dal.IsCallable(dal.RATE_API_REDDIT_POST, env.GetEnvConfigs().MaxRequestsMediumMinute) {
+		return "", fmt.Errorf("rate limit breached: %s", dal.RATE_API_REDDIT_POST)
+	}
 	for _, r := range redditPayloads {
 		post, _, err := client.Post.SubmitText(context.Background(), reddit.SubmitTextRequest{
 			Subreddit: r.Subreddit,
@@ -116,6 +124,7 @@ func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountP
 		}
 		fmt.Printf("correlationID: %s Reddit text post is available at: %s", ledgerId, post.URL)
 		postIds = append(postIds, post.FullID)
+		time.Sleep(30)
 	}
 
 	return strings.Join(postIds, ","), err
