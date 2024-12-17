@@ -30,6 +30,7 @@ func PollForLedgerUpdates() {
 	log.Printf("QUEUE URL: %s", *queueURL)
 	for i := 0; i < config.GetEnvConfigs().MaxConsumers; i++ {
 		go startConsumer(queueURL)
+		time.Sleep(time.Duration(3) * time.Second)
 	}
 }
 
