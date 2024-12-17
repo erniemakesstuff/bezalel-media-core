@@ -332,6 +332,8 @@ type PublishEvent struct {
 	AccountID           string // PublisherProfile owner.
 	RootMediaEventID    string
 	ProcessOwner        string // Agent guid performing the publish.
+
+	ChannelContentIDsCsv string // The content IDs; csv; from the downstream service YouTube, Twitter, etc.
 }
 
 func (m *PublishEvent) GetEventID() string {

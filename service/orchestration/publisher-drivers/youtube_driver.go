@@ -31,26 +31,26 @@ type YouTubeContents struct {
 *
 * YouTube Profiles need to be phone verified in order to enable Thumbnail uploads!
  */
-func (s YouTubeDriver) Publish(pubCommand PublishCommand) error {
+func (s YouTubeDriver) Publish(pubCommand PublishCommand) (string, error) {
 	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 	client, err := auth.GetClient(acc.OauthToken, acc.OauthRefreshToken, acc.OauthExpiryMilliSec, acc.OauthTokenType)
 	if err != nil {
 		log.Printf("correlationID: %s error creating http client for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 	svc, err := youtube.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		log.Printf("correlationID: %s error creating youtube service for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 	contents, err := s.loadVideoDetails(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error fetching contents for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 	return s.uploadMedia(pubCommand.RootPublishEvent.LedgerID, svc, contents)
 }
@@ -89,17 +89,17 @@ func (s YouTubeDriver) getShortFormContents(pubc PublishCommand) (YouTubeContent
 	return result, nil
 }
 
-func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, contents YouTubeContents) error {
+func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, contents YouTubeContents) (string, error) {
 	err := TryDownloadWithRetry(contents.VideoContentLookupKey, 0)
 	if err != nil {
 		log.Printf("correlationID: %s error deserializing shortform script contents: %s", ledgerId, err)
-		return err
+		return "", err
 	}
 	videoFilename := s.getDescriptiveFilename(contents.VideoTitle)
 	err = os.Rename(contents.VideoContentLookupKey, videoFilename)
 	if err != nil {
 		log.Printf("correlationID: %s error renaming file: %s", ledgerId, err)
-		return err
+		return "", err
 	}
 
 	upload := &youtube.Video{
@@ -115,13 +115,13 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 	file, err := os.Open(videoFilename)
 	if err != nil {
 		log.Printf("correlationID: %s error opening video file: %s", ledgerId, err)
-		return err
+		return "", err
 	}
 
-	_, err = call.Media(file).Do()
+	uploadVideoResp, err := call.Media(file).Do()
 	if err != nil {
 		log.Printf("correlationID: %s error uploading YouTube video: %s", ledgerId, err)
-		return s.setAnyBadRequestCode(err)
+		return "", s.setAnyBadRequestCode(err)
 	}
 	file.Close()
 	os.Remove(videoFilename)
@@ -152,7 +152,7 @@ func (s YouTubeDriver) uploadMedia(ledgerId string, svc *youtube.Service, conten
 		defer os.Remove(contents.VideoThumbnailContentLookupKey)
 	*/
 
-	return s.setAnyBadRequestCode(err)
+	return uploadVideoResp.Id, s.setAnyBadRequestCode(err)
 }
 
 func (s YouTubeDriver) getDescriptiveFilename(videoTitle string) string {

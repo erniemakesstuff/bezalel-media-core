@@ -25,23 +25,23 @@ type TwitterPostContents struct {
 	Images        []string
 }
 
-func (s TwitterDriver) Publish(pubCommand PublishCommand) error {
+func (s TwitterDriver) Publish(pubCommand PublishCommand) (string, error) {
 	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for Twitter driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMedia)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for tinyblog: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
-	err = s.publishTwitterPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayload)
+	id, err := s.publishTwitterPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayload)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading blog contents to Twitter: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
-	return err
+	return id, err
 }
 
 func (s TwitterDriver) loadMediaContents(mediaEvent tables.MediaEvent) (TwitterPostContents, error) {
@@ -80,7 +80,7 @@ func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (man
 	return ScriptPayloadToTinyBlogSchema(payload)
 }
 
-func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.AccountPublisher, tweetPayload TwitterPostContents) error {
+func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.AccountPublisher, tweetPayload TwitterPostContents) (string, error) {
 	mediaIds, err := s.uploadImages(account, tweetPayload)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading twitter images: %s", ledgerId, err)
@@ -114,12 +114,12 @@ func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.Accoun
 
 	res, err := managetweet.Create(context.Background(), c, p)
 	if err != nil {
-		return s.setAnyBadRequestCode(err)
+		return "", s.setAnyBadRequestCode(err)
 	}
 
 	// You can access tweet by x.com/anyuser/status/<TweetId>
 	log.Printf("correlationID: %s tweeted: %s", ledgerId, gotwi.StringValue(res.Data.ID))
-	return err
+	return *res.Data.ID, err
 }
 
 func (s TwitterDriver) setAnyBadRequestCode(err error) error {

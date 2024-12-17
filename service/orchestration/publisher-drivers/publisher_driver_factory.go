@@ -13,7 +13,7 @@ type PublishCommand struct {
 }
 
 type PublisherDriver interface {
-	Publish(PublishCommand) error
+	Publish(PublishCommand) (string, error)
 }
 
 func GetDriver(dsitributionChannelName string) (PublisherDriver, error) {

@@ -18,25 +18,25 @@ type MediumBlogContents struct {
 	BlogTitle string
 }
 
-func (s MediumDriver) Publish(pubCommand PublishCommand) error {
+func (s MediumDriver) Publish(pubCommand PublishCommand) (string, error) {
 	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for medium driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 
 	blogPayload, err := s.loadMediaContents(pubCommand.FinalRenderMedia)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 
-	err = s.publishMediumArticle(pubCommand.RootPublishEvent.LedgerID, acc.PublisherAPISecretKey, blogPayload, acc)
+	id, err := s.publishMediumArticle(pubCommand.RootPublishEvent.LedgerID, acc.PublisherAPISecretKey, blogPayload, acc)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading blog contents to Medium: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
-	return err
+	return id, err
 }
 
 func (s MediumDriver) loadMediaContents(mediaEvent tables.MediaEvent) (MediumBlogContents, error) {
@@ -62,7 +62,7 @@ func (s MediumDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (mani
 	return ScriptPayloadToBlogSchema(payload)
 }
 
-func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, blogPayload MediumBlogContents, account tables.AccountPublisher) error {
+func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, blogPayload MediumBlogContents, account tables.AccountPublisher) (string, error) {
 	// If you have a self-issued access token, you can skip these steps and
 	// create a new client directly:
 	m2 := medium.NewClientWithAccessToken(apiSecret)
@@ -73,7 +73,7 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 	u, err := m2.GetUser("")
 	if err != nil {
 		log.Printf("correlationID: %s error retrieving user context: %s", ledgerId, err)
-		return s.setAnyBadRequestCode(err)
+		return "", s.setAnyBadRequestCode(err)
 	}
 
 	p, err := m2.CreatePost(medium.CreatePostOptions{
@@ -84,13 +84,13 @@ func (s MediumDriver) publishMediumArticle(ledgerId string, apiSecret string, bl
 		PublishStatus: medium.PublishStatusPublic,
 	})
 	if err != nil {
-		return s.setAnyBadRequestCode(err)
+		return "", s.setAnyBadRequestCode(err)
 	}
 
 	// Confirm everything went ok. p.URL has the location of the created post.
 	// TODO: send publish-url to work-engagement queue.
 	log.Println(u, p)
-	return err
+	return p.ID, err
 }
 
 func (s MediumDriver) setAnyBadRequestCode(err error) error {

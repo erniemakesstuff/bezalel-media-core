@@ -21,23 +21,23 @@ type RedditDriverContents struct {
 	Subreddit string
 }
 
-func (s RedditDriver) Publish(pubCommand PublishCommand) error {
+func (s RedditDriver) Publish(pubCommand PublishCommand) (string, error) {
 	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for Reddit driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
 	blogPayloads, err := s.loadMediaContents(pubCommand.FinalRenderMedia, acc)
 	if err != nil {
 		log.Printf("correlationID: %s error downloading content for blog: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
-	err = s.publishRedditPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayloads)
+	id, err := s.publishRedditPost(pubCommand.RootPublishEvent.LedgerID, acc, blogPayloads)
 	if err != nil {
 		log.Printf("correlationID: %s error uploading blog contents to Reddit: %s", pubCommand.RootPublishEvent.LedgerID, err)
-		return err
+		return "", err
 	}
-	return err
+	return id, err
 }
 
 func (s RedditDriver) loadMediaContents(mediaEvent tables.MediaEvent, pubAccount tables.AccountPublisher) ([]RedditDriverContents, error) {
@@ -91,7 +91,7 @@ func (s RedditDriver) scriptPayloadToBlogJson(payload string) (manifest.BlogSche
 	return result, err
 }
 
-func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountPublisher, redditPayloads []RedditDriverContents) error {
+func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountPublisher, redditPayloads []RedditDriverContents) (string, error) {
 	// TODO: Move PublisherAPISecretID to be a global-service config.
 	// Retain the AccountPublisher fields; necessary.
 	// https://trello.com/c/ol3Lvvop
@@ -104,7 +104,7 @@ func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountP
 	if err != nil {
 		log.Printf("correlationID: %s error creating Reddit client: %s", ledgerId, err)
 	}
-
+	postIds := []string{}
 	for _, r := range redditPayloads {
 		post, _, err := client.Post.SubmitText(context.Background(), reddit.SubmitTextRequest{
 			Subreddit: r.Subreddit,
@@ -112,12 +112,13 @@ func (s RedditDriver) publishRedditPost(ledgerId string, account tables.AccountP
 			Text:      r.TextBody,
 		})
 		if err != nil {
-			return s.setAnyBadRequestCode(err)
+			return "", s.setAnyBadRequestCode(err)
 		}
 		fmt.Printf("correlationID: %s Reddit text post is available at: %s", ledgerId, post.URL)
+		postIds = append(postIds, post.FullID)
 	}
 
-	return err
+	return strings.Join(postIds, ","), err
 }
 
 func (s RedditDriver) setAnyBadRequestCode(err error) error {

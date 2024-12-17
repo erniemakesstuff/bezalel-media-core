@@ -51,7 +51,7 @@ func TestMediumPublish(t *testing.T) {
 		RootPublishEvent: pubEvent,
 	}
 	driver := MediumDriver{}
-	err := driver.Publish(cmd)
+	_, err := driver.Publish(cmd)
 	if err != nil {
 		log.Printf("publisher error: %s", err)
 	}
@@ -69,7 +69,7 @@ func TestTwitterPublish(t *testing.T) {
 		RootPublishEvent: pubEvent,
 	}
 	driver := TwitterDriver{}
-	err := driver.Publish(cmd)
+	_, err := driver.Publish(cmd)
 	if err != nil {
 		log.Printf("publisher error: %s", err)
 	}
@@ -87,7 +87,7 @@ func TestRedditPublish(t *testing.T) {
 		RootPublishEvent: pubEvent,
 	}
 	driver := RedditDriver{}
-	err := driver.Publish(cmd)
+	_, err := driver.Publish(cmd)
 	if err != nil {
 		log.Printf("publisher error: %s", err)
 	}
@@ -124,7 +124,7 @@ func TestYouTubePublish(t *testing.T) {
 		},
 	}
 	driver := YouTubeDriver{}
-	err := driver.Publish(cmd)
+	_, err := driver.Publish(cmd)
 	if err != nil {
 		log.Printf("publisher error: %s", err)
 	}
