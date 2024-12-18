@@ -9,6 +9,7 @@ import (
 )
 
 const BAD_REQUEST_PROFILE_CODE = "BadRequestProfileCode"
+const BAD_REQUEST_POISON_FOR_CHANNEL = "PoisonRequestCannotBePublishedToChannel_ExcludeChannelFromReceivingThisEvent"
 
 func ScriptPayloadToBlogSchema(payload string) (manifest.BlogSchema, error) {
 	result := manifest.BlogSchema{}

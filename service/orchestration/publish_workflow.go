@@ -66,6 +66,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
 		s.handleBadRequestCode(err, ledgerId, pubCommand.RootPublishEvent)
+		s.handlePoisonMessageForChannel(err, ledgerId, pubCommand.RootPublishEvent)
 		// Try release publish lock
 		dal.ReleasePublishLock(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID, processId)
 		return err
@@ -105,6 +106,23 @@ func (s *PublishWorkFlow) handleBadRequestCode(err error, ledgerId string, pubEv
 	expiredEvent.PublishStatus = tables.EXPIRED
 	dal.AppendLedgerPublishEvents(ledgerId, []tables.PublishEvent{expiredEvent})
 	dal.SetProfileStaleFlag(pubEvent.AccountID, pubEvent.PublisherProfileID, true)
+	dal.ForceAllLocksFree(pubEvent.AccountID, pubEvent.PublisherProfileID)
+}
+
+func (s *PublishWorkFlow) handlePoisonMessageForChannel(err error, ledgerId string, pubEvent tables.PublishEvent) {
+	if !strings.Contains(fmt.Sprintf("%s", err), drivers.BAD_REQUEST_POISON_FOR_CHANNEL) {
+		return
+	}
+	log.Printf("correlationID: %s received bad  poison request from drivers - excluding channel: %s %s",
+		ledgerId, pubEvent.AccountID, pubEvent.PublisherProfileID)
+	expiredEvent := pubEvent
+	expiredEvent.PublishStatus = tables.EXPIRED
+
+	andonPublication := pubEvent
+	andonPublication.AccountID = "ANDON - stop publishing to this channel"
+	andonPublication.PublisherProfileID = "ANDON - stop publishing to this channel"
+	andonPublication.PublishStatus = tables.COMPLETE
+	dal.AppendLedgerPublishEvents(ledgerId, []tables.PublishEvent{expiredEvent, andonPublication})
 	dal.ForceAllLocksFree(pubEvent.AccountID, pubEvent.PublisherProfileID)
 }
 

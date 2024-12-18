@@ -83,7 +83,7 @@ func (s TwitterDriver) loadScriptPayload(rootFinalRender tables.MediaEvent) (man
 
 func (s TwitterDriver) publishTwitterPost(ledgerId string, account tables.AccountPublisher, tweetPayload TwitterPostContents) (string, error) {
 	if len(tweetPayload.TweetTextBody) > 280 {
-		return "", fmt.Errorf("tweet payload is larger than 280 characters")
+		return "", fmt.Errorf("tweet payload is larger than 280 characters: %s", BAD_REQUEST_POISON_FOR_CHANNEL)
 	}
 	mediaIds, err := s.uploadImages(account, tweetPayload)
 	if err != nil {
