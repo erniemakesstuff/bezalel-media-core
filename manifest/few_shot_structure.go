@@ -58,11 +58,11 @@ func GetTinyBlogJson() string {
 		BlogText:    "Your output blog content as plaintext must be in the blogText field. This field is limited to length 280 characters.",
 		ImageDescriptionTexts: []string{"Descriptions of images that charachterize the blog text go here.",
 			"One image description per entry in this json string array.",
-			"You are allowed 0, 1, or 2 description entries.",
+			"Randomly decide to create 0, 1, or 2 description entries.",
 			"Describe the images using excruciating details for calling an image generator.",
 			`Include any details of the texture, lighting, text, objects, scenery,  placement arrangement, clothing, 
 			skin color, tone, and anything else to accurately describe the image.`,
-			"The array may be empty.",
+			"The array may be empty if you have randomly decided on 0 description entries in json:imageDescriptionTexts.",
 		},
 	}
 
