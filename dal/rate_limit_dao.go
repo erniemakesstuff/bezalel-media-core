@@ -56,8 +56,11 @@ func IsCallable(apiName string, maxRequestsPerMin int64) bool {
 		},
 		TableName:    aws.String(dynamo_configuration.TABLE_RATE_LIMIT),
 		ReturnValues: aws.String("ALL_NEW"),
-		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v0 SET %s = :v1, %s = :v2",
-			"RequestCount", "TTL", "MaxRequests")),
+		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v0 SET #ttlName = :v1, %s = :v2",
+			"RequestCount", "MaxRequests")),
+		ExpressionAttributeNames: map[string]*string{
+			"#ttlName": aws.String("TTL"),
+		},
 	}
 
 	response, err := svc.UpdateItem(input)

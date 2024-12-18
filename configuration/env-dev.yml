@@ -16,3 +16,10 @@ MaxMessagesPerPoll: 10
 MaxConsumers: 1
 SNSMediaTopic: arn:aws:sns:us-west-2:971422718801:media-topic
 ConsumerTaskPerMessages: 500
+
+# Rate Limits
+MaxRequestYouTubeMinute: 1
+MaxRequestsInstagramMinute: 1
+MaxRequestsTwitterMinute: 1
+MaxRequestsMediumMinute: 1
+MaxRequestsRedditMinute: 1
