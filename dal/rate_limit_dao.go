@@ -53,14 +53,11 @@ func IsCallable(apiName string, maxRequestsPerMin int64) bool {
 			":v2": {
 				N: aws.String(strconv.FormatInt(entry.MaxRequests, 10)),
 			},
-			":v3": {
-				N: aws.String(entry.RateTimeKeyBucket),
-			},
 		},
 		TableName:    aws.String(dynamo_configuration.TABLE_RATE_LIMIT),
 		ReturnValues: aws.String("ALL_NEW"),
-		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v0 SET %s = :v1, %s = :v2, %s = :v3",
-			"RequestCount", "TTL", "MaxRequests", "RateTimeKeyBucket")),
+		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v0 SET %s = :v1, %s = :v2",
+			"RequestCount", "TTL", "MaxRequests")),
 	}
 
 	response, err := svc.UpdateItem(input)

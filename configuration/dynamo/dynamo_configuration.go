@@ -273,13 +273,13 @@ func createRateLimit(svc *dynamodb.DynamoDB) {
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				// <DAY>.<5min increments>
-				AttributeName: aws.String("TimeKey"),
+				AttributeName: aws.String("RateTimeKeyBucket"),
 				AttributeType: aws.String("S"),
 			},
 		},
 		KeySchema: []*dynamodb.KeySchemaElement{
 			{
-				AttributeName: aws.String("TimeKey"),
+				AttributeName: aws.String("RateTimeKeyBucket"),
 				KeyType:       aws.String("HASH"),
 			},
 		},
