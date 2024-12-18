@@ -62,7 +62,7 @@ func GetTinyBlogJson() string {
 			"Describe the images using excruciating details for calling an image generator.",
 			`Include any details of the texture, lighting, text, objects, scenery,  placement arrangement, clothing, 
 			skin color, tone, and anything else to accurately describe the image.`,
-			"The array may be empty if you have randomly decided on 0 description entries in json:imageDescriptionTexts.",
+			"The json:imageDescriptionTexts array may be empty if you have randomly decided on 0 description entries.",
 		},
 	}
 
