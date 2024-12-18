@@ -55,7 +55,7 @@ func GetTinyBlogJson() string {
 	sampleShot := TinyBlogSchema{
 		Instruction: "The instructions you received must be in the instruction field.",
 		BlogTitle:   "Your output blog title must be in the blogTitle field.",
-		BlogText:    "Your output blog content as plaintext must be in the blogText field. This field must contain at most 280 characters.",
+		BlogText:    "Your output blog content as plaintext must be in the blogText field. This field is limited to length 280 characters.",
 		ImageDescriptionTexts: []string{"Descriptions of images that charachterize the blog text go here.",
 			"One image description per entry in this json string array.",
 			"You are allowed 0, 1, or 2 description entries.",

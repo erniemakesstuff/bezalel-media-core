@@ -80,7 +80,8 @@ scriptPrompts:
     
     Rewrite the following text into a pithy Twitter post.
     Ensure that your content is brand safe and advertiser friendly.
-    Your blog text output should be less than 280 characters long, and should use emojis in your writing.
+    Your blog text output should be less than 280 characters length, and should use emojis in your writing.
+    json:blogText should at most 280 characters in length.
     Your output should be valid json:
     $TINY_BLOG_JSON_FORMAT
     ###

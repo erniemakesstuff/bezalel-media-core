@@ -42,7 +42,7 @@ func LoadAsBytes(contentLookupKey string) ([]byte, error) {
 }
 
 func TryDownloadWithRetry(contentLookupKey string, retry int) error {
-	const maxRetry = 3
+	const maxRetry = 5
 	if retry > maxRetry {
 		return fmt.Errorf("max download retries exceeded for file: %s", contentLookupKey)
 	}
@@ -57,7 +57,7 @@ func TryDownloadWithRetry(contentLookupKey string, retry int) error {
 	if _, err = os.Stat(contentLookupKey); err != nil {
 		log.Printf("error checking %s file doesn't exist after download, retrying: %s", contentLookupKey, err)
 		newRetry := retry + 1
-		time.Sleep(time.Duration(newRetry) * time.Second)
+		time.Sleep(time.Duration(10) * time.Second)
 		return TryDownloadWithRetry(contentLookupKey, newRetry)
 	}
 
