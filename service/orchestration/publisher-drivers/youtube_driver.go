@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
@@ -34,14 +33,14 @@ type YouTubeContents struct {
 * YouTube Profiles need to be phone verified in order to enable Thumbnail uploads!
  */
 func (s YouTubeDriver) Publish(pubCommand PublishCommand) (string, error) {
-	acc, err := s.getPublisherCredentials(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
+	acc, err := dal.GetPublisherAccount(pubCommand.RootPublishEvent.AccountID, pubCommand.RootPublishEvent.PublisherProfileID)
 	if err != nil {
 		log.Printf("correlationID: %s error loading publisher account for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return "", err
 	}
 
 	googleAuthClient := auth.GoogleAuth{}
-	client, err := googleAuthClient.GetClient(acc.OauthToken, acc.OauthRefreshToken, acc.OauthExpiryEpochSec, acc.OauthTokenType)
+	client, err := googleAuthClient.GetClient(acc)
 	if err != nil {
 		log.Printf("correlationID: %s error creating http client for YouTube driver: %s", pubCommand.RootPublishEvent.LedgerID, err)
 		return "", err
@@ -57,19 +56,6 @@ func (s YouTubeDriver) Publish(pubCommand PublishCommand) (string, error) {
 		return "", err
 	}
 	return s.uploadMedia(pubCommand.RootPublishEvent.LedgerID, svc, contents)
-}
-
-func (s YouTubeDriver) getPublisherCredentials(publisherAccountID string, publisherProfileID string) (tables.AccountPublisher, error) {
-	acc, err := dal.GetPublisherAccount(publisherAccountID, publisherProfileID)
-	if err != nil {
-		return tables.AccountPublisher{}, err
-	}
-	isExpired := acc.OauthExpiryEpochSec < time.Now().Unix()
-	if isExpired {
-		return s.refreshAccountCredentials(acc)
-	}
-
-	return acc, err
 }
 
 func (s YouTubeDriver) refreshAccountCredentials(account tables.AccountPublisher) (tables.AccountPublisher, error) {

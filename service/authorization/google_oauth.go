@@ -10,6 +10,7 @@ import (
 	"time"
 
 	dal "github.com/bezalel-media-core/v2/dal"
+	dalTables "github.com/bezalel-media-core/v2/dal/tables/v1"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -54,7 +55,7 @@ https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 
 type GoogleAuth struct{}
 
-func (self *GoogleAuth) GetClient(bearerToken string, refreshToken string, expiresAtEpochSec int64, tokenType string) (*http.Client, error) {
+func (self *GoogleAuth) GetClient(accountPublisher dalTables.AccountPublisher) (*http.Client, error) {
 	ctx := context.Background()
 	config, err := self.getGoogleConfig()
 	if err != nil {
@@ -63,13 +64,24 @@ func (self *GoogleAuth) GetClient(bearerToken string, refreshToken string, expir
 	}
 
 	token := oauth2.Token{
-		AccessToken:  bearerToken,
-		RefreshToken: refreshToken,
-		Expiry:       time.Unix(expiresAtEpochSec, 0),
-		ExpiresIn:    expiresAtEpochSec,
-		TokenType:    tokenType,
+		AccessToken:  accountPublisher.OauthToken,
+		RefreshToken: accountPublisher.OauthRefreshToken,
+		Expiry:       time.Unix(accountPublisher.OauthExpiryEpochSec, 0),
+		ExpiresIn:    accountPublisher.OauthExpiryEpochSec,
+		TokenType:    accountPublisher.OauthTokenType,
 	}
-	return config.Client(ctx, &token), err
+	httpClient, err := config.Client(ctx, &token), err
+	if err != nil {
+		return &http.Client{}, err
+	}
+
+	// An automatic refresh occurre. Persist latest tokens to profile in db.
+	if accountPublisher.OauthRefreshToken != token.RefreshToken {
+		err = dal.StoreOauthCredentials(accountPublisher.AccountID, accountPublisher.PublisherProfileID,
+			token.AccessToken, token.RefreshToken, token.Expiry.Unix(), token.TokenType)
+	}
+
+	return httpClient, err
 }
 
 func (self *GoogleAuth) getGoogleConfig() (*oauth2.Config, error) {
@@ -94,10 +106,10 @@ func (self *GoogleAuth) exchangeToken(code string) (*oauth2.Token, error) {
 	}
 	tok, err := config.Exchange(context.Background(), code)
 	if err != nil {
-		log.Fatalf("Unable to retrieve token %v", err)
+		log.Printf("Unable to retrieve token %v", err)
 	}
 
-	return tok, nil
+	return tok, err
 }
 
 func (self *GoogleAuth) saveToken(file string, token *oauth2.Token) {
