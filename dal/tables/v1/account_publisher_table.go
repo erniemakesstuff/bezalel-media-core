@@ -46,7 +46,7 @@ type AccountPublisher struct {
 	OauthToken            string
 	OauthRefreshToken     string
 	OauthTokenType        string
-	OauthExpiryMilliSec   int64
+	OauthExpiryEpochSec   int64
 
 	PublisherLanguage string // ISO 639 https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
 	PublisherNiche    string // Drama, news, ...

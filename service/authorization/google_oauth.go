@@ -52,29 +52,27 @@ For more information about the client_secrets.json file format, please visit:
 https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 `
 
-func GetClient(bearerToken string, refreshToken string, expiresAtMilliSec int64, tokenType string) (*http.Client, error) {
+type GoogleAuth struct{}
+
+func (self *GoogleAuth) GetClient(bearerToken string, refreshToken string, expiresAtEpochSec int64, tokenType string) (*http.Client, error) {
 	ctx := context.Background()
-	config, err := getGoogleConfig()
+	config, err := self.getGoogleConfig()
 	if err != nil {
 		log.Printf("failed to load google config: %s", err)
 		return nil, err
-	}
-	expiresInSec := (expiresAtMilliSec - time.Now().UnixMilli()) / 1000
-	if expiresInSec < 0 {
-		expiresInSec = 0
 	}
 
 	token := oauth2.Token{
 		AccessToken:  bearerToken,
 		RefreshToken: refreshToken,
-		Expiry:       time.UnixMilli(expiresAtMilliSec),
-		ExpiresIn:    expiresInSec,
+		Expiry:       time.Unix(expiresAtEpochSec, 0),
+		ExpiresIn:    expiresAtEpochSec,
 		TokenType:    tokenType,
 	}
 	return config.Client(ctx, &token), err
 }
 
-func getGoogleConfig() (*oauth2.Config, error) {
+func (self *GoogleAuth) getGoogleConfig() (*oauth2.Config, error) {
 	credsBytes, err := os.ReadFile("creds_google_oauth.json") // TODO: Move this to env config
 	if err != nil {
 		log.Fatalf("Unable to load credentials file %v", err)
@@ -89,8 +87,8 @@ func getGoogleConfig() (*oauth2.Config, error) {
 }
 
 // Exchange the authorization code for an access token
-func exchangeToken(code string) (*oauth2.Token, error) {
-	config, err := getGoogleConfig()
+func (self *GoogleAuth) exchangeToken(code string) (*oauth2.Token, error) {
+	config, err := self.getGoogleConfig()
 	if err != nil {
 		log.Fatalf("Unable to load config from json %v", err)
 	}
@@ -102,7 +100,7 @@ func exchangeToken(code string) (*oauth2.Token, error) {
 	return tok, nil
 }
 
-func saveToken(file string, token *oauth2.Token) {
+func (self *GoogleAuth) saveToken(file string, token *oauth2.Token) {
 	fmt.Printf("Saving credential file to: %s\n", file)
 	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -114,8 +112,8 @@ func saveToken(file string, token *oauth2.Token) {
 
 // StartOauthCodeFlow uses Config to request a Token.
 // It returns the retrieved Token.
-func StartOauthCodeFlow(accountId string, publisherProfileId string) (string, error) {
-	config, err := getGoogleConfig()
+func (self *GoogleAuth) StartOauthCodeFlow(accountId string, publisherProfileId string) (string, error) {
+	config, err := self.getGoogleConfig()
 	if err != nil {
 		log.Fatalf("Unable to create google confige: %v", err)
 	}
@@ -132,13 +130,13 @@ func StartOauthCodeFlow(accountId string, publisherProfileId string) (string, er
 	return authUrl, err
 }
 
-func StoreAuthorizationCode(authCode string, accountId string, publisherProfileId string) error {
-	token, err := exchangeToken(authCode)
+func (self *GoogleAuth) StoreAuthorizationCode(authCode string, accountId string, publisherProfileId string) (*oauth2.Token, error) {
+	token, err := self.exchangeToken(authCode)
 	if err != nil {
 		log.Printf("error exchanging token to store authorization code: %s", err)
-		return err
+		return token, err
 	}
 
-	err = dal.StoreOauthCredentials(accountId, publisherProfileId, token.AccessToken, token.RefreshToken, token.Expiry.UnixMilli(), token.TokenType)
-	return err
+	err = dal.StoreOauthCredentials(accountId, publisherProfileId, token.AccessToken, token.RefreshToken, token.Expiry.Unix(), token.TokenType)
+	return token, err
 }

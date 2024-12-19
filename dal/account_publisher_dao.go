@@ -76,7 +76,7 @@ func StoreOauthCredentials(accountId string, publisherProfileId string, bearerTo
 		},
 		TableName:        aws.String(dynamo_configuration.TABLE_ACCOUNTS),
 		ReturnValues:     aws.String("NONE"),
-		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v0, %s = :v1, %s = :v2, %s = :v3", "OauthExpiryMilliSec", "OauthToken", "OauthRefreshToken", "OauthTokenType")),
+		UpdateExpression: aws.String(fmt.Sprintf("SET %s = :v0, %s = :v1, %s = :v2, %s = :v3", "OauthExpiryEpochSec", "OauthToken", "OauthRefreshToken", "OauthTokenType")),
 	}
 
 	_, err = svc.UpdateItem(input)

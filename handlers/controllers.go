@@ -56,8 +56,8 @@ func HandlerOauthCodeFlowStart(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, err.Error())
 		return
 	}
-
-	authUrl, err := authorization.StartOauthCodeFlow(payload.AccountId, payload.PublisherProfileId)
+	googleAuthClient := authorization.GoogleAuth{}
+	authUrl, err := googleAuthClient.StartOauthCodeFlow(payload.AccountId, payload.PublisherProfileId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, err.Error())
@@ -80,8 +80,8 @@ func HandlerOauthCodeCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	var payload requestModels.AuthorizationCodeState
 	json.Unmarshal(data, &payload)
-
-	err = authorization.StoreAuthorizationCode(code, payload.AccountId, payload.PublisherProfileId)
+	googleAuthClient := authorization.GoogleAuth{}
+	_, err = googleAuthClient.StoreAuthorizationCode(code, payload.AccountId, payload.PublisherProfileId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, err.Error())
