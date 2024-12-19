@@ -43,7 +43,7 @@ func createShortVideoChildEvents(schema manifest.ShortVideoSchema, parentMediaEv
 
 	// Static brainrot videos; append 5 rand. Will be cut and trimmed in final rendering.
 	const staticPrompt = "Static content; not used in generation."
-	const maxBrainrotBackgroundVideo = 7
+	const maxBrainrotBackgroundVideo = 6
 	for i := 1; i <= maxBrainrotBackgroundVideo; i++ {
 		vidBg := parentMediaEvent.ToChildMediaEntry(staticPrompt, staticPrompt, tables.MEDIA_VIDEO)
 		vidBg.RenderSequence = i
