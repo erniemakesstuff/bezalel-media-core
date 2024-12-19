@@ -31,7 +31,7 @@ func (s *PublishWorkFlow) Run(ledgerItem tables.Ledger, processId string) error 
 }
 
 func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledgerId string, processId string) error {
-	driver, err := drivers.GetDriver(pubCommand.RootPublishEvent.DistributionChannel)
+	_, err := drivers.GetDriver(pubCommand.RootPublishEvent.DistributionChannel)
 	if err != nil {
 		log.Printf("correlationID: %s error fetching driver: %s", ledgerId, err)
 		return err
@@ -62,7 +62,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 		return err
 	}
 
-	contentIds, err := driver.Publish(pubCommand)
+	//contentIds, err := driver.Publish(pubCommand)
 	if err != nil {
 		log.Printf("correlationID: %s error publishing: %s", ledgerId, err)
 		s.handleBadRequestCode(err, ledgerId, pubCommand.RootPublishEvent)
@@ -74,7 +74,7 @@ func (s *PublishWorkFlow) handlePublish(pubCommand drivers.PublishCommand, ledge
 
 	completionEventRecord := pubCommand.RootPublishEvent
 	completionEventRecord.PublishStatus = tables.COMPLETE
-	completionEventRecord.ChannelContentIDsCsv = contentIds
+	completionEventRecord.ChannelContentIDsCsv = "" //contentIds
 	err = dal.AppendLedgerPublishEvents(ledgerId, []tables.PublishEvent{completionEventRecord})
 	if err != nil {
 		log.Printf("correlationID: %s error appending completion publish event: %s", ledgerId, err)

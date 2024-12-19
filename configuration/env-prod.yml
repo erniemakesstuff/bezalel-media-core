@@ -23,3 +23,4 @@ MaxRequestsInstagramMinute: 1
 MaxRequestsTwitterMinute: 1
 MaxRequestsMediumMinute: 1
 MaxRequestsRedditMinute: 1
+MaxSourceOverflow: 200

@@ -95,3 +95,6 @@ Access Docker commands in ec2-user user
 sudo usermod -a -G docker ec2-user
 sudo chmod 666 /var/run/docker.sock
 docker version
+
+Installing git:
+dnf install git-all

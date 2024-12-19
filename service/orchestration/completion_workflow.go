@@ -39,6 +39,12 @@ func (s *CompletionWorkflow) Run(ledgerItem tables.Ledger, processId string) err
 		log.Fatalf("correlationID: %s unable to mark ledger as completed: %s", ledgerItem.LedgerID, err)
 		return err
 	}
+
+	err = dal.RecordOverflowPoolCompletion(ledgerItem.TriggerEventSource)
+	if err != nil {
+		log.Fatalf("correlationID: %s unable to mark item completed from overflow pool: %s", ledgerItem.LedgerID, err)
+		return err
+	}
 	return nil
 }
 

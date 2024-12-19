@@ -16,6 +16,8 @@ type RateLimitEntry struct {
 	RateTimeKeyBucket string // Represent granularity API_NAME:<date>:minute or some other granularity
 	RequestCount      int64
 	MaxRequests       int64
+	EventsSubmitted   int64
+	EventsCompleted   int64
 	TTL               int64 // epoch seconds
 }
 
@@ -31,7 +33,7 @@ const (
 func IsCallable(apiName string, maxRequestsPerMin int64) bool {
 	const twoHours = 7200
 	ttl := time.Now().Unix() + twoHours
-	rateTimeBucket := getRateTimeKeyBucket(apiName, time.Now())
+	rateTimeBucket := getRateTimeKeyBucketMinute(apiName, time.Now())
 	entry := RateLimitEntry{
 		RateTimeKeyBucket: rateTimeBucket,
 		MaxRequests:       maxRequestsPerMin,
@@ -79,8 +81,100 @@ func IsCallable(apiName string, maxRequestsPerMin int64) bool {
 	return responseItem.RequestCount <= responseItem.MaxRequests
 }
 
-func getRateTimeKeyBucket(apiName string, bucketTime time.Time) string {
+func IsOverflow(sourceChannel string, maxOverflowCapacity int64) bool {
+	const fourtyEightHours = 172800
+	ttl := time.Now().Unix() + fourtyEightHours
+	rateTimeBucket := getRateTimeKeyBucketDay(sourceChannel, time.Now())
+	entry := RateLimitEntry{
+		RateTimeKeyBucket: rateTimeBucket,
+		TTL:               ttl,
+	}
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"RateTimeKeyBucket": {
+				S: aws.String(entry.RateTimeKeyBucket),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":v0": {
+				N: aws.String(strconv.FormatInt(1, 10)),
+			},
+			":v1": {
+				N: aws.String(strconv.FormatInt(entry.TTL, 10)),
+			},
+		},
+		TableName:    aws.String(dynamo_configuration.TABLE_RATE_LIMIT),
+		ReturnValues: aws.String("ALL_NEW"),
+		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v0 SET #ttlName = :v1",
+			"EventsSubmitted")),
+		ExpressionAttributeNames: map[string]*string{
+			"#ttlName": aws.String("TTL"),
+		},
+	}
+
+	response, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("WARN error checking rate limit: %s", err)
+		return false
+	}
+
+	responseItem := RateLimitEntry{}
+	err = dynamodbattribute.UnmarshalMap(response.Attributes, &responseItem)
+	if err != nil {
+		log.Printf("WARN error unmarshalling rate limit item: %s", err)
+		return false
+	}
+
+	return responseItem.EventsSubmitted-responseItem.EventsCompleted <= maxOverflowCapacity
+}
+
+func RecordOverflowPoolCompletion(sourceChannel string) error {
+	const fourtyEightHours = 172800
+	ttl := time.Now().Unix() + fourtyEightHours
+	rateTimeBucket := getRateTimeKeyBucketDay(sourceChannel, time.Now())
+	entry := RateLimitEntry{
+		RateTimeKeyBucket: rateTimeBucket,
+		TTL:               ttl,
+	}
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"RateTimeKeyBucket": {
+				S: aws.String(entry.RateTimeKeyBucket),
+			},
+		},
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":v0": {
+				N: aws.String(strconv.FormatInt(1, 10)),
+			},
+			":v1": {
+				N: aws.String(strconv.FormatInt(entry.TTL, 10)),
+			},
+		},
+		TableName:    aws.String(dynamo_configuration.TABLE_RATE_LIMIT),
+		ReturnValues: aws.String("ALL_NEW"),
+		UpdateExpression: aws.String(fmt.Sprintf("ADD %s :v0 SET #ttlName = :v1",
+			"EventsCompleted")),
+		ExpressionAttributeNames: map[string]*string{
+			"#ttlName": aws.String("TTL"),
+		},
+	}
+
+	_, err := svc.UpdateItem(input)
+	if err != nil {
+		log.Printf("WARN error checking rate limit: %s", err)
+		return err
+	}
+	return err
+}
+
+func getRateTimeKeyBucketMinute(apiName string, bucketTime time.Time) string {
 	timeBucket := fmt.Sprintf("%s:%d-%d-%d:%d.%d", apiName, bucketTime.UTC().Month(), bucketTime.UTC().Day(),
 		bucketTime.UTC().Year(), bucketTime.UTC().Hour(), bucketTime.UTC().Minute())
+	return timeBucket
+}
+
+func getRateTimeKeyBucketDay(sourceChannel string, bucketTime time.Time) string {
+	timeBucket := fmt.Sprintf("%s:%d-%d-%d", sourceChannel, bucketTime.UTC().Month(), bucketTime.UTC().Day(),
+		bucketTime.UTC().Year())
 	return timeBucket
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	env "github.com/bezalel-media-core/v2/configuration"
 	dal "github.com/bezalel-media-core/v2/dal"
 )
 
@@ -28,6 +29,12 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 		return nil
 	}
 
+	if dal.IsOverflow(ledgerItem.TriggerEventSource, env.GetEnvConfigs().MaxSourceOverflow) {
+		log.Printf("source has surplus unprocessed events - load shedding new events: %s", ledgerItem.TriggerEventSource)
+		return nil
+	}
+
+	// Triggers downstream workflows via CDC on dynamo table.
 	err = dal.CreateLedger(ledgerItem)
 	if err != nil {
 		log.Printf("failed to create a new ledger item: %s", err)

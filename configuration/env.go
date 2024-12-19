@@ -41,6 +41,7 @@ type EnvConfigVals struct {
 	MaxRequestsTwitterMinute   int64 `yaml:"MaxRequestsTwitterMinute"`
 	MaxRequestsMediumMinute    int64 `yaml:"MaxRequestsMediumMinute"`
 	MaxRequestsRedditMinute    int64 `yaml:"MaxRequestsRedditMinute"`
+	MaxSourceOverflow          int64 `yaml:"MaxSourceOverflow"`
 }
 
 var configSync sync.Once
