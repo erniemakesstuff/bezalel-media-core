@@ -125,7 +125,7 @@ func IsOverflow(sourceChannel string, maxOverflowCapacity int64) bool {
 		return false
 	}
 
-	return responseItem.EventsSubmitted-responseItem.EventsCompleted <= maxOverflowCapacity
+	return responseItem.EventsSubmitted-responseItem.EventsCompleted >= maxOverflowCapacity
 }
 
 func RecordOverflowPoolCompletion(sourceChannel string) error {
