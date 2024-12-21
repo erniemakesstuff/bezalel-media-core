@@ -125,7 +125,7 @@ func TakeSystemLockOwnership(systemId string, processId string, expiryTimeMilli 
 		},
 		TableName:           aws.String(dynamo_configuration.SYSTEM_DAEMON),
 		ReturnValues:        aws.String("NONE"),
-		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v, %s = :e", "ProcessID", "Version", "ExpiryTimeMilli")),
+		UpdateExpression:    aws.String(fmt.Sprintf("SET %s = :r, %s = :v, %s = :e", "ProcessID", "Version", "ExpiryTimeEpochMilli")),
 		ConditionExpression: aws.String(fmt.Sprintf("%s = :ov", "Version")),
 	}
 
