@@ -89,7 +89,7 @@ func GetShortVideoJson() string {
 		VideoThumbnailText: NO HOPE LOSER
 		Reasoning: The thumbnail text elicits intrigue by the phrase "no hope" and elicits an emotional response by adding "LOSER."
 		`,
-		VideoTags: []string{"Add search engine optimized keywords in json:videoTags array.", "You should generate at least 20 tags, and at most 30 tags.",
+		VideoTags: []string{"Add search engine optimized keywords in json:videoTags array.", "You should generate at least 10 tags, and at most 20 tags.",
 			"Your tags are two to three words each, with one tag per entry in json:videoTags array.", "Your tags bias toward long-tail keywords, specifics, and their synonyms.",
 			"Total character length of the tags combined should be less than 400 characters."},
 		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.

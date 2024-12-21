@@ -220,5 +220,10 @@ func (s YouTubeDriver) setAnyBadRequestCode(err error) error {
 	if isCredentialError {
 		return fmt.Errorf("%s: YouTube profile resulted in bad request: %s", BAD_REQUEST_PROFILE_CODE, err)
 	}
+
+	isRequestError := strings.Contains(fmt.Sprintf("%s", err), "Error 400")
+	if isRequestError {
+		return fmt.Errorf("%s: YouTube payload is invalid, poison: %s", BAD_REQUEST_POISON_FOR_CHANNEL, err)
+	}
 	return err
 }
