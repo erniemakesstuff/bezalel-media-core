@@ -25,7 +25,6 @@ func processWatch(processId string) {
 		const sixMinutes = 360000
 		waitForOwnership(processId, dal.SYSTEM_HEARTBEAT_MONITOR, sixMinutes)
 		processHeartbeats()
-		dal.TakeSystemLockOwnership(dal.SYSTEM_HEARTBEAT_MONITOR, processId, sixMinutes)
 		time.Sleep(time.Duration(5) * time.Minute)
 	}
 }
@@ -33,6 +32,7 @@ func processWatch(processId string) {
 func processHeartbeats() {
 	heartbeatEntries, err := getAllHeartBeatEntries()
 	if err != nil {
+		log.Printf("error fetching heartbeats: %s", err)
 		return
 	}
 	for _, h := range heartbeatEntries {
@@ -50,7 +50,6 @@ func processHeartbeats() {
 			log.Printf("correlationID: %s error incrementing heartbeat: %s", h.LedgerID, err)
 		}
 	}
-
 }
 
 func getAllHeartBeatEntries() ([]dal.HeartbeatEntry, error) {
