@@ -14,6 +14,14 @@ type CustomPromptDriver struct {
 	Source    string
 }
 
+func NewCustomPromptDriver(payloadIO io.ReadCloser, source string) Driver {
+	return &CustomPromptDriver{PayloadIO: payloadIO, Source: source}
+}
+
+func (d CustomPromptDriver) IsReady() bool {
+	return true
+}
+
 func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {

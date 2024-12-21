@@ -8,6 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type Driver interface {
+	GetRawEventPayload() (tables.Ledger, error)
+	IsReady() bool
+}
+
 func newLedgerFromText(targetLanguage string, text string, source string) tables.Ledger {
 	return tables.Ledger{
 		LedgerID:                   uuid.New().String(),

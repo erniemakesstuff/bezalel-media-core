@@ -9,20 +9,23 @@ import (
 	models_v1 "github.com/bezalel-media-core/v2/service/ingestion/models/v1"
 )
 
-type BlogPromptDriver struct {
+type ReactDriver struct {
 	PayloadIO io.ReadCloser
 	Source    string
 }
 
-func NewBlogPromptDriver(payloadIO io.ReadCloser, source string) Driver {
-	return &BlogPromptDriver{PayloadIO: payloadIO, Source: source}
+// TODO: create multiple ReactDriver instances
+// Maintain six ReactDriver instances: short videos, long videos, short images, long images, short audio, long audio
+func NewReactDriver(payloadIO io.ReadCloser, source string) Driver {
+	return &ReactDriver{PayloadIO: payloadIO, Source: source}
 }
 
-func (d BlogPromptDriver) IsReady() bool {
+func (d ReactDriver) IsReady() bool {
 	return true
 }
 
-func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
+func (d ReactDriver) GetRawEventPayload() (tables.Ledger, error) {
+	// TODO: This is not threadsafe.
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {
 		log.Printf("error decoding raw event payload: %s", err)
@@ -31,7 +34,7 @@ func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	return newLedgerFromText(rawEvent.TargetLanguage, rawEvent.Text, d.Source), err
 }
 
-func (d BlogPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Blog_Request, error) {
+func (d ReactDriver) decode(payloadIO io.ReadCloser) (models_v1.Blog_Request, error) {
 	decoder := json.NewDecoder(payloadIO)
 	var payload models_v1.Blog_Request
 	err := decoder.Decode(&payload)

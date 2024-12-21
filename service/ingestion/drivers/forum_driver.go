@@ -15,6 +15,14 @@ type ForumDriver struct {
 	Source    string
 }
 
+func NewForumDriver(payloadIO io.ReadCloser, source string) Driver {
+	return &ForumDriver{PayloadIO: payloadIO, Source: source}
+}
+
+func (d ForumDriver) IsReady() bool {
+	return true
+}
+
 func (d ForumDriver) GetRawEventPayload() (tables.Ledger, error) {
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {

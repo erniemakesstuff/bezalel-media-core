@@ -13,6 +13,11 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 	if err != nil {
 		log.Printf("error retreiving driver: %s", err)
 	}
+
+	if !driver.IsReady() {
+		return nil
+	}
+
 	ledgerItem, err := driver.GetRawEventPayload()
 	if err != nil {
 		log.Printf("driver failed to get raw event payload: %s", err)
@@ -48,4 +53,8 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 	}
 
 	return err
+}
+
+func AggregateSources(source string, r *http.Request) error {
+	return nil
 }
