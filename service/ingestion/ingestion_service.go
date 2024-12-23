@@ -18,7 +18,7 @@ func SaveSourceEventToLedger(source string, r *http.Request) error {
 		return nil
 	}
 
-	ledgerItem, err := driver.GetRawEventPayload()
+	ledgerItem, err := driver.BuildEventPayload()
 	if err != nil {
 		log.Printf("driver failed to get raw event payload: %s", err)
 		return err

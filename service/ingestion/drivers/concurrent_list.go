@@ -32,12 +32,10 @@ func (cl *ConcurrentList) Remove(index int) {
 	}
 }
 
-func (cl *ConcurrentList) Flush(index int) {
+func (cl *ConcurrentList) Flush() {
 	cl.lock.Lock()
 	defer cl.lock.Unlock()
-	if index >= 0 && index < len(cl.list) {
-		cl.list = make([]interface{}, 0)
-	}
+	cl.list = make([]interface{}, 0)
 }
 
 func (cl *ConcurrentList) Get(index int) (interface{}, bool) {

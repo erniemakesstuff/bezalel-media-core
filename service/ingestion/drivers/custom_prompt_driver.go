@@ -18,11 +18,15 @@ func NewCustomPromptDriver(payloadIO io.ReadCloser, source string) Driver {
 	return &CustomPromptDriver{PayloadIO: payloadIO, Source: source}
 }
 
+func (d CustomPromptDriver) WithMedia(payloadIO io.ReadCloser) error {
+	return nil
+}
+
 func (d CustomPromptDriver) IsReady() bool {
 	return true
 }
 
-func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
+func (d CustomPromptDriver) BuildEventPayload() (tables.Ledger, error) {
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {
 		log.Printf("error decoding raw event payload: %s", err)
@@ -31,9 +35,9 @@ func (d CustomPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	return newLedgerFromText("EN", rawEvent.PromptText, d.Source), err
 }
 
-func (d CustomPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Custom_Prompt_Request, error) {
+func (d CustomPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.CustomPromptRequest, error) {
 	decoder := json.NewDecoder(payloadIO)
-	var payload models_v1.Custom_Prompt_Request
+	var payload models_v1.CustomPromptRequest
 	err := decoder.Decode(&payload)
 	if err != nil {
 		return payload, err

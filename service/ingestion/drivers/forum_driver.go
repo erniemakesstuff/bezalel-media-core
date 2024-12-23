@@ -19,11 +19,15 @@ func NewForumDriver(payloadIO io.ReadCloser, source string) Driver {
 	return &ForumDriver{PayloadIO: payloadIO, Source: source}
 }
 
+func (d ForumDriver) WithMedia(payloadIO io.ReadCloser) error {
+	return nil
+}
+
 func (d ForumDriver) IsReady() bool {
 	return true
 }
 
-func (d ForumDriver) GetRawEventPayload() (tables.Ledger, error) {
+func (d ForumDriver) BuildEventPayload() (tables.Ledger, error) {
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {
 		log.Printf("error decoding raw event payload: %s", err)
@@ -38,9 +42,9 @@ func (d ForumDriver) GetRawEventPayload() (tables.Ledger, error) {
 	return newLedgerFromText(rawEvent.TargetLanguage, payload, d.Source), err
 }
 
-func (d ForumDriver) decode(payloadIO io.ReadCloser) (models_v1.Forum_Dump_Request, error) {
+func (d ForumDriver) decode(payloadIO io.ReadCloser) (models_v1.ForumDumpRequest, error) {
 	decoder := json.NewDecoder(payloadIO)
-	var payload models_v1.Forum_Dump_Request
+	var payload models_v1.ForumDumpRequest
 	err := decoder.Decode(&payload)
 	if err != nil {
 		return payload, err

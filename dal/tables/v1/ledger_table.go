@@ -27,8 +27,8 @@ type Ledger struct {
 	// Optional
 	TriggerEventPayload        string // article text, ...
 	TriggerEventSource         string
-	TriggerEventMediaUrls      string // Images, videos, ... [url1, url2,...]
-	TriggerEventWebsiteUrls    string // product pages, news article sources crawled. [url1, url2,...]
+	TriggerEventMediaUrls      string // CSV Images, videos, ... [url1, url2,...]
+	TriggerEventWebsiteUrls    string // CSV product pages, news article sources crawled. [url1, url2,...]
 	TriggerEventTargetLanguage string // EN, CN, ... Specifies the overall downstream language as set by Drivers.
 	TriggerEventContentHash    string // for deduping raw events.
 	MediaEvents                string // Media generation: audio, video, ...
@@ -38,6 +38,7 @@ type Ledger struct {
 	HeartbeatCount             int64
 	TTL                        int64 // epoch seconds
 }
+
 type Event interface {
 	GetEventID() string
 }

@@ -22,7 +22,11 @@ func (d BlogPromptDriver) IsReady() bool {
 	return true
 }
 
-func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
+func (d BlogPromptDriver) WithMedia(payloadIO io.ReadCloser) error {
+	return nil
+}
+
+func (d BlogPromptDriver) BuildEventPayload() (tables.Ledger, error) {
 	rawEvent, err := d.decode(d.PayloadIO)
 	if err != nil {
 		log.Printf("error decoding raw event payload: %s", err)
@@ -31,9 +35,9 @@ func (d BlogPromptDriver) GetRawEventPayload() (tables.Ledger, error) {
 	return newLedgerFromText(rawEvent.TargetLanguage, rawEvent.Text, d.Source), err
 }
 
-func (d BlogPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.Blog_Request, error) {
+func (d BlogPromptDriver) decode(payloadIO io.ReadCloser) (models_v1.BlogRequest, error) {
 	decoder := json.NewDecoder(payloadIO)
-	var payload models_v1.Blog_Request
+	var payload models_v1.BlogRequest
 	err := decoder.Decode(&payload)
 	if err != nil {
 		return payload, err

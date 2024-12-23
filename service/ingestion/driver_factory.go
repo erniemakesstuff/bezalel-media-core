@@ -8,6 +8,7 @@ import (
 )
 
 func GetDriver(source string, payloadIO io.ReadCloser) (drivers.Driver, error) {
+	var err error
 	switch {
 	case source == "v1/source/prompt":
 		val := drivers.NewCustomPromptDriver(payloadIO, source)
@@ -18,8 +19,11 @@ func GetDriver(source string, payloadIO io.ReadCloser) (drivers.Driver, error) {
 	case source == "v1/source/forum":
 		val := drivers.NewForumDriver(payloadIO, source)
 		return val, nil
-	case source == "v1/reactions/short/images" || source == "v1/reactions/short/videos":
-		return drivers.NewReactDriver(payloadIO, source), nil
+	case source == "v1/reactions/short/image" || source == "v1/reactions/short/video" ||
+		source == "v1/reactions/long/image" || source == "v1/reactions/long/video":
+		driverReact := drivers.NewReactDriver(source)
+		err = driverReact.WithMedia(payloadIO)
+		return driverReact, err
 	}
 
 	return nil, errors.New("no matching source-to-driver found")

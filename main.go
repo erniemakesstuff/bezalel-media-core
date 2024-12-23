@@ -23,6 +23,10 @@ const route_youtube_oauth_callback = "/v1/authcode/youtube/callback"
 const route_source_prompt = "/v1/source/prompt"
 const route_source_blog = "/v1/source/blog"
 const route_source_forum = "/v1/source/forum"
+const route_source_reactions_short_image = "/v1/source/reaction/short/image"
+const route_source_reactions_short_video = "/v1/source/reaction/short/video"
+const route_source_reactions_long_image = "/v1/source/reaction/long/image"
+const route_source_reactions_long_video = "/v1/source/reaction/long/video"
 
 func main() {
 	// Register Oauth callbacks
