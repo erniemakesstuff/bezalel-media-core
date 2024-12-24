@@ -12,3 +12,6 @@ distributionFormats:
   - format: "ShortVideo"
     channels:
       - channelName: "YouTube"
+  - format: "LongVideo"
+    channels:
+      - channelName: "YouTube"

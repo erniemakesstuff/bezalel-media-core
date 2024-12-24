@@ -111,3 +111,21 @@ scriptPrompts:
     ###
   promptText: |
     $RAW_TEXT
+- promptCategoryKey: "ShortVideo.Reaction"
+  systemPromptText: |
+    TODO
+    You will write your script using the $LANGUAGE language.
+    Your output should be valid json:
+    $SHORT_VIDEO_JSON_FORMAT
+    ###
+  promptText: |
+    $RAW_TEXT
+- promptCategoryKey: "LongVideo.Reaction"
+  systemPromptText: |
+    TODO
+    You will write your script using the $LANGUAGE language.
+    Your output should be valid json:
+    $LONG_VIDEO_JSON_FORMAT
+    ###
+  promptText: |
+    $RAW_TEXT

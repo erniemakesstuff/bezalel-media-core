@@ -30,6 +30,16 @@ type ShortVideoSchema struct {
 	Comments                  []string `json:"comments"`
 }
 
+type LongVideoSchema struct {
+	VideoTitle                string   `json:"videoTitle"` // json key should be consistent between Short and Long videos.
+	VideoThumbnailText        string   `json:"videoThumbnailText"`
+	VideoDescription          string   `json:"videoDescription"`
+	VideoTags                 []string `json:"videoTags"`
+	ThumbnailImageDescription string   `json:"thumbnailImageDescription"`
+	NarrationText             string   `json:"narrationText"`
+	Comments                  []string `json:"comments"`
+}
+
 func GetBlogJsonSchema() string {
 	sampleShot := BlogSchema{
 		Instruction: "The instructions you received must be in the instruction field.",
@@ -99,13 +109,46 @@ func GetShortVideoJson() string {
 		and that is related to the videoTitle and videoDescription.`,
 		MainPost: `Main post content, summary, or abridged text goes here.
 		If the post is longer than one paragraph long, then abridge the contents to be less than one paragraph; summarizing to capture the main dramatic details.
-		All text in json:mainPost should be at most 50 seconds long when read aloud.`,
+		All text in json:mainPost should be at most 125 words.`,
 		Comments: []string{
 			"Comments from the post go here, summarized, or abridged.",
 			"One comment per list entry.",
 			"Select comments that are no more than three sentences long.",
-			"All entries combined in json:comments should only require at most 10 seconds to read aloud.",
+			"All entries combined in json:comments should be at most 40 words.",
 		},
+	}
+
+	b, err := json.MarshalIndent(sampleShot, "", "  ")
+	if err != nil {
+		log.Fatalf("error marshalling schema sample: %s", err)
+	}
+	return string(b)
+}
+
+func GetLongVideoJson() string {
+	sampleShot := LongVideoSchema{
+		VideoTitle: `Your clickbait video title goes here. Suffix your title with hashtag #shorts.
+		Your title is pithy.
+		Your title should evoke curiosity by asking a question, interest, and evoke strong emotions such as anger, fear, shock, surprise, or joy.`,
+		VideoThumbnailText: `A highly condensed version of your videoTitle that is punchy and likely to solicit intrigue.
+		Example:
+		---Good Thumbnail Text 1---
+		VideoTitle: My new wife wants to kick my daughter out of her room.
+		VideoThumbnailText: Crazy Wife!
+		Reasoning: The thumbnail text is short, punchy, captures the theme of the videoTitle.
+		---Good Thumbnail Text 2---
+		VideoTitle: The job market is the worst it's been since the 2008 crisis.
+		VideoThumbnailText: NO HOPE LOSER
+		Reasoning: The thumbnail text elicits intrigue by the phrase "no hope" and elicits an emotional response by adding "LOSER."
+		`,
+		VideoTags: []string{"Add search engine optimized keywords in json:videoTags array.", "You should generate at least 10 tags, and at most 20 tags.",
+			"Your tags are two to three words each, with one tag per entry in json:videoTags array.", "Your tags bias toward long-tail keywords, specifics, and their synonyms.",
+			"Total character length of the tags combined should be less than 400 characters."},
+		VideoDescription: `Your video description should contain several hashtags, and an SEO rich description.
+		You must include #shorts hashtag in the description.
+		Include at least three relevant hashtags in your video description.`,
+		ThumbnailImageDescription: `Describe an image likely to attract a viewer to click on your video, 
+		and that is related to the videoTitle and videoDescription.`,
 	}
 
 	b, err := json.MarshalIndent(sampleShot, "", "  ")

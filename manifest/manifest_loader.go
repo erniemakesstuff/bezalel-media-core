@@ -24,6 +24,7 @@ const (
 	PROMPT_SCRIPT_VAR_BLOG_FORMAT        = "$BLOG_JSON_FORMAT"
 	PROMPT_SCRIPT_VAR_TINY_BLOG_FORMAT   = "$TINY_BLOG_JSON_FORMAT"
 	PROMPT_SCRIPT_VAR_SHORT_VIDEO_FORMAT = "$SHORT_VIDEO_JSON_FORMAT"
+	PROMPT_SCRIPT_VAR_LONG_VIDEO_FORMAT  = "$LONG_VIDEO_JSON_FORMAT"
 )
 
 const (
@@ -31,6 +32,7 @@ const (
 	DIST_FORMAT_BLOG        = "Blog"
 	DIST_FORMAT_TINY_BLOG   = "TinyBlog"
 	DIST_FORMAT_SHORT_VIDEO = "ShortVideo"
+	DIST_FORMAT_LONG_VIDEO  = "LongVideo"
 )
 
 type Prompt struct {
@@ -139,6 +141,8 @@ func getScriptPromptCollection() ScriptPromptCollection {
 			PROMPT_SCRIPT_VAR_TINY_BLOG_FORMAT, GetTinyBlogJson(), -1)
 		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
 			PROMPT_SCRIPT_VAR_SHORT_VIDEO_FORMAT, GetShortVideoJson(), -1)
+		prompts.ScriptPrompts[i].SystemPromptText = strings.Replace(prompts.ScriptPrompts[i].SystemPromptText,
+			PROMPT_SCRIPT_VAR_LONG_VIDEO_FORMAT, GetLongVideoJson(), -1)
 	}
 	return prompts
 }

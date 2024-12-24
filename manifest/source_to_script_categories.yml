@@ -23,3 +23,15 @@ sources:
   - sourceName: "v1/source/forum"
     scriptCategories:
       - categoryKey: "ShortVideo.Drama"
+  - sourceName: "v1/source/reaction/short/video"
+    scriptCategories:
+      - categoryKey: "ShortVideo.Reaction"
+  - sourceName: "v1/source/reaction/short/image"
+    scriptCategories:
+      - categoryKey: "ShortVideo.Reaction"
+  - sourceName: "v1/source/reaction/long/video"
+    scriptCategories:
+      - categoryKey: "LongVideo.Reaction"
+  - sourceName: "v1/source/reaction/long/image"
+    scriptCategories:
+      - categoryKey: "LongVideo.Reaction"

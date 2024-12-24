@@ -164,6 +164,7 @@ type MetaMediaDescriptor string
 
 const (
 	FINAL_RENDER    MetaMediaDescriptor = "FinalRender"       // Used to indicate that this media will be uploaded to the target PublisherProfile distribution channel.
+	CONTEXT_ADDED   MetaMediaDescriptor = "ContextWasAdded"   // Any dependent context needed for scripting was added
 	SCRIPT_ENRICHED MetaMediaDescriptor = "ScriptWasEnriched" // metadata to indicate script data was enriched.
 )
 
@@ -206,6 +207,8 @@ func GetDistributionFormatFromString(format string) (DistributionFormat, error) 
 		return DIST_FORMAT_LVIDEO, nil
 	case strings.EqualFold(format, string(DIST_FORMAT_SVIDEO)):
 		return DIST_FORMAT_SVIDEO, nil
+	case strings.EqualFold(format, string(DIST_FORMAT_LVIDEO)):
+		return DIST_FORMAT_LVIDEO, nil
 	}
 
 	return DIST_FORMAT_BLOG, fmt.Errorf("unable to find matching distribution format from string: %s", format)
